@@ -1,0 +1,1 @@
+# afkworker for collect statistics
