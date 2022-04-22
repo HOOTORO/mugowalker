@@ -1,23 +1,23 @@
 package esperia
 
-func Map() *Campain {
+// func Map() *Campain {
 
-	re := new(Campain)
+// 	re := new(Campain)
 
-	ranh := Ranhorn{
-		screenpos: TPoint{X: ranhx, Y: ranhy},
-		Guild: Guild{screenpos: TPoint{X: 400, Y: 500},
-			Hellscape: Hellscape{screenpos: TPoint{X: 780, Y: 890},
-				Cursed: Cursed{screenpos: TPoint{X: 780, Y: 890}},
-			}},
-	}
+// 	ranh := &Ranhorn{
+// 		screenpos: TPoint{X: ranhx, Y: ranhy},
+// 		Guild: Guild{screenpos: TPoint{X: 400, Y: 500},
+// 			Hellscape: Hellscape{screenpos: TPoint{X: 780, Y: 890},
+// 				Cursed: Cursed{screenpos: TPoint{X: 780, Y: 890}},
+// 			}},
+// 	}
 
-	df := DarkForest{screenpos: TPoint{X: dfox, Y: dfoy}}
+// 	df := DarkForest{entry: TPoint{X: dfox, Y: dfoy}}
 
-	re.depth = 1
-	re.screenpos = TPoint{X: campx, Y: campy}
-	re.DarkForest = df
-	re.Ranhorn = ranh
+// 	re.depth = 1
+// 	re.screenpos = TPoint{X: campx, Y: campy}
+// 	re.DarkForest = df
+// 	re.Ranhorn = *ranh
 
-	return re
-}
+// 	return re
+// }

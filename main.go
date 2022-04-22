@@ -4,6 +4,7 @@ import (
 	"afk/worker/adb"
 	"afk/worker/bot"
 	"afk/worker/esperia"
+	// "afk/worker/esperia"
 	// "afk/worker/fshelp"
 	// "afk/worker/img"
 	// "fmt"
@@ -22,14 +23,16 @@ func main() {
 	blueStacks.Adb("kill-server")
 	blueStacks.Adb("start-server")
 
-	bot := bot.New(blueStacks)
-	mapa := esperia.Map()
+	afkbot := bot.New(blueStacks)
+	mapa := esperia.NewCAMPAIN()
 
-	bot.
-		Walkin(&mapa.Ranhorn).
-		Walkin(&mapa.Guild).
-		Walkin(&mapa.Hellscape).
-		Walkin(&mapa.Cursed)
+	afkbot.WalkIN(mapa.DarkForest)
+	_ = mapa
+	// bot.Walkin(mapa)
+	// Walkin(&mapa.Ranhorn).
+	// 	Walkin(&mapa.Guild).
+	// 	Walkin(&mapa.Hellscape).
+	// 	Walkin(&mapa.Cursed)
 
 	// err := blueStacks.Connect()
 	// if err != nil {

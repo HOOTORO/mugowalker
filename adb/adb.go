@@ -45,6 +45,8 @@ const (
 	pull             = "pull"
 	input            = "input"
 	tap              = "tap"
+	back             = "keyevent 4"
+	swipe            = "swipe"
 )
 
 func New(name, host, port string) *Device {
@@ -123,6 +125,22 @@ func (d *Device) Tap(x, y int) {
 	yPos := strconv.Itoa(y)
 	d.Input(tap, xPos, yPos)
 }
+
+func (d *Device) Back() {
+	d.Input(back)
+}
+
+// nargs: swipe <x1> <y1> <x2> <y2> [duration(ms)]
+func (d *Device) Swipe(x, y, x1, y1, td int) {
+
+	xPos := strconv.Itoa(x)
+	yPos := strconv.Itoa(y)
+	x1Pos := strconv.Itoa(x1)
+	y1Pos := strconv.Itoa(y1)
+	duration := strconv.Itoa(td)
+	d.Input(swipe, xPos, yPos, x1Pos, y1Pos, duration)
+}
+
 func (d *Device) ShareFolder() (docpath, picpath string) {
 	//bluestacks shared folders
 	docpath = "/mnt/windows/Documents/"

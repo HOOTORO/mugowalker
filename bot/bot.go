@@ -2,10 +2,9 @@ package bot
 
 import (
 	"afk/worker/adb"
-	"time"
-
-	// "afk/worker/esperia"
+	"afk/worker/esperia"
 	"log"
+	"time"
 )
 
 type Bot interface {
@@ -17,14 +16,17 @@ type Bot interface {
 }
 
 type Walker interface {
-	In() (int, int)
+	// Walk() (int, int)
+	Walk() (esperia.TPoint, interface{})
 }
 
-func (bot *AfkBot) Walkin(w Walker) *AfkBot {
-	x, y := w.In()
-	bot.dev.Tap(x, y)
+func (bot *AfkBot) WalkIN(w Walker) interface{} {
+	point, camp := w.Walk()
+	bot.tap(point.X, point.Y)
+	// x, y := w.WannaIn()
+	// bot.WalkIn(x, y)
 	time.Sleep(5 * time.Second)
-	return bot
+	return camp
 }
 
 type AfkBot struct {
@@ -40,7 +42,7 @@ func New(dev *adb.Device) (ab *AfkBot) {
 	return &AfkBot{dev: dev}
 }
 
-func (ab *AfkBot) In(x, y int) {
+func (ab *AfkBot) tap(x, y int) {
 	ab.dev.Tap(x, y)
 }
 

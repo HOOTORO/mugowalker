@@ -1,144 +1,150 @@
 package esperia
 
 type Esperia interface {
-	New()
-	In() *Esperia
+	Walk() (TPoint, *Campain)
+	NewCAMPAIN() *Campain
 }
 
 type Campain struct {
+	entry TPoint
 	depth int
 	DarkForest
 	Ranhorn
-	screenpos TPoint
 }
 
-func (c *Campain) New() {
-	panic("not implemented") // TODO: Implement
+func NewCAMPAIN() *Campain {
+	return &Campain{entry: CampainEntry, depth: 0}
 }
 
-func (c *Campain) In() (int, int) {
-	return c.screenpos.X, c.screenpos.Y
+func (c *Campain) Walk() (TPoint, interface{}) {
+	return c.entry, c
 }
+
+// func (c *Campain) Begin()
+
+// func (c *Campain) DarkForest() (TPoint, *DarkForest) {
+// 	return DarkFP, &DarkForest{entry: DarkFP, depth: 0}
+// }
 
 type DarkForest struct {
-	Ranhorn
-	KingsTower
-	ArcaneLabyrinth
-	ArenaOfHeroes
-	TemporalRift
-	BountyBoard
-	screenpos TPoint
+	entry TPoint
+	depth int
+	// state interface{}
+	// Ranhorn
+	// KingsTower
+	// ArcaneLabyrinth
+	// ArenaOfHeroes
+	// TemporalRift
+	// BountyBoard
+}
+
+func (c *DarkForest) Walk() (TPoint, interface{}) {
+	return c.entry, c
+}
+func (df *DarkForest) KingsTower() (TPoint, *KingsTower) {
+	return KingsTP, &KingsTower{entry: KingsTP, depth: 1}
 }
 
 type KingsTower struct {
-	TowerOfLight
-	BrutalCitadel
-	WorldTree
-	ForsakenNecropolis
-	screenpos TPoint
+	entry TPoint
+	depth int
+	// TowerOfLight
+	// BrutalCitadel
+	// WorldTree
+	// ForsakenNecropolis
 }
 
-type TowerOfLight struct {
-	pnt TPoint
-}
+// func (kt *KingsTower) KT() (TPoint, *KingsTower) {
+// 	return KingsTP, kt
+// }
 
-type BrutalCitadel struct {
-	pnt TPoint
-}
+// type TowerOfLight struct {
+// 	entry TPoint
+// }
 
-type WorldTree struct {
-	pnt TPoint
-}
+// type BrutalCitadel struct {
+// 	entry TPoint
+// }
 
-type ForsakenNecropolis struct {
-	pnt TPoint
-}
+// type WorldTree struct {
+// 	entry TPoint
+// }
 
-type ArcaneLabyrinth struct {
-	pnt TPoint
-}
+// type ForsakenNecropolis struct {
+// 	entry TPoint
+// }
 
-type ArenaOfHeroes struct {
-	pnt TPoint
-}
+// type ArcaneLabyrinth struct {
+// 	entry TPoint
+// }
 
-type TemporalRift struct {
-	pnt TPoint
-}
+// type ArenaOfHeroes struct {
+// 	entry TPoint
+// }
 
-type BountyBoard struct {
-	pnt TPoint
-}
+// type TemporalRift struct {
+// 	entry TPoint
+// }
+
+// type BountyBoard struct {
+// 	entry TPoint
+// }
 
 type Ranhorn struct {
-	OakInn
-	Store
-	Guild
-	screenpos TPoint
+	entry TPoint
+	// OakInn
+	// Store
+	// Guild
 }
 
-func (c *Ranhorn) In() (int, int) {
-	return c.screenpos.X, c.screenpos.Y
-}
+// type OakInn struct {
+// 	pnt TPoint
+// }
 
-type OakInn struct {
-	pnt TPoint
-}
+// type Store struct {
+// 	pnt TPoint
+// }
 
-type Store struct {
-	pnt TPoint
-}
-
-type Guild struct {
-	// GHunting
-	Hellscape
-	screenpos TPoint
-}
-
-func (c *Guild) In() (int, int) {
-	return c.screenpos.X, c.screenpos.Y
-}
+// type Guild struct {
+// 	entry TPoint
+// 	GHunting
+// 	Hellscape
+// }
 
 // type GHunting struct {
+// 	entry TPoint
 // 	Wrizz
 // 	Soren
-// 	screenpos TPoint
 // }
 
 // type Wrizz struct {
-// pnt TPoint
+// 	pnt TPoint
 // 	Fight
 // }
 
 // type Soren struct {
-// pnt TPoint
+// 	pnt TPoint
 // 	Fight
 // }
 
-type Hellscape struct {
-	Cursed
-	// Twisted
-	screenpos TPoint
-}
-
-func (c *Hellscape) In() (int, int) {
-	return c.screenpos.X, c.screenpos.Y
-}
+// type Hellscape struct {
+// 	entry TPoint
+// 	Cursed
+// 	Twisted
+// 	screenpos TPoint
+// }
 
 // type Twisted struct {
 // 	TPoint
 // 	Fight
 // }
 
-type Cursed struct {
-	// Leaderboardship
-	// Fight
-	screenpos TPoint
-}
-
-func (c *Cursed) In() (int, int) {
-	return c.screenpos.X, c.screenpos.Y
-}
+// type Cursed struct {
+// 	entry TPoint
+// 	Leaderboardship
+// 	Fight
+// 	screenpos TPoint
+// }
 
 // type Leaderboardship struct {
 // 	screenpos TPoint
@@ -157,11 +163,11 @@ func (c *Cursed) In() (int, int) {
 // 	screenpos TPoint
 // }
 
-// type Fight struct {
-// }
+type Fight struct {
+}
 
-// type MultiFight struct {
-// }
+type MultiFight struct {
+}
 
 type TPoint struct {
 	X int
