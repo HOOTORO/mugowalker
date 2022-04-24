@@ -1,9 +1,9 @@
 package main
 
 import (
-	"afk/worker/adb"
-	"afk/worker/bot"
-	"afk/worker/esperia"
+	"worker/adb"
+	"worker/bot"
+	"worker/esperia"
 	// "afk/worker/esperia"
 	// "afk/worker/fshelp"
 	// "afk/worker/img"
@@ -22,12 +22,12 @@ func main() {
 	blueStacks := adb.New(name, host, port)
 	blueStacks.Adb("kill-server")
 	blueStacks.Adb("start-server")
+	afkbot := bot.New(blueStacks, esperia.Campain)
 
-	afkbot := bot.New(blueStacks)
-	mapa := &esperia.Esperia{}
-	some := mapa.Ranhorn.Guild.Hellscape.Cursed
-	afkbot.DayWalker(some)
+	some := esperia.GuildHunt
+	afkbot.Walk(some)
 	_ = some
+
 	// not good enough
 	// bot.Walkin(mapa)
 	// Walkin(&mapa.Ranhorn).

@@ -1,52 +1,51 @@
 package bot
 
 import (
-	"afk/worker/adb"
 	"log"
 	"time"
+	"worker/adb"
+	"worker/navi"
 )
 
 type Bot interface {
 	New(*adb.Device)
 }
 
-// type Walker interface {
-// 	Walk() (int, int)
-// }
+type DayWalker interface {
+	Walk(*navi.Place)
+}
+
+type NightStalker interface {
+	Hunt()
+}
+
+type DayWalkerNightStalker interface {
+	DayWalker
+	NightStalker
+}
 
 type AfkBot struct {
-	state Location
-	dev   *adb.Device
+	state *navi.Place
+	*adb.Device
 }
 
-type Location interface {
-	Path(Location) []struct{ x, y int }
+func New(dev *adb.Device, startPlace *navi.Place) (ab *AfkBot) {
+	err := dev.Connect()
+	if err != nil {
+		log.Panicf("AfkBOT: can't connect, check adress.")
+	}
+	return &AfkBot{Device: dev, state: startPlace}
 }
 
-func (bot *AfkBot) DayWalker(e Location) {
-	road := bot.state.Path(e)
+func (bot *AfkBot) Walk(e *navi.Place) {
+
+	road := []navi.TPoint{e.Entry}
 	for _, v := range road {
-		if v.x != 0 {
-			bot.Walk(v.x, v.y)
+		if v.X != 0 {
+			bot.Tap(v.X, v.Y)
 		} else {
 			bot.Back()
 		}
 		time.Sleep(5 * time.Second)
 	}
-}
-
-func New(dev *adb.Device) (ab *AfkBot) {
-	err := dev.Connect()
-	if err != nil {
-		log.Panicf("AfkBOT: can't connect, check adress.")
-	}
-	return &AfkBot{dev: dev}
-}
-
-func (ab *AfkBot) Walk(x, y int) {
-	ab.dev.Tap(x, y)
-}
-
-func (ab *AfkBot) Back() {
-	ab.dev.Back()
 }

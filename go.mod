@@ -1,3 +1,3 @@
-module afk/worker
+module worker
 
 go 1.18

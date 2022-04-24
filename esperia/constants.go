@@ -1,5 +1,7 @@
 package esperia
 
+import "worker/navi"
+
 // const (
 // 	samplesDir = "samples"
 // )
@@ -11,22 +13,32 @@ package esperia
 // )
 
 var (
-	CampainEntry = TPoint{X: 540, Y: 1850}
-	CampBeginP   = TPoint{X: 540, Y: 1666}
-	CampainBoss  = TPoint{}
-	AFKChest     = TPoint{}
-	FASTReward   = TPoint{}
+	campainMenuPos = navi.TPoint{X: 540, Y: 1850}
+	CampBeginP     = navi.TPoint{X: 540, Y: 1666}
+	CampainBoss    = navi.TPoint{}
+	AFKChest       = navi.TPoint{}
+	FASTReward     = navi.TPoint{}
 )
 
 var (
-	RanhornEntry = TPoint{X: 100, Y: 1850}
-	ShopP        = TPoint{}
-	GuildP       = TPoint{X: 400, Y: 500}
+	hornyMenuPos = navi.TPoint{X: 100, Y: 1850}
+	shopPos      = navi.TPoint{}
+	guildPos     = navi.TPoint{X: 400, Y: 500}
+	oakPos       = navi.TPoint{}
 )
 
 var (
-	DarkFP     = TPoint{X: 300, Y: 1850}
-	KingsTP    = TPoint{}
-	ArcaneLAbP = TPoint{}
-	Temporal   = TPoint{}
+	darkMenuPos = navi.TPoint{X: 300, Y: 1850}
+	kTPos       = navi.TPoint{}
+	labPos      = navi.TPoint{}
+	temporalPos = navi.TPoint{}
+	bountyPos   = navi.TPoint{}
+	arenaPos    = navi.TPoint{}
+)
+
+var (
+	ghuntPos   = navi.TPoint{}
+	hellscpPos = navi.TPoint{}
+	clownPos   = navi.TPoint{}
+	twistedPos = navi.TPoint{}
 )
