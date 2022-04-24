@@ -24,10 +24,11 @@ func main() {
 	blueStacks.Adb("start-server")
 
 	afkbot := bot.New(blueStacks)
-	mapa := esperia.NewCAMPAIN()
-
-	afkbot.WalkIN(mapa.DarkForest)
-	_ = mapa
+	mapa := &esperia.Esperia{}
+	some := mapa.Ranhorn.Guild.Hellscape.Cursed
+	afkbot.DayWalker(some)
+	_ = some
+	// not good enough
 	// bot.Walkin(mapa)
 	// Walkin(&mapa.Ranhorn).
 	// 	Walkin(&mapa.Guild).

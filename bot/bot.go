@@ -2,36 +2,37 @@ package bot
 
 import (
 	"afk/worker/adb"
-	"afk/worker/esperia"
 	"log"
 	"time"
 )
 
 type Bot interface {
 	New(*adb.Device)
-	Daily() string
-	Arena() string
-	Fight() string
-	Place() []interface{}
 }
 
-type Walker interface {
-	// Walk() (int, int)
-	Walk() (esperia.TPoint, interface{})
-}
-
-func (bot *AfkBot) WalkIN(w Walker) interface{} {
-	point, camp := w.Walk()
-	bot.tap(point.X, point.Y)
-	// x, y := w.WannaIn()
-	// bot.WalkIn(x, y)
-	time.Sleep(5 * time.Second)
-	return camp
-}
+// type Walker interface {
+// 	Walk() (int, int)
+// }
 
 type AfkBot struct {
-	state string
+	state Location
 	dev   *adb.Device
+}
+
+type Location interface {
+	Path(Location) []struct{ x, y int }
+}
+
+func (bot *AfkBot) DayWalker(e Location) {
+	road := bot.state.Path(e)
+	for _, v := range road {
+		if v.x != 0 {
+			bot.Walk(v.x, v.y)
+		} else {
+			bot.Back()
+		}
+		time.Sleep(5 * time.Second)
+	}
 }
 
 func New(dev *adb.Device) (ab *AfkBot) {
@@ -42,23 +43,10 @@ func New(dev *adb.Device) (ab *AfkBot) {
 	return &AfkBot{dev: dev}
 }
 
-func (ab *AfkBot) tap(x, y int) {
+func (ab *AfkBot) Walk(x, y int) {
 	ab.dev.Tap(x, y)
 }
 
-func (ab *AfkBot) Daily() string {
-	panic("not implemented") // TODO: Implement
-}
-
-func (ab *AfkBot) Arena() string {
-	panic("not implemented") // TODO: Implement
-}
-
-func (ab *AfkBot) Fight() string {
-	panic("not implemented") // TODO: Implement
-
-}
-
-func (ab *AfkBot) Place() []interface{} {
-	panic("not implemented") // TODO: Implement
+func (ab *AfkBot) Back() {
+	ab.dev.Back()
 }
