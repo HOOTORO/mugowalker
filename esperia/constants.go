@@ -37,8 +37,8 @@ var (
 )
 
 var (
-	ghuntPos   = navi.TPoint{}
-	hellscpPos = navi.TPoint{}
-	clownPos   = navi.TPoint{}
-	twistedPos = navi.TPoint{}
+	ghuntPos   = navi.TPoint{X: 300, Y: 900}
+	hellscpPos = navi.TPoint{X: 770, Y: 860}
+	clownPos   = navi.TPoint{X: 500, Y: 1200}
+	twistedPos = navi.TPoint{X: 550, Y: 800}
 )

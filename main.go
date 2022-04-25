@@ -4,27 +4,30 @@ import (
 	"worker/adb"
 	"worker/bot"
 	"worker/esperia"
-	// "afk/worker/esperia"
-	// "afk/worker/fshelp"
-	// "afk/worker/img"
-	// "fmt"
-	// "log"
-	// "os"
-	// "os/exec"
+	"worker/fshelp"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
 	const (
 		name = "Bluestacks"
 		host = "localhost"
-		port = "51422"
+		port = "51532"
 	)
+	log.SetLevel(log.DebugLevel)
+	//fshelp.CreateFolder("_workdir")
+	fshelp.SetWD("_workdir")
 	blueStacks := adb.New(name, host, port)
-	blueStacks.Adb("kill-server")
-	blueStacks.Adb("start-server")
+	// blueStacks.Adb("kill-server")
+	// blueStacks.Adb("start-server")
 	afkbot := bot.New(blueStacks, esperia.Campain)
 
-	some := esperia.GuildHunt
+	some := esperia.ClownRealm
+	// log.Printf("some: %v", some.Nparent(3))
+	log.Printf("some: %v", some)
+
+	//return
 	afkbot.Walk(some)
 	_ = some
 

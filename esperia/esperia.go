@@ -5,17 +5,17 @@ import "worker/navi"
 var (
 	Campain = &navi.Place{
 		Name:  "Campain",
-		Depth: 0,
+		Depth: 1,
 		Entry: campainMenuPos,
 	}
 	DarkForest = &navi.Place{
 		Name:  "DarkForest",
-		Depth: 0,
+		Depth: 1,
 		Entry: darkMenuPos,
 	}
 	Ranhorn = &navi.Place{
 		Name:  "Ranhorn",
-		Depth: 0,
+		Depth: 1,
 		Entry: hornyMenuPos,
 	}
 )
@@ -23,19 +23,19 @@ var (
 var (
 	Guild = &navi.Place{
 		Name:   "Guild",
-		Depth:  1,
+		Depth:  2,
 		Entry:  guildPos,
 		Parent: Ranhorn,
 	}
 	Shop = &navi.Place{
 		Name:   "Shop",
-		Depth:  1,
+		Depth:  2,
 		Entry:  shopPos,
 		Parent: Ranhorn,
 	}
 	OakInn = &navi.Place{
 		Name:   "Oak Inn",
-		Depth:  1,
+		Depth:  2,
 		Entry:  oakPos,
 		Parent: Ranhorn,
 	}
@@ -44,31 +44,31 @@ var (
 var (
 	Lab = &navi.Place{
 		Name:   "Arcane Lab",
-		Depth:  1,
+		Depth:  2,
 		Entry:  labPos,
 		Parent: DarkForest,
 	}
 	KT = &navi.Place{
 		Name:   "Kings Tower",
-		Depth:  1,
+		Depth:  2,
 		Entry:  kTPos,
 		Parent: DarkForest,
 	}
 	Bounty = &navi.Place{
 		Name:   "Bounty Board",
-		Depth:  1,
+		Depth:  2,
 		Entry:  bountyPos,
 		Parent: DarkForest,
 	}
 	Arena = &navi.Place{
 		Name:   "",
-		Depth:  1,
+		Depth:  2,
 		Entry:  arenaPos,
 		Parent: DarkForest,
 	}
 	Temporal = &navi.Place{
 		Name:   "Temporal Rift",
-		Depth:  1,
+		Depth:  2,
 		Entry:  temporalPos,
 		Parent: DarkForest,
 	}
@@ -77,13 +77,13 @@ var (
 var (
 	GuildHunt = &navi.Place{
 		Name:   "Guildhunting",
-		Depth:  2,
+		Depth:  3,
 		Entry:  ghuntPos,
 		Parent: Guild,
 	}
 	Hellscape = &navi.Place{
 		Name:   "Hellscape",
-		Depth:  2,
+		Depth:  3,
 		Entry:  hellscpPos,
 		Parent: Guild,
 	}
@@ -92,15 +92,15 @@ var (
 var (
 	TwistedRealm = &navi.Place{
 		Name:   "Twisted Realm",
-		Depth:  3,
+		Depth:  4,
 		Entry:  twistedPos,
-		Parent: Guild,
+		Parent: Hellscape,
 	}
 	ClownRealm = &navi.Place{
 		Name:   "Cursed Realm",
-		Depth:  3,
+		Depth:  4,
 		Entry:  clownPos,
-		Parent: Guild,
+		Parent: Hellscape,
 	}
 )
 
