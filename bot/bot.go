@@ -1,35 +1,25 @@
 package bot
 
 import (
-	"afk/worker/adb"
-	"time"
+	"worker/adb"
+	"worker/datman"
+	"worker/navi"
+	"worker/navi/cam"
 
-	// "afk/worker/esperia"
-	"log"
+	log "github.com/sirupsen/logrus"
 )
 
 type Bot interface {
 	New(*adb.Device)
-	Daily() string
-	Arena() string
-	Fight() string
-	Place() []interface{}
+	TransferTo(*navi.Place)
+	Work(job interface{})
 }
 
-type Walker interface {
-	In() (int, int)
-}
-
-func (bot *AfkBot) Walkin(w Walker) *AfkBot {
-	x, y := w.In()
-	bot.dev.Tap(x, y)
-	time.Sleep(5 * time.Second)
-	return bot
-}
-
+//TODO: to complex. extract bot from esperia
 type AfkBot struct {
-	state string
-	dev   *adb.Device
+	*adb.Device
+	datman.DataManager
+	navi.Navigator
 }
 
 func New(dev *adb.Device) (ab *AfkBot) {
@@ -37,26 +27,13 @@ func New(dev *adb.Device) (ab *AfkBot) {
 	if err != nil {
 		log.Panicf("AfkBOT: can't connect, check adress.")
 	}
-	return &AfkBot{dev: dev}
+	log.Infof("Connected to device: %v", dev)
+	dman := datman.NewFM(dev.Name)
+	return &AfkBot{Device: dev, DataManager: dman}
 }
 
-func (ab *AfkBot) In(x, y int) {
-	ab.dev.Tap(x, y)
-}
-
-func (ab *AfkBot) Daily() string {
-	panic("not implemented") // TODO: Implement
-}
-
-func (ab *AfkBot) Arena() string {
-	panic("not implemented") // TODO: Implement
-}
-
-func (ab *AfkBot) Fight() string {
-	panic("not implemented") // TODO: Implement
-
-}
-
-func (ab *AfkBot) Place() []interface{} {
-	panic("not implemented") // TODO: Implement
+func (bot *AfkBot) TransferTo(e *navi.Place) {
+	ss := cam.Capture(bot.Device, e.Name)
+	ss.Area(bot.DataManager, e.Entry.X, e.Entry.Y, 60)
+	bot.Walk(bot.Device, e)
 }
