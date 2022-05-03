@@ -25,7 +25,7 @@ func main() {
 	camp := UImap["Campain"]
 	afkbot := bot.New(blueStacks, camp)
 
-	some := UImap[]
+	some := UImap["ClowndRealm"]
 	// log.Printf("some: %v", some.Nparent(3))
 	log.Printf("some: %v", some)
 	// afkbot.Screencap("so")
