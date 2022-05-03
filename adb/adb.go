@@ -1,14 +1,11 @@
 package adb
 
 import (
-	// "io"
 	"errors"
 	"fmt"
+	"os/exec"
 	"strconv"
 	"strings"
-
-	// "os"
-	"os/exec"
 )
 
 type Adb interface {
@@ -21,7 +18,7 @@ type Adb interface {
 }
 
 type Device struct {
-	name    string
+	Name    string
 	adbpath string
 	*Connection
 }
@@ -31,6 +28,9 @@ type Connection struct {
 	port   string
 	status bool
 }
+
+const sharedFolder = "/mnt/windows/BstSharedFolder/"
+const screenExt = ".png"
 
 func (c *Connection) Alive() bool {
 	return c.status
@@ -52,7 +52,7 @@ const (
 func New(name, host, port string) *Device {
 	checkExeExists(adb)
 	conn := &Connection{host: host, port: port, status: false}
-	return &Device{name: name, Connection: conn}
+	return &Device{Name: name, Connection: conn}
 }
 
 func (d *Device) Connect() error {
@@ -76,9 +76,10 @@ func (d *Device) Adb(args ...string) ([]byte, error) {
 	cmd := exec.Command(adb, args...)
 	res, err := cmd.CombinedOutput()
 
-	cmd = exec.Command("adb", "connect", "localhost:1111")
-	exec.Command("adb", "shell", "input", "tap", "100", "200")
-	exec.Command("adb", "screeencap", "- p ", "/sdcard/ff.pmng")
+	// cmd = exec.Command("adb", "connect", "localhost:1111")
+	// exec.Command("adb", "shell", "input", "tap", "100", "200")
+	// exec.Command("adb", "screeencap", "- p ", "/sdcard/ff.png")
+	exec.Command("adb", "pull", "/sdcard/ff.pmng")
 
 	return res, err
 }
@@ -92,22 +93,32 @@ func (d *Device) Shell(args ...string) ([]byte, error) {
 	return res, err
 }
 
-func (d *Device) Screencap(args ...string) ([]byte, error) {
-	if len(args) < 1 {
+func (d *Device) Screencap(scrname string) ([]byte, error) {
+	if len(scrname) < 1 {
 		//screencap -p /sdcard/screenshot.png
-		return nil, errors.New("Screencap: filename(full path) required")
+
+		return nil, errors.New("Screencap: filename required")
 	}
-	shellArgs := strings.Join(args, " ")
-	res, err := d.Shell(screencap, shellArgs)
+	// for usablility set shared folder
+	// shellArgs := strings.Join(fname, " ")
+
+	res, err := d.Shell(screencap, sharedFolder+scrname+screenExt)
 	return res, err
 }
 
-func (d *Device) Pull(args ...string) ([]byte, error) {
-	if len(args) < 1 {
-		return nil, errors.New("Pull: Specify path to file. Output optional, if not set - wd")
+// made by screencap from sharedfolder
+func (d *Device) PullScreen(scrname string) string {
+	filename := scrname + screenExt
+	d.Pull(sharedFolder + filename)
+	return filename
+}
+
+func (d *Device) Pull(fname string) ([]byte, error) {
+	if len(fname) < 1 {
+		return nil, errors.New("Pull: Filename required") //Specify path to file. Output optional, if not set - wd")
 	}
-	shellArgs := strings.Join(args, " ")
-	res, err := d.Adb(pull, shellArgs)
+	//shellArgs := strings.Join(args, " ")
+	res, err := d.Adb(pull, fname)
 	return res, err
 }
 
@@ -120,13 +131,13 @@ func (d *Device) Input(args ...string) error {
 	return err
 }
 
-func (d *Device) Tap(x, y int) {
+func (d *Device) GoForward(x, y int) {
 	xPos := strconv.Itoa(x)
 	yPos := strconv.Itoa(y)
 	d.Input(tap, xPos, yPos)
 }
 
-func (d *Device) Back() {
+func (d *Device) GoBack() {
 	d.Input(back)
 }
 
@@ -141,12 +152,14 @@ func (d *Device) Swipe(x, y, x1, y1, td int) {
 	d.Input(swipe, xPos, yPos, x1Pos, y1Pos, duration)
 }
 
-func (d *Device) ShareFolder() (docpath, picpath string) {
-	//bluestacks shared folders
-	docpath = "/mnt/windows/Documents/"
-	picpath = "/mnt/windows/Pictures/"
-	return
-}
+// func (d *Device) ShareFolder() (docpath, picpath string) {
+// 	//bluestacks shared folders	 (read-only)
+// 	// screenrecord --verbose /mnt/windows/BstSharedFolder/silasruinder.mp4
+// 	// screeenpshot path /sdcard/Pictures/Screenshots/
+// 	docpath = "/mnt/windows/Documents/"
+// 	picpath = "/mnt/windows/Pictures/"
+// 	return
+// }
 
 func checkExeExists(program string) {
 	// fmt.Printf("Current Env: %v", os.Environ())

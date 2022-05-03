@@ -2,6 +2,7 @@ package esperia
 
 import "worker/navi"
 
+//TODO: rework, map should be provided from ext or in more general way, map
 var (
 	Campain = &navi.Place{
 		Name:  "Campain",
@@ -34,7 +35,7 @@ var (
 		Parent: Ranhorn,
 	}
 	OakInn = &navi.Place{
-		Name:   "Oak Inn",
+		Name:   "OakInn",
 		Depth:  2,
 		Entry:  oakPos,
 		Parent: Ranhorn,
@@ -43,19 +44,19 @@ var (
 
 var (
 	Lab = &navi.Place{
-		Name:   "Arcane Lab",
+		Name:   "ArcaneLab",
 		Depth:  2,
 		Entry:  labPos,
 		Parent: DarkForest,
 	}
 	KT = &navi.Place{
-		Name:   "Kings Tower",
+		Name:   "KingsTower",
 		Depth:  2,
 		Entry:  kTPos,
 		Parent: DarkForest,
 	}
 	Bounty = &navi.Place{
-		Name:   "Bounty Board",
+		Name:   "BountyBoard",
 		Depth:  2,
 		Entry:  bountyPos,
 		Parent: DarkForest,
@@ -67,7 +68,7 @@ var (
 		Parent: DarkForest,
 	}
 	Temporal = &navi.Place{
-		Name:   "Temporal Rift",
+		Name:   "TemporalRift",
 		Depth:  2,
 		Entry:  temporalPos,
 		Parent: DarkForest,
@@ -91,13 +92,13 @@ var (
 
 var (
 	TwistedRealm = &navi.Place{
-		Name:   "Twisted Realm",
+		Name:   "TwistedRealm",
 		Depth:  4,
 		Entry:  twistedPos,
 		Parent: Hellscape,
 	}
 	ClownRealm = &navi.Place{
-		Name:   "Cursed Realm",
+		Name:   "CursedRealm",
 		Depth:  4,
 		Entry:  clownPos,
 		Parent: Hellscape,

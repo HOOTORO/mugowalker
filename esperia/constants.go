@@ -2,15 +2,6 @@ package esperia
 
 import "worker/navi"
 
-// const (
-// 	samplesDir = "samples"
-// )
-
-// const (
-// 	campx, campy = 540, 1850
-// 	ranhx, ranhy = 100, 1850
-// 	dfox, dfoy   = 300, 1850
-// )
 
 var (
 	campainMenuPos = navi.TPoint{X: 540, Y: 1850}
