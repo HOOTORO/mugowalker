@@ -2,19 +2,23 @@ package esperia
 
 import "worker/navi"
 
+var flatmap map[string]*navi.Location = make(map[string]*navi.Location, 0)
+
 //TODO: rework, map should be provided from ext or in more general way, map
+
 var (
-	Campain = &navi.Place{
+	Campain = &navi.Location{
 		Name:  "Campain",
 		Depth: 1,
 		Entry: campainMenuPos,
 	}
-	DarkForest = &navi.Place{
+
+	DarkForest = &navi.Location{
 		Name:  "DarkForest",
 		Depth: 1,
 		Entry: darkMenuPos,
 	}
-	Ranhorn = &navi.Place{
+	Ranhorn = &navi.Location{
 		Name:  "Ranhorn",
 		Depth: 1,
 		Entry: hornyMenuPos,
@@ -22,19 +26,19 @@ var (
 )
 
 var (
-	Guild = &navi.Place{
+	Guild = &navi.Location{
 		Name:   "Guild",
 		Depth:  2,
 		Entry:  guildPos,
 		Parent: Ranhorn,
 	}
-	Shop = &navi.Place{
+	Shop = &navi.Location{
 		Name:   "Shop",
 		Depth:  2,
 		Entry:  shopPos,
 		Parent: Ranhorn,
 	}
-	OakInn = &navi.Place{
+	OakInn = &navi.Location{
 		Name:   "OakInn",
 		Depth:  2,
 		Entry:  oakPos,
@@ -43,31 +47,31 @@ var (
 )
 
 var (
-	Lab = &navi.Place{
+	Lab = &navi.Location{
 		Name:   "ArcaneLab",
 		Depth:  2,
 		Entry:  labPos,
 		Parent: DarkForest,
 	}
-	KT = &navi.Place{
+	KT = &navi.Location{
 		Name:   "KingsTower",
 		Depth:  2,
 		Entry:  kTPos,
 		Parent: DarkForest,
 	}
-	Bounty = &navi.Place{
+	Bounty = &navi.Location{
 		Name:   "BountyBoard",
 		Depth:  2,
 		Entry:  bountyPos,
 		Parent: DarkForest,
 	}
-	Arena = &navi.Place{
+	Arena = &navi.Location{
 		Name:   "",
 		Depth:  2,
 		Entry:  arenaPos,
 		Parent: DarkForest,
 	}
-	Temporal = &navi.Place{
+	Temporal = &navi.Location{
 		Name:   "TemporalRift",
 		Depth:  2,
 		Entry:  temporalPos,
@@ -76,13 +80,13 @@ var (
 )
 
 var (
-	GuildHunt = &navi.Place{
+	GuildHunt = &navi.Location{
 		Name:   "Guildhunting",
 		Depth:  3,
 		Entry:  ghuntPos,
 		Parent: Guild,
 	}
-	Hellscape = &navi.Place{
+	Hellscape = &navi.Location{
 		Name:   "Hellscape",
 		Depth:  3,
 		Entry:  hellscpPos,
@@ -91,13 +95,13 @@ var (
 )
 
 var (
-	TwistedRealm = &navi.Place{
+	TwistedRealm = &navi.Location{
 		Name:   "TwistedRealm",
 		Depth:  4,
 		Entry:  twistedPos,
 		Parent: Hellscape,
 	}
-	ClownRealm = &navi.Place{
+	ClownRealm = &navi.Location{
 		Name:   "CursedRealm",
 		Depth:  4,
 		Entry:  clownPos,
@@ -105,7 +109,23 @@ var (
 	}
 )
 
-type Esperia struct {
+func UIMap() map[string]*navi.Location {
+	flatmap[Campain.Name] = Campain
+	flatmap[DarkForest.Name] = DarkForest
+	flatmap[Ranhorn.Name] = Ranhorn
+	flatmap[Guild.Name] = Guild
+	flatmap[OakInn.Name] = OakInn
+	flatmap[Shop.Name] = Shop
+	flatmap[Arena.Name] = Arena
+	flatmap[Bounty.Name] = Bounty
+	flatmap[KT.Name] = KT
+	flatmap[Lab.Name] = Lab
+	flatmap[Temporal.Name] = Temporal
+	flatmap[GuildHunt.Name] = GuildHunt
+	flatmap[Hellscape.Name] = Hellscape
+	flatmap[ClownRealm.Name] = ClownRealm
+	flatmap[TwistedRealm.Name] = TwistedRealm
+	return flatmap
 }
 
 type Player struct {

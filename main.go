@@ -21,15 +21,17 @@ func main() {
 	blueStacks := adb.New(name, host, port)
 	// blueStacks.Adb("kill-server")
 	// blueStacks.Adb("start-server")
-	afkbot := bot.New(blueStacks)
+	UImap := esperia.UIMap()
+	camp := UImap["Campain"]
+	afkbot := bot.New(blueStacks, camp)
 
-	some := esperia.ClownRealm
+	some := UImap[]
 	// log.Printf("some: %v", some.Nparent(3))
 	log.Printf("some: %v", some)
 	// afkbot.Screencap("so")
 	// afkbot.Pull("so")
 	// return
-	afkbot.TransferTo(some)
+	afkbot.Walk(some)
 	_ = some
 
 }

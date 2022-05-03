@@ -1,7 +1,7 @@
 package mapman
 
 import (
-	"worker/esperia"
+// "worker/esperia"
 )
 
 type MapExporter interface {
@@ -9,7 +9,7 @@ type MapExporter interface {
 }
 
 type MapImporter interface {
-	Import(interface{}) esperia.Esperia
+	Import(interface{}) bool
 }
 
 func He() {

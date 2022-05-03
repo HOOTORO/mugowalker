@@ -54,3 +54,14 @@ func Similarity(imgA, imgB image.Image) (similar bool) {
 	log.Debugf("Are Images similar? --> %b", similar)
 	return
 }
+
+func OpenImg(fname string) image.Image {
+	imgA, err := images.Open(fname)
+	if err != nil {
+		panic(err)
+	}
+	if err != nil {
+		return nil
+	}
+	return imgA
+}

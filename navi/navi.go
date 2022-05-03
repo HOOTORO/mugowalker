@@ -1,18 +1,26 @@
 package navi
 
 import (
+	"image"
 	"time"
+	"worker/adb"
+	"worker/imaginer"
 
 	log "github.com/sirupsen/logrus"
 )
 
-type UiMap map[string]Place
+var trylim int = 5
 
-type Place struct {
+type UiMap map[string]Location
+
+type Location struct {
 	Name   string
 	Depth  int
 	Entry  TPoint
-	Parent *Place
+	etalon image.Image
+	areas  map[string]image.Image
+	Parent *Location
+	Peers  []*Location
 }
 
 type TPoint struct {
@@ -21,19 +29,17 @@ type TPoint struct {
 }
 
 type Navigator struct {
-	curentPLace *Place
+	*adb.Device
+	Liveloc *Location
 }
 
+// Travels the world
 type Walker interface {
 	GoForward(x, y int)
 	GoBack()
 }
 
-type Locator interface {
-	IsPlace(*Place)
-}
-
-func (p *Place) Nparent(n int) (nparent *Place) {
+func (p *Location) Nparent(n int) (nparent *Location) {
 	nparent = p
 	stepsN := p.Depth - n
 	if stepsN > 0 {
@@ -45,22 +51,21 @@ func (p *Place) Nparent(n int) (nparent *Place) {
 	return
 }
 
-func (n *Navigator) Walk(w Walker, target *Place) {
-	if n == nil {
-		n.curentPLace = target.Nparent(1)
-	}
-	log.Debugf("Let's take a walk from >>%v<< to >>%v<<", n.curentPLace.Name, target.Name)
-	for n.curentPLace.Depth != 1 {
-		w.GoForward(target.Entry.X, target.Entry.Y)
+func (n *Navigator) Step(w Walker, target *Location) {
+	log.Debugf("Little step for bot (>>%v>> to <<%v>>", n.Liveloc.Name, target.Name)
+	w.GoForward(target.Entry.X, target.Entry.Y)
+	capture := n.Capture(target)
+	if !n.ExpectedLocation(capture, target) && trylim > 0 {
 		time.Sleep(3 * time.Second)
-		n.curentPLace = n.curentPLace.Parent
+		n.Step(w, target)
+	} else {
+		trylim = 5
+		panic("WE FAILED MASTQA")
 	}
 
-	for i := 0; i < target.Depth; i++ {
-		nextStep := target.Nparent(i + 1)
-		log.Debugf("Make a #%d step to --> %v", i+1, nextStep.Name)
-		w.GoForward(nextStep.Entry.X, nextStep.Entry.Y)
-		time.Sleep(7 * time.Second)
-		n.curentPLace = nextStep
-	}
+}
+
+func (n *Navigator) ExpectedLocation(v *View, loc *Location) bool {
+	return imaginer.Similarity(v.img, loc.etalon)
+
 }
