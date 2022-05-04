@@ -7,16 +7,25 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"path/filepath"
+)
+
+const (
+	data        = "rawdata"
+	locationdir = "Locations"
 )
 
 //TODO: rework this ugly ...
 type DataManager interface {
 	OpenPng(string) image.Image
 	SaveImg(string, image.Image) error
+	SaveLoc(name string, Loca image.Image) error
 }
 
 type FsMan struct {
-	name string
+	basedir string
+	datadir string
+	locdir  string
 }
 
 func NewFM(name string) *FsMan {
@@ -25,8 +34,21 @@ func NewFM(name string) *FsMan {
 		log.Fatalf("FSMan: Cannot create folder %v, error: %v", name, err)
 		return nil
 	}
+	datadir := filepath.Join(name, data)
+	err = os.MkdirAll(datadir, os.ModeDir)
+	if err != nil && errors.Is(err, fs.ErrExist) {
+		log.Fatalf("FSMan: Cannot create folder %v, error: %v", name, err)
+		return nil
+	}
+	locdi := filepath.Join(name, locationdir)
+	err = os.MkdirAll(locdi, os.ModeDir)
+	if err != nil && errors.Is(err, fs.ErrExist) {
+		log.Fatalf("FSMan: Cannot create folder %v, error: %v", name, err)
+		return nil
+	}
+
 	SetWD(name)
-	return &FsMan{name: name}
+	return &FsMan{basedir: name, datadir: datadir, locdir: locdi}
 }
 
 func (fd *FsMan) OpenPng(path string) image.Image {
@@ -49,6 +71,16 @@ func (fd *FsMan) OpenPng(path string) image.Image {
 func (fd *FsMan) SaveImg(fname string, img image.Image) error {
 	f, _ := os.Create(fname)
 	return png.Encode(f, img)
+}
+
+func (fd *FsMan) SaveLoc(name string, Loca image.Image) error {
+	nn := filepath.Join(fd.locdir, name)
+	err := fd.SaveImg(nn, Loca)
+	return err
+}
+
+func (fd *FsMan) SaveData(name string) error {
+	panic("TO IMPLEMENT")
 }
 
 func SetWD(path string) {

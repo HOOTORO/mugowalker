@@ -35,9 +35,6 @@ func New(dev *adb.Device, startLocation *navi.Location) (ab *AfkBot) {
 
 func (dw *AfkBot) Walk(dst *navi.Location) {
 
-	// ss := cam.Capture(bot.Device, e.Name)
-	// ss.Area(bot.DataManager, e.Entry.X, e.Entry.Y, 60)
-	// bot.Walk(bot.Device, e)
 	if dw.Liveloc == nil {
 		dw.Liveloc = dst.Nparent(1)
 	}
@@ -50,17 +47,26 @@ func (dw *AfkBot) Walk(dst *navi.Location) {
 
 	}
 
-	// for n.curentPLace.Depth != 1 {
-	// 	w.GoForward(target.Entry.X, target.Entry.Y)
-	// 	time.Sleep(3 * time.Second)
-	// 	n.curentPLace = n.curentPLace.Parent
-	// }
+}
 
-	// for i := 0; i < target.Depth; i++ {
-	// 	nextStep := target.Nparent(i + 1)
+func (b *AfkBot) InitEtalons(uimap map[string]*navi.Location) {
 
-	// 	w.GoForward(nextStep.Entry.X, nextStep.Entry.Y)
-	// 	time.Sleep(7 * time.Second)
-	// 	n.curentPLace = nextStep
-	// }
+	for _, v := range uimap {
+		// if b.Liveloc == nil {
+		// 	b.Liveloc = v.Nparent(1)
+		// }
+		b.EtalonStep(b.Device, b.DataManager, v.Nparent(1))
+		log.Debugf("Let's take a walk from >>%v<< to >>%v<<", b.Liveloc.Name, v.Name)
+
+		for b.Liveloc != v {
+			b.EtalonStep(b.Device, b.DataManager, v.Nparent(b.Liveloc.Depth+1))
+			log.Debugf("Made a #%d step to --> %v", b.Liveloc.Depth-1, b.Liveloc.Name)
+
+		}
+		for i := 1; i < v.Depth; i++ {
+			b.GoBack()
+		}
+
+	}
+
 }

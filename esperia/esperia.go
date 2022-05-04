@@ -66,7 +66,7 @@ var (
 		Parent: DarkForest,
 	}
 	Arena = &navi.Location{
-		Name:   "",
+		Name:   "Arena",
 		Depth:  2,
 		Entry:  arenaPos,
 		Parent: DarkForest,
@@ -102,7 +102,7 @@ var (
 		Parent: Hellscape,
 	}
 	ClownRealm = &navi.Location{
-		Name:   "CursedRealm",
+		Name:   "ClownRealm",
 		Depth:  4,
 		Entry:  clownPos,
 		Parent: Hellscape,

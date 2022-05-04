@@ -13,7 +13,7 @@ func main() {
 	const (
 		name = "Bluestacks"
 		host = "localhost"
-		port = "62065"
+		port = "59978"
 	)
 	log.SetLevel(log.DebugLevel)
 	//fshelp.CreateFolder("_workdir")
@@ -24,13 +24,11 @@ func main() {
 	UImap := esperia.UIMap()
 	camp := UImap["Campain"]
 	afkbot := bot.New(blueStacks, camp)
-
-	some := UImap["ClowndRealm"]
+	afkbot.InitEtalons(UImap)
+	return
+	some := UImap["ClownRealm"]
 	// log.Printf("some: %v", some.Nparent(3))
-	log.Printf("some: %v", some)
-	// afkbot.Screencap("so")
-	// afkbot.Pull("so")
-	// return
+	// log.Printf("some: %v", some)
 	afkbot.Walk(some)
 	_ = some
 
