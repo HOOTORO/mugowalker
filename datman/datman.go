@@ -3,32 +3,32 @@ package datman
 import (
 	"errors"
 	"image"
-	"image/png"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
+	"worker/navi"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
 	data        = "rawdata"
-	locationdir = "Locations"
+	locationdir = "locations"
 )
 
 //TODO: rework this ugly ...
 type DataManager interface {
 	OpenPng(string) image.Image
 	SaveImg(string, image.Image) error
-	SaveLoc(name string, Loca image.Image) error
-}
-
-type FsMan struct {
-	basedir string
-	datadir string
-	locdir  string
+	// SaveLocation(loc *navi.Location) error
+	Candidate(loc *navi.Location, img image.Image)
+	LocEtalons(locname string) (locImgs []image.Image, err error)
 }
 
 func NewFM(name string) *FsMan {
+	if !filepath.IsAbs(name) {
+		name, _ = filepath.Abs(name)
+	}
 	err := os.MkdirAll(name, os.ModeDir)
 	if err != nil && errors.Is(err, fs.ErrExist) {
 		log.Fatalf("FSMan: Cannot create folder %v, error: %v", name, err)
@@ -49,38 +49,6 @@ func NewFM(name string) *FsMan {
 
 	SetWD(name)
 	return &FsMan{basedir: name, datadir: datadir, locdir: locdi}
-}
-
-func (fd *FsMan) OpenPng(path string) image.Image {
-	file, err := os.Open(path)
-	if err != nil {
-		log.Printf("File: fail to open img")
-		return nil
-	}
-
-	defer file.Close()
-	pngf, err := png.Decode(file)
-	if err != nil {
-		log.Printf("File: decode error, its not png")
-		return nil
-	}
-
-	return pngf
-}
-
-func (fd *FsMan) SaveImg(fname string, img image.Image) error {
-	f, _ := os.Create(fname)
-	return png.Encode(f, img)
-}
-
-func (fd *FsMan) SaveLoc(name string, Loca image.Image) error {
-	nn := filepath.Join(fd.locdir, name)
-	err := fd.SaveImg(nn, Loca)
-	return err
-}
-
-func (fd *FsMan) SaveData(name string) error {
-	panic("TO IMPLEMENT")
 }
 
 func SetWD(path string) {

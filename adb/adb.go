@@ -3,6 +3,7 @@ package adb
 import (
 	"errors"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -58,10 +59,10 @@ func New(name, host, port string) *Device {
 func (d *Device) Connect() error {
 	if !d.Alive() {
 		dest := d.host + ":" + d.port
-		_, err := d.Adb(connect, dest)
-		if err != nil {
+		res, err := d.Adb(connect, dest)
+		if err != nil || string(res)[:5] == "canno" {
 			d.status = false
-			return errors.New("Connection: FAIL")
+			return errors.New("Connection to host failed: " + dest)
 		}
 		d.status = true
 	}
@@ -79,7 +80,9 @@ func (d *Device) Adb(args ...string) ([]byte, error) {
 	// cmd = exec.Command("adb", "connect", "localhost:1111")
 	// exec.Command("adb", "shell", "input", "tap", "100", "200")
 	// exec.Command("adb", "screeencap", "- p ", "/sdcard/ff.png")
-	exec.Command("adb", "pull", "/sdcard/ff.pmng")
+	//exec.Command("adb", "pull", "/sdcard/ff.png")
+
+	log.Tracef("Adb: CMD Output --> %s", res)
 
 	return res, err
 }
@@ -95,12 +98,8 @@ func (d *Device) Shell(args ...string) ([]byte, error) {
 
 func (d *Device) Screencap(scrname string) ([]byte, error) {
 	if len(scrname) < 1 {
-		//screencap -p /sdcard/screenshot.png
-
 		return nil, errors.New("Screencap: filename required")
 	}
-	// for usablility set shared folder
-	// shellArgs := strings.Join(fname, " ")
 
 	res, err := d.Shell(screencap, sharedFolder+scrname+screenExt)
 	return res, err
@@ -117,7 +116,6 @@ func (d *Device) Pull(fname string) ([]byte, error) {
 	if len(fname) < 1 {
 		return nil, errors.New("Pull: Filename required") //Specify path to file. Output optional, if not set - wd")
 	}
-	//shellArgs := strings.Join(args, " ")
 	res, err := d.Adb(pull, fname)
 	return res, err
 }
@@ -151,15 +149,6 @@ func (d *Device) Swipe(x, y, x1, y1, td int) {
 	duration := strconv.Itoa(td)
 	d.Input(swipe, xPos, yPos, x1Pos, y1Pos, duration)
 }
-
-// func (d *Device) ShareFolder() (docpath, picpath string) {
-// 	//bluestacks shared folders	 (read-only)
-// 	// screenrecord --verbose /mnt/windows/BstSharedFolder/silasruinder.mp4
-// 	// screeenpshot path /sdcard/Pictures/Screenshots/
-// 	docpath = "/mnt/windows/Documents/"
-// 	picpath = "/mnt/windows/Pictures/"
-// 	return
-// }
 
 func checkExeExists(program string) {
 	// fmt.Printf("Current Env: %v", os.Environ())

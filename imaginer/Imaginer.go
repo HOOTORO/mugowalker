@@ -51,7 +51,8 @@ func Similarity(imgA, imgB image.Image) (similar bool) {
 	// 	log.Debugf("Images are distinct.")
 	// }
 	similar = images.Similar(hashA, hashB, imgSizeA, imgSizeB)
-	log.Debugf("Are Images similar? --> %b", similar)
+	log.Debugf("Are Images similar? --> %v", similar)
+
 	return
 }
 

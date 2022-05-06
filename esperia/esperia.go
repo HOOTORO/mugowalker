@@ -7,6 +7,14 @@ var flatmap map[string]*navi.Location = make(map[string]*navi.Location, 0)
 //TODO: rework, map should be provided from ext or in more general way, map
 
 var (
+	Main = &navi.Location{
+		Name:  "Main",
+		Depth: 0,
+		Entry: campainMenuPos,
+	}
+)
+
+var (
 	Campain = &navi.Location{
 		Name:  "Campain",
 		Depth: 1,
@@ -110,6 +118,7 @@ var (
 )
 
 func UIMap() map[string]*navi.Location {
+	flatmap[Main.Name] = Main
 	flatmap[Campain.Name] = Campain
 	flatmap[DarkForest.Name] = DarkForest
 	flatmap[Ranhorn.Name] = Ranhorn

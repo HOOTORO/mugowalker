@@ -4,30 +4,37 @@ import (
 	"image"
 	"strconv"
 	"worker/imaginer"
-
-	log "github.com/sirupsen/logrus"
+	// log "github.com/sirupsen/logrus"
 )
 
-type View struct {
-	name  string
-	img   image.Image
-	areas map[string]image.Image
-}
+func (n *Location) Capture(dev Device) image.Image {
+	dev.Screencap(n.Name)
+	fpath := dev.PullScreen(n.Name)
+	img := imaginer.OpenImg(fpath)
 
-func (n *Navigator) Capture(l *Location) *View {
-	n.Screencap(l.Name)
-	newFname := n.PullScreen(l.Name)
-	img := imaginer.OpenImg(newFname)
-	res := &View{name: l.Name, img: img, areas: make(map[string]image.Image)}
-	log.Debugf("Current Position Captured  --> %v", res)
-	return res
+	// log.Debugf("Current Position Captured  --> %v", res)
+	return img
 
 }
 
-func (l *View) Area(x, y, r int) {
-	areaord := str(x) + str(y) + str(r)
-	box := imaginer.Concat(l.img, x-r, y-r, x+r, y+r)
-	l.areas[areaord] = box
+type Device interface {
+	Screencap(string) ([]byte, error)
+	PullScreen(string) string
+}
+
+func (l *Location) CutSector(img image.Image, x, y, r int, name string) image.Image {
+
+	box := imaginer.Concat(l.Etalons[0], x-r, y-r, x+r, y+r)
+	l.Sectors[name] = &Sector{x, y, r, box}
+	return box
+}
+
+func (l *Location) EtalonSamples(d DSaver) {
+	if l.Etalons == nil {
+		l.Etalons = make([]image.Image, 0)
+		l.Etalons, _ = d.LocEtalons(l.Name)
+	}
+
 }
 
 func str(x int) string {
