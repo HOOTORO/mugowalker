@@ -82,7 +82,8 @@ func (fd *FsMan) LocEtalons(locname string) (locImgs []image.Image, err error) {
 	locFiles, err := locsFolder.Readdirnames(0)
 	for _, v := range locFiles {
 		if strings.Contains(v, locname) {
-			img := fd.OpenPng(v)
+			fp := filepath.Join(locpath, v)
+			img := fd.OpenPng(fp)
 			locImgs = append(locImgs, img)
 		}
 	}

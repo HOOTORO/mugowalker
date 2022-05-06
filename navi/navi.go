@@ -35,18 +35,6 @@ type Navigator struct {
 	Liveloc *Location
 }
 
-// Travels the world
-type Walker interface {
-	GoForward(x, y int)
-	GoBack()
-}
-
-//Saves the data
-type DSaver interface {
-	// SaveLocation(*Location) error
-	LocEtalons(locname string) (locImgs []image.Image, err error)
-}
-
 func (p *Location) Nparent(n int) (nparent *Location) {
 	nparent = p
 	stepsN := p.Depth - n

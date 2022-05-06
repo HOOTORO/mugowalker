@@ -96,6 +96,13 @@ func (d *Device) Shell(args ...string) ([]byte, error) {
 	return res, err
 }
 
+//Screenshopt to PWD
+func (d *Device) Capture(name string) string {
+	d.Screencap(name)
+	fpath := d.PullScreen(name)
+	return fpath
+}
+
 func (d *Device) Screencap(scrname string) ([]byte, error) {
 	if len(scrname) < 1 {
 		return nil, errors.New("Screencap: filename required")

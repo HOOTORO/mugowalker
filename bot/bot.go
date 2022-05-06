@@ -53,20 +53,30 @@ func (n *AfkBot) Step(target *navi.Location) {
 	n.GoForward(target.Entry.X, target.Entry.Y)
 	//give oit time to load
 	time.Sleep(3 * time.Second)
-	screen := target.Capture(n.Device)
-	target.EtalonSamples(n)
+	screen := n.OpenPng(n.Capture(target.Name))
+	target.Etalons, _ = n.LocEtalons(target.Name)
+
 	if len(target.Etalons) == 0 {
 		n.Candidate(target, screen)
 		log.Panicf("No etalons images for Location >>%v<<", target.Name)
 	}
-	n.SaveImg("1.png", target.Etalons[0])
-	//n.SaveImg("2.png", screen)
-	if !target.IsLocation(screen) && n.trylim > 0 {
-		n.Step(target)
-		n.trylim--
+	// n.SaveImg("1.png", target.Etalons[0])
+	// n.SaveImg("2.png", screen)
+
+	// Если Неудача и больше 5 траев panic("WE FAILED MASTQA")
+	// Eсли неуд и меньше 5 траев, то пусть еще раз, трай отнять
+	// Если успех просто выйти
+
+	if target.IsLocation(screen) {
+		return
 	} else {
-		n.trylim = 5
-		panic("WE FAILED MASTQA")
+		if !target.IsLocation(screen) && n.trylim < 5 {
+			n.trylim--
+			n.Step(target)
+		} else {
+			n.trylim = 5
+			panic("WE FAILED MASTQA")
+		}
 	}
 
 }
