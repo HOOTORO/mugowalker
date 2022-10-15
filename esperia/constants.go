@@ -32,3 +32,7 @@ var (
 	clownPos   = navi.TPoint{X: 500, Y: 1200}
 	twistedPos = navi.TPoint{X: 550, Y: 800}
 )
+
+var (
+	CRLeadPos = navi.TPoint{X: 975, Y: 345}
+)

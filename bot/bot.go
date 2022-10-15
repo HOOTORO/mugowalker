@@ -2,11 +2,10 @@ package bot
 
 import (
 	"time"
+
 	"worker/adb"
 	"worker/datman"
 	"worker/navi"
-
-	// "worker/navi/cam"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -17,42 +16,34 @@ type Bot interface {
 	Work(job interface{})
 }
 
-//TODO: to complex. extract bot from esperia
+// TODO: to complex. extract bot from esperia
 type AfkBot struct {
 	*adb.Device
 	datman.DataManager
 	*navi.Navigator
-	trylim int
+	cnt, maxtry int
 }
 
 func New(dev *adb.Device, startLocation *navi.Location) (ab *AfkBot) {
-	err := dev.Connect()
-	if err != nil {
-		log.Panicf("AfkBOT Error: %v", err)
-	}
-	log.Infof("Connected to device: %v", dev)
 	dman := datman.NewFM(dev.Name)
 	nav := &navi.Navigator{Liveloc: startLocation}
-	return &AfkBot{Device: dev, DataManager: dman, Navigator: nav, trylim: 5}
+	return &AfkBot{Device: dev, DataManager: dman, Navigator: nav, maxtry: 3}
 }
 
 func (dw *AfkBot) Walk(dst *navi.Location) {
-
 	log.Debugf("Let's take a walk from >>%v<< to >>%v<<", dw.Liveloc.Name, dst.Name)
-
 	for dw.Liveloc != dst {
 		dw.Step(dst.Nparent(dw.Liveloc.Depth + 1))
-		log.Debugf("Made a #%d step to --> %v", dw.Liveloc.Depth-1, dw.Liveloc.Name)
-
+		log.Debugf("Made a #%d step to --> %v", dw.Liveloc.Depth, dw.Liveloc.Name)
 	}
-
 }
 
 func (n *AfkBot) Step(target *navi.Location) {
 	log.Debugf("Little step for bot (>>%v>> to <<%v>>", n.Liveloc.Name, target.Name)
 	n.GoForward(target.Entry.X, target.Entry.Y)
-	//give oit time to load
-	time.Sleep(3 * time.Second)
+	// give oit time to load
+	time.Sleep(5 * time.Second)
+
 	screen := n.OpenPng(n.Capture(target.Name))
 	target.Etalons, _ = n.LocEtalons(target.Name)
 
@@ -62,23 +53,17 @@ func (n *AfkBot) Step(target *navi.Location) {
 	}
 	// n.SaveImg("1.png", target.Etalons[0])
 	// n.SaveImg("2.png", screen)
-
-	// Если Неудача и больше 5 траев panic("WE FAILED MASTQA")
-	// Eсли неуд и меньше 5 траев, то пусть еще раз, трай отнять
-	// Если успех просто выйти
-
-	if target.IsLocation(screen) {
-		return
-	} else {
-		if !target.IsLocation(screen) && n.trylim < 5 {
-			n.trylim--
-			n.Step(target)
-		} else {
-			n.trylim = 5
-			panic("WE FAILED MASTQA")
+	n.cnt = 0
+	for !target.IsLocation(screen) {
+		time.Sleep(5 * time.Second)
+		screen = n.OpenPng(n.Capture(target.Name))
+		n.cnt++
+		if n.cnt > n.maxtry {
+			n.Unknownplace(target, screen, target.Entry)
+			panic("WE FAILED MASTA")
 		}
 	}
-
+	n.Liveloc = target
 }
 
 // func (b *AfkBot) InitEtalons(uimap map[string]*navi.Location) {

@@ -3,14 +3,16 @@ package adb
 import (
 	"errors"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
-type Adb interface {
-	New(string) *Adb
+type EmulatorManager interface {
+	AndroidDevice(string, string, string) *Device
 	Connect(string)
 	Shell(string) (string, error)
 	Screencap(string) string
@@ -18,10 +20,17 @@ type Adb interface {
 	Adb(string) ([]byte, error)
 }
 
+type adbd struct {
+	*exec.Cmd
+}
+
 type Device struct {
-	Name    string
-	adbpath string
+	*adbd
 	*Connection
+	Name        string
+	transportId string
+	product     string
+	model       string
 }
 
 type Connection struct {
@@ -30,8 +39,10 @@ type Connection struct {
 	status bool
 }
 
-const sharedFolder = "/mnt/windows/BstSharedFolder/"
-const screenExt = ".png"
+const (
+	sharedFolder = "/mnt/windows/BstSharedFolder/"
+	screenExt    = ".png"
+)
 
 func (c *Connection) Alive() bool {
 	return c.status
@@ -50,16 +61,25 @@ const (
 	swipe            = "swipe"
 )
 
-func New(name, host, port string) *Device {
-	checkExeExists(adb)
-	conn := &Connection{host: host, port: port, status: false}
-	return &Device{Name: name, Connection: conn}
+// var gadb *adbd
+
+func AndroidDevice(name, host, port string) (*Device, error) {
+	a, _ := getAdb()
+	// // TODO: Rework this. f devices() should ret []*Device
+	// conn := &Connection{host: host, port: port, status: false}
+	// dev := &Device{Name: name, Connection: conn}
+	for _, v := range a.devices() {
+		if v.host == host && v.port == port {
+			return v, nil
+		}
+	}
+	return nil, errors.New("Device not found")
 }
 
-func (d *Device) Connect() error {
+func (d *Device) connect() error {
 	if !d.Alive() {
 		dest := d.host + ":" + d.port
-		res, err := d.Adb(connect, dest)
+		res, err := d.run(connect, dest)
 		if err != nil || string(res)[:5] == "canno" {
 			d.status = false
 			return errors.New("Connection to host failed: " + dest)
@@ -69,100 +89,142 @@ func (d *Device) Connect() error {
 	return nil
 }
 
-//Run Adb, first agrgument must be a adb subcommand
-func (d *Device) Adb(args ...string) ([]byte, error) {
+func (dev *Device) Shell(args ...string) ([]byte, error) {
+	if len(args) < 1 {
+		return nil, errors.New("Shell: 1 subcommand required")
+	}
+	shellArgs := strings.Join(args, " ")
+	res, err := dev.run(shell, shellArgs)
+	return res, err
+}
+
+// Screenshot to PWD
+func (dev *Device) Capture(name string) string {
+	dev.Screencap(name)
+	fpath := dev.PullScreen(name)
+	return fpath
+}
+
+func (dev *Device) Screencap(scrname string) ([]byte, error) {
+	if len(scrname) < 1 {
+		return nil, errors.New("Screencap: filename required")
+	}
+
+	res, err := dev.Shell(screencap, sharedFolder+scrname+screenExt)
+	return res, err
+}
+
+// made by screencap from sharedfolder
+func (dev *Device) PullScreen(scrname string) string {
+	filename := scrname + screenExt
+	dev.Pull(sharedFolder + filename)
+	return filename
+}
+
+func (dev *Device) Pull(fname string) ([]byte, error) {
+	if len(fname) < 1 {
+		return nil, errors.New("Pull: Filename required") // Specify path to file. Output optional, if not set - wd")
+	}
+	res, err := dev.run(pull, fname)
+	return res, err
+}
+
+func (dev *Device) Input(args ...string) error {
+	if len(args) < 2 {
+		return errors.New("Input: min 2 args required, input source/command and args")
+	}
+	shellArgs := strings.Join(args, " ")
+	_, err := dev.Shell(input, shellArgs)
+	return err
+}
+
+func (dev *Device) GoForward(x, y int) {
+	xPos := strconv.Itoa(x)
+	yPos := strconv.Itoa(y)
+	dev.Input(tap, xPos, yPos)
+}
+
+func (dev *Device) GoBack() {
+	dev.Input(back)
+}
+
+// nargs: swipe <x1> <y1> <x2> <y2> [duration(ms)]
+func (dev *Device) Swipe(x, y, x1, y1, td int) {
+	xPos := strconv.Itoa(x)
+	yPos := strconv.Itoa(y)
+	x1Pos := strconv.Itoa(x1)
+	y1Pos := strconv.Itoa(y1)
+	duration := strconv.Itoa(td)
+	dev.Input(swipe, xPos, yPos, x1Pos, y1Pos, duration)
+}
+
+func getAdb() (*adbd, error) {
+	// fmt.Printf("Current Env: %v", os.Environ())
+	// if gadb != nil {
+	// 	return gadb, nil
+	// } else {
+	path, err := exec.LookPath(adb)
+	if err != nil {
+		fmt.Printf("didn't find '%v' executable\n", adb)
+		return nil, errors.New("No adb for you today, my friend!")
+	} else {
+		fmt.Printf("'%v' executable is in '%s'\n", adb, path)
+
+		return &adbd{exec.Command(adb, "")}, nil
+	}
+	//}
+}
+
+/*
+	Run adb, first argument must be a adb subcommand
+
+"connect", "localhost:1111"
+
+"shell", "input", "tap", "100", "200"
+
+"screencap", "- p ", "/sdcard/ff.png"
+
+"pull", "/sdcard/ff.png"
+*/
+func (ad *adbd) run(args ...string) ([]byte, error) {
+	drv, _ := getAdb()
 	if len(args) < 1 {
 		return nil, errors.New("Adb: 1 subcommand required")
 	}
-	cmd := exec.Command(adb, args...)
-	res, err := cmd.CombinedOutput()
-
-	// cmd = exec.Command("adb", "connect", "localhost:1111")
-	// exec.Command("adb", "shell", "input", "tap", "100", "200")
-	// exec.Command("adb", "screeencap", "- p ", "/sdcard/ff.png")
-	//exec.Command("adb", "pull", "/sdcard/ff.png")
+	drv.Args = append([]string{drv.Args[0]}, args...)
+	res, err := drv.CombinedOutput()
 
 	log.Tracef("Adb: CMD Output --> %s", res)
 
 	return res, err
 }
 
-func (d *Device) Shell(args ...string) ([]byte, error) {
-	if len(args) < 1 {
-		return nil, errors.New("Shell: 1 subcommand required")
-	}
-	shellArgs := strings.Join(args, " ")
-	res, err := d.Adb(shell, shellArgs)
-	return res, err
-}
-
-//Screenshopt to PWD
-func (d *Device) Capture(name string) string {
-	d.Screencap(name)
-	fpath := d.PullScreen(name)
-	return fpath
-}
-
-func (d *Device) Screencap(scrname string) ([]byte, error) {
-	if len(scrname) < 1 {
-		return nil, errors.New("Screencap: filename required")
+func (ad *adbd) devices() (devices []*Device) {
+	b, e := ad.run("devices", "-l")
+	if e != nil {
+		log.Errorf("DevERR: %v", e.Error())
+		return nil
 	}
 
-	res, err := d.Shell(screencap, sharedFolder+scrname+screenExt)
-	return res, err
-}
+	s := strings.TrimPrefix(string(b), "List of devices attached\r\n")
+	s = strings.TrimSuffix(s, "\r\n\r\n")
+	strdevices := strings.Split(s, "\r\n")
 
-// made by screencap from sharedfolder
-func (d *Device) PullScreen(scrname string) string {
-	filename := scrname + screenExt
-	d.Pull(sharedFolder + filename)
-	return filename
-}
+	fmt.Printf("All Devices --> %v (len: %v)", strdevices, len(strdevices))
+	for k, v := range strdevices {
+		onedev := &Device{adbd: ad}
 
-func (d *Device) Pull(fname string) ([]byte, error) {
-	if len(fname) < 1 {
-		return nil, errors.New("Pull: Filename required") //Specify path to file. Output optional, if not set - wd")
+		r := regexp.MustCompile(`transport_id:(\d+)`)
+		onedev.transportId = r.FindStringSubmatch(v)[1]
+		r = regexp.MustCompile(`product:(\w+)`)
+		onedev.product = r.FindStringSubmatch(v)[1]
+		r = regexp.MustCompile(`(\d.\d.\d\):(\d+)`)
+		onedev.host = r.FindStringSubmatch(v)[1]
+		onedev.product = r.FindStringSubmatch(v)[1]
+		fmt.Printf("Dev # %v -->> %v < ", k, onedev)
+		// for nf, field := range onedev {
+		// 	log.Tracef(" 		Param # %v -->> %v < ", nf, field)
+		// }
 	}
-	res, err := d.Adb(pull, fname)
-	return res, err
-}
-
-func (d *Device) Input(args ...string) error {
-	if len(args) < 2 {
-		return errors.New("Input: min 2 args required, input source/command and args")
-	}
-	shellArgs := strings.Join(args, " ")
-	_, err := d.Shell(input, shellArgs)
-	return err
-}
-
-func (d *Device) GoForward(x, y int) {
-	xPos := strconv.Itoa(x)
-	yPos := strconv.Itoa(y)
-	d.Input(tap, xPos, yPos)
-}
-
-func (d *Device) GoBack() {
-	d.Input(back)
-}
-
-// nargs: swipe <x1> <y1> <x2> <y2> [duration(ms)]
-func (d *Device) Swipe(x, y, x1, y1, td int) {
-
-	xPos := strconv.Itoa(x)
-	yPos := strconv.Itoa(y)
-	x1Pos := strconv.Itoa(x1)
-	y1Pos := strconv.Itoa(y1)
-	duration := strconv.Itoa(td)
-	d.Input(swipe, xPos, yPos, x1Pos, y1Pos, duration)
-}
-
-func checkExeExists(program string) {
-	// fmt.Printf("Current Env: %v", os.Environ())
-	path, err := exec.LookPath(program)
-	if err != nil {
-		fmt.Printf("didn't find '%v' executable\n", program)
-	} else {
-		fmt.Printf("'%v' executable is in '%s'\n", program, path)
-	}
+	return
 }

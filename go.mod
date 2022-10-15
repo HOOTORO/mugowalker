@@ -7,4 +7,4 @@ require (
 	github.com/vitali-fedulov/images/v2 v2.1.2
 )
 
-require golang.org/x/sys v0.0.0-20191026070338-33540a1f6037 // indirect
+require golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect

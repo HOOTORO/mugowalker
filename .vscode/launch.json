@@ -4,18 +4,14 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-        
         {
             "name": "Launch Package",
             "type": "go",
             "request": "launch",
-            "runtimeArgs": [
-
-            ],
             "mode": "auto",
             "program": "c:\\Users\\maruk\\vscode\\afkarena\\worker\\main.go",
             "stopOnEntry": false,
-            "args": [ ]
+            "args": []
         }
     ]
 }

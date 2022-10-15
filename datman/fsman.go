@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"worker/navi"
 
@@ -43,34 +44,28 @@ func (fd *FsMan) SaveImg(fname string, img image.Image) error {
 	return err
 }
 
-//TODO: I thibk this is navi fucntions
 func (fd *FsMan) Candidate(loc *navi.Location, img image.Image) {
+	nn := "cadidate_" + loc.Name + ".png"
+	fd.saveToLocFolder(nn, loc, img)
+}
+
+func (fd *FsMan) Unknownplace(loc *navi.Location, img image.Image, clickSector navi.TPoint) {
+	nn := "unknown_sector" + strconv.Itoa(clickSector.X) + "-" + strconv.Itoa(clickSector.Y) + ".png"
+	clkarea := loc.CutSector(loc.Etalons[0], clickSector.X, clickSector.Y, 60, "unknown")
+	fd.saveToLocFolder(nn, loc, img)
+	fd.saveToLocFolder("secotr_unkno.png", loc, clkarea)
+
+}
+
+func (fd *FsMan) saveToLocFolder(fname string, loc *navi.Location, img image.Image) {
 	dir := filepath.Join(fd.locdir, loc.Name)
 	err := os.MkdirAll(dir, os.ModeDir)
 	if err != nil && errors.Is(err, fs.ErrExist) {
 		log.Fatalf("FSMan: Cannot create folder %v, error: %v", loc.Name, err)
 	}
-	nn := filepath.Join(dir, "cadidate_"+loc.Name+".png")
+	nn := filepath.Join(dir, fname)
 	fd.SaveImg(nn, img)
 }
-
-// //TODO: generalize?
-// func (fd *FsMan) SaveLocation(loc *navi.Location) error {
-// 	pulls, err := fd.Pulled()
-// 	for _, v := range pulls {
-// 		if strings.Contains(v, loc.Name) {
-// 			nn := filepath.Join(fd.locdir, v)
-// 			err = os.Rename(v, nn)
-// 			log.Tracef("SAVED To loc:  --> %v |||  %v ||| %v", v, nn, err)
-// 		}
-// 	}
-// 	for k, v := range loc.Areas {
-// 		name := loc.Name + "_" + k + "_entry.png"
-// 		nn := filepath.Join(fd.locdir, name)
-// 		fd.SaveImg(nn, v)
-// 	}
-// 	return err
-// }
 
 //TODO: refactor, make pulled in a more general way
 func (fd *FsMan) LocEtalons(locname string) (locImgs []image.Image, err error) {
@@ -91,10 +86,6 @@ func (fd *FsMan) LocEtalons(locname string) (locImgs []image.Image, err error) {
 		err = errors.New("No Etalons founded!")
 	}
 	return
-}
-
-func (fd *FsMan) SaveData(name string) error {
-	panic("TO IMPLEMENT")
 }
 
 func (fm *FsMan) Pulled() ([]string, error) {

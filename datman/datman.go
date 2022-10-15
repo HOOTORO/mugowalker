@@ -20,8 +20,8 @@ const (
 type DataManager interface {
 	OpenPng(string) image.Image
 	SaveImg(string, image.Image) error
-	// SaveLocation(loc *navi.Location) error
 	Candidate(loc *navi.Location, img image.Image)
+	Unknownplace(loc *navi.Location, img image.Image, clickSector navi.TPoint)
 	LocEtalons(locname string) (locImgs []image.Image, err error)
 }
 

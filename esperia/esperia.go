@@ -117,6 +117,15 @@ var (
 	}
 )
 
+var (
+	CRLeaderboardship = &navi.Location{
+		Name:   "CRLeaders",
+		Depth:  5,
+		Entry:  CRLeadPos,
+		Parent: ClownRealm,
+	}
+)
+
 func UIMap() map[string]*navi.Location {
 	flatmap[Main.Name] = Main
 	flatmap[Campain.Name] = Campain
