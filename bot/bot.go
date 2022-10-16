@@ -25,7 +25,7 @@ type AfkBot struct {
 }
 
 func New(dev *adb.Device, startLocation *navi.Location) (ab *AfkBot) {
-	dman := datman.NewFM(dev.Name)
+	dman := datman.NewFM("dev")
 	nav := &navi.Navigator{Liveloc: startLocation}
 	return &AfkBot{Device: dev, DataManager: dman, Navigator: nav, maxtry: 3}
 }

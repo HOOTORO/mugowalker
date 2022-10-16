@@ -15,12 +15,11 @@ func main() {
 		port = "5555"
 	)
 	// TODO: scaling  adb shell wm size returns resolution
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.TraceLevel)
 	bs, _ := adb.AndroidDevice(name, host, port)
-	// bs.Connect()
+	// bs.Conn5ect()
 	if bs != nil {
-		bs.Screencap("tes.png")
-		bs.PullScreen("tes.png")
+		bs.Capture("EZX")
 	} else {
 		fmt.Printf("\nALIVE STATUS: %v ", bs)
 	}
