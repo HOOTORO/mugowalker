@@ -22,7 +22,7 @@ func main() {
 		bs.Screencap("tes.png")
 		bs.PullScreen("tes.png")
 	} else {
-		fmt.Printf("ALIVE STATUS: %v ", bs)
+		fmt.Printf("\nALIVE STATUS: %v ", bs)
 	}
 
 	// log.Infof("Connection status --> %b", bs.Alive())

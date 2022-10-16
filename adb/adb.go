@@ -27,12 +27,8 @@ type adbd struct {
 type Device struct {
 	*adbd
 	*Connection
-	Name        string
-	transportId string
-	product     string
-	model       string
+	devinfo map[string]string
 }
-
 type Connection struct {
 	host   string
 	port   string
@@ -59,6 +55,14 @@ const (
 	tap              = "tap"
 	back             = "keyevent 4"
 	swipe            = "swipe"
+)
+
+const (
+	DEV_ID    = "tid"
+	NAME      = "name"
+	HOST      = "host"
+	PORT      = "port"
+	DEV_MODEL = "device"
 )
 
 // var gadb *adbd
@@ -148,6 +152,9 @@ func (dev *Device) GoBack() {
 	dev.Input(back)
 }
 
+func (dev *Device) param(k, v string) {
+}
+
 // nargs: swipe <x1> <y1> <x2> <y2> [duration(ms)]
 func (dev *Device) Swipe(x, y, x1, y1, td int) {
 	xPos := strconv.Itoa(x)
@@ -210,21 +217,39 @@ func (ad *adbd) devices() (devices []*Device) {
 	s = strings.TrimSuffix(s, "\r\n\r\n")
 	strdevices := strings.Split(s, "\r\n")
 
-	fmt.Printf("All Devices --> %v (len: %v)", strdevices, len(strdevices))
+	fmt.Printf("All Devices (len: %v) --> \n%v\n", len(strdevices), strings.Join(strdevices, "\n"))
 	for k, v := range strdevices {
+		fmt.Printf("\nDev # %v -->>> %v <<< \n", k, v)
 		onedev := &Device{adbd: ad}
 
-		r := regexp.MustCompile(`transport_id:(\d+)`)
-		onedev.transportId = r.FindStringSubmatch(v)[1]
-		r = regexp.MustCompile(`product:(\w+)`)
-		onedev.product = r.FindStringSubmatch(v)[1]
-		r = regexp.MustCompile(`(\d.\d.\d\):(\d+)`)
-		onedev.host = r.FindStringSubmatch(v)[1]
-		onedev.product = r.FindStringSubmatch(v)[1]
-		fmt.Printf("Dev # %v -->> %v < ", k, onedev)
-		// for nf, field := range onedev {
-		// 	log.Tracef(" 		Param # %v -->> %v < ", nf, field)
-		// }
+		// https://regex101.com/r/7YFfra/1
+		// https://regex101.com/r/7YFfra/2
+
+		r := regexp.
+			MustCompile(
+				`(?P<host>(?:\d{1,3}\.){3}\d{1,3}|` +
+					`(?P<name>\w+))+` +
+					`[-|:]?(?P<port>\d+)+` +
+					`[^\r]+?device[\s]+` +
+					`product:(?P<product>\w+)\s` +
+					`model:(?P<model>\w+)\s` +
+					`device:(?P<device>\w+)\s` +
+					`transport_id:(?P<tid>\d)`)
+
+		params := r.FindAllStringSubmatch(v, -1)
+		devinfo := make(map[string]string, 0)
+
+		for k, match := range params {
+			fmt.Printf("\nParams  #%v; val => %v", k, match)
+			for ind, subName := range r.SubexpNames() {
+				if subName != "" {
+					devinfo[subName] = match[ind]
+					fmt.Printf("\n	<%v>:  	#>>> %v <<<", subName, match[ind])
+				}
+			}
+		}
+		onedev.devinfo = devinfo
+		devices = append(devices, onedev)
 	}
 	return
 }
