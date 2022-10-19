@@ -5,19 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Package",
-            "type": "go",
-            "request": "launch",
-            "mode": "auto",
-            "program": "${fileDirname}"
-        },
-        {
             "name": "stop on entry",
             "type": "go",
             "request": "launch",
             "mode": "auto",
             "program": "c:\\Users\\maruk\\vscode\\afkarena\\worker\\main.go",
-            "stopOnEntry": true,
+            "stopOnEntry": false,
             "args": []
         }
     ]

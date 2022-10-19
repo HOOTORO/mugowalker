@@ -1,9 +1,12 @@
 package imaginer
 
 import (
+	"fmt"
 	"image"
 	"image/draw"
 
+	"github.com/keritos/tesseract"
+	// "github.com/otiai10/gosseract/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/vitali-fedulov/images/v2"
 )
@@ -65,4 +68,21 @@ func OpenImg(fname string) image.Image {
 		return nil
 	}
 	return imgA
+}
+
+// func Text(img string) {
+// 	client := gosseract.NewClient()
+// 	defer client.Close()
+// 	client.SetImage(img)
+// 	text, _ := client.Text()
+// 	fmt.Println(text)
+// 	// Hello, World!
+// }
+
+func Txt(img string) string {
+	t, err := tesseract.ReadTextFromFile(img)
+	if err != nil {
+		fmt.Printf("OCR Error: %v", err.Error())
+	}
+	return t
 }

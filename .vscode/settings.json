@@ -14,5 +14,11 @@
         "Nparent",
         "Tracef",
         "uimap"
-    ]
+    ],
+    "go.toolsEnvVars": {
+        "GOVCS": "android.googlesource.com",
+        "GOPRIVATE": "",
+        "GOPROXY": "",
+        "GONOPROXY": ""
+    }
 }

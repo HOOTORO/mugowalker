@@ -3,232 +3,116 @@ package adb
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
-type EmulatorManager interface {
-	AndroidDevice(string, string, string) *Device
-	Screencap(string) string
-	ShareFolder() string
-	Adb(string) ([]byte, error)
-}
+// ErrADBNotFound is returned when the ADB executable is not found.
+var ErrADBNotFound = errors.New("ADB command not found on PATH")
 
-type adbd struct {
-	*exec.Cmd
-}
+// ErrDeviceUnauthorized is returned by ADB commands when the device has not
+// authorized ADB debugging. Check the confirmation dialog on the device.
+var ErrDeviceUnauthorized = errors.New("Device unauthorized")
 
-type Device struct {
-	*Connection
-	devinfo map[string]string
-}
-type Connection struct {
-	*adbd
-	status bool
-}
+// The path to the adb executable, or an empty string if the adb executable was
+// not found.
+var adb string
 
-const (
-	sharedFolder = "/mnt/windows/BstSharedFolder/"
-	screenExt    = ".png"
-)
-
-const (
-	adb       string = "adb"
-	shell            = "shell"
-	devices          = "devices"
-	connect          = "connect"
-	screencap        = "screencap -p"
-	pull             = "pull"
-	input            = "input"
-	tap              = "tap"
-	back             = "keyevent 4"
-	swipe            = "swipe"
-)
-
-const (
-	state  string = "get-state"
-	target string = "-t"
-)
-
-const (
-	DEV_ID    = "tid"
-	NAME      = "name"
-	HOST      = "host"
-	PORT      = "port"
-	DEV_MODEL = "device"
-	STATE     = "state"
-)
-
-// var gadb *adbd
-
-func AndroidDevice(name, host, port string) (dev *Device, e error) {
-	a, _ := getAdb()
-	// // TODO: Rework this. f devices() should ret []*Device
-	// conn := &Connection{host: host, port: port, status: false}
-	// dev := &Device{Name: name, Connection: conn}
-	for _, v := range a.devices() {
-		if v.devinfo[HOST] == host && v.devinfo[PORT] == port {
-
-			v.connect()
-
-			dev = v
+func init() {
+	// Search for ADB using ANDROID_HOME
+	if home := os.Getenv("ANDROID_HOME"); home != "" {
+		path, err := filepath.Abs(filepath.Join(home, "platform-tools", "adb")) //+ maker.HostExecutableExtension)
+		if err == nil {
+			if _, err := os.Stat(path); err == nil {
+				adb = path
+				return
+			}
 		}
 	}
-	return nil, errors.New("Device not found")
+	// Fallback to searching on PATH.
+	if p, err := exec.LookPath("adb"); err == nil {
+		if p, err = filepath.Abs(p); err == nil {
+			adb = p
+		}
+	}
 }
 
-func (dev *Device) param(k, v string) {
-	dev.devinfo[k] = v
+// Cmd represents a command that can be run on an Android device.
+type Cmd struct {
+	// Path is the path of the command to run on the device.
+	//
+	// If the string is empty, the command is treated as a ADB command for Device.
+	Path string
+	// Args holds the command line arguments to pass to the command.
+	Args []string
+	// The device this command should be run on. If nil, then any one of the
+	// attached devices will execute the command.
+	Device *Device
+	// Stdout and Stderr specify the process's standard output and error.
+	//
+	// If either is nil, Run connects the corresponding file descriptor
+	// to the null device (os.DevNull).
+	//
+	// If Stdout and Stderr are the same writer, at most one
+	// goroutine at a time will call Write.
+	Stdout io.Writer
+	Stderr io.Writer
 }
 
-func (d *Device) String() string {
-	return fmt.Sprintf("\n# ADev: %v # < | > #Transport ID# [%v] < | >	HOSTNAME: < %v:%v >	<|>	STATE [%v]	>>> was <%v>	",
-		d.devinfo[DEV_MODEL], d.devinfo[DEV_ID], d.devinfo[HOST], d.devinfo[PORT], d.devinfo[STATE], d.devinfo[STATE])
+// Run starts the specified command and waits for it to complete.
+// The returned error is nil if the command runs, has no problems copying
+// stdout and stderr, and exits with a zero exit status.
+func (c *Cmd) Run() error {
+	args := []string{}
+	if c.Device != nil {
+		args = append(args, "-s", c.Device.Serial)
+	}
+	if c.Path != "" {
+		args = append(args, "shell", c.Path)
+	}
+	args = append(args, c.Args...)
+	cmd := exec.Command(adb, args...)
+	cmd.Stdout = c.Stdout
+	cmd.Stderr = c.Stderr
+	return cmd.Run()
 }
 
-// nargs: swipe <x1> <y1> <x2> <y2> [duration(ms)]
-func (dev *Device) Swipe(x, y, x1, y1, td int) {
-	xPos := strconv.Itoa(x)
-	yPos := strconv.Itoa(y)
-	x1Pos := strconv.Itoa(x1)
-	y1Pos := strconv.Itoa(y1)
-	duration := strconv.Itoa(td)
-	dev.Input(swipe, xPos, yPos, x1Pos, y1Pos, duration)
-}
-
-func getAdb() (*adbd, error) {
-	// fmt.Printf("Current Env: %v", os.Environ())
-	// if gadb != nil {
-	// 	return gadb, nil
-	// } else {
-	path, err := exec.LookPath(adb)
-	if err != nil {
-		fmt.Printf("didn't find '%v' executable\n", adb)
-		return nil, errors.New("No adb for you today, my friend!")
+// Call starts the specified command and waits for it to complete, returning the
+// all stdout as a string.
+// The returned error is nil if the command runs, has no problems copying
+// stdout and stderr, and exits with a zero exit status.
+func (c *Cmd) Call() (string, error) {
+	clone := *c // Don't change c's Stdout
+	stdout := &bytes.Buffer{}
+	if clone.Stdout != nil {
+		clone.Stdout = io.MultiWriter(clone.Stdout, stdout)
 	} else {
-		fmt.Printf("'%v' executable is in '%s'\n", adb, path)
-
-		return &adbd{exec.Command(adb)}, nil
+		clone.Stdout = stdout
 	}
-	//}
+	stderr := &bytes.Buffer{}
+	if clone.Stdout != nil {
+		clone.Stderr = io.MultiWriter(clone.Stdout, stderr)
+	} else {
+		clone.Stderr = stderr
+	}
+	err := clone.Run()
+	if err != nil && strings.Contains(stderr.String(), "error: device unauthorized.") {
+		err = ErrDeviceUnauthorized
+	}
+	return stdout.String(), err
 }
 
-func (d *Device) connect() {
-	if d.devinfo[STATE] == "device" {
-		// dest := d.devinfo[HOST] + ":" + d.devinfo[PORT]
-		// res, err := d.cmd.run(connect, dest)
-		// if err != nil || string(res)[:5] == "canno" {
-		// 	d.status = false
-		// 	return errors.New("Connection to host failed: " + dest)
-		// }
-
-		if d.adbd == nil {
-			d.attachAdb()
-		}
-		if !d.status {
-			d.status = true
-		}
-
-	}
-}
-
-func (d *Device) attachAdb() {
-	d.Connection = &Connection{
-		adbd:   &adbd{exec.Command(adb, target, d.devinfo[DEV_ID])},
-		status: true,
-	}
-}
-
-func (d *Device) state() string {
-	state, _ := d.run(target, d.devinfo[DEV_ID], state)
-	fmt.Printf("\nDev<%v> state was >>> %v | Current >>> %v <<<", d.devinfo[DEV_MODEL], d.devinfo[STATE], state)
-	d.devinfo[STATE] = string(state)
-	return string(state)
-}
-
-// Exec sh on remote Device
-func (dev *Device) sh(args ...string) ([]byte, error) {
-	if len(args) < 1 {
-		return nil, errors.New("Shell: 1 subcommand required")
-	}
-	shellArgs := strings.Join(args, " ")
-	dev.attachAdb()
-	res, err := dev.run(shell, shellArgs)
-	return res, err
-}
-
-/*
-	Run adb, first argument must be a adb subcommand
-
-"connect", "localhost:1111"
-
-"shell", "input", "tap", "100", "200"
-
-"screencap", "- p ", "/sdcard/ff.png"
-
-"pull", "/sdcard/ff.png"
-*/
-func (ad *adbd) run(args ...string) ([]byte, error) {
-	if len(args) < 1 {
-		return nil, errors.New("Adb: 1 subcommand required")
-	}
-
-	ad.Args = append(ad.Args, args...)
-
-	var stdoutBuf, stderrBuf bytes.Buffer
-
-	ad.Stdout = io.MultiWriter(os.Stdout, &stdoutBuf)
-	ad.Stderr = io.MultiWriter(os.Stderr, &stderrBuf)
-	// stdout, err := ad.StdoutPipe()
-	err := ad.Run()
-	if err != nil {
-		log.Fatalf("\nRun() failed with %s\n", err)
-	}
-
-	outStr, errStr := stdoutBuf.String(), stderrBuf.String()
-	fmt.Printf("\nout:\n%s\nerr:\n%s\n", outStr, errStr)
-
-	// ?OFF DOCad
-
-	/* 	stdout, err := ad.StdoutPipe()
-	   	if err != nil {
-	   		log.Fatal(err)
-	   	}
-	   	if err := ad.Start(); err != nil {
-	   		log.Fatal(err)
-	   	}
-
-	   	if err := ad.Wait(); err != nil {
-	   		log.Fatal(err)
-	   	}
-	   	fmt.Printf("%s is %d years old\n", stdout, err) */
-
-	fmt.Printf("\nRun:>>> <%v>\n	Output >>>> %s,\n	 errr >> %v", strings.Join(ad.Args, " "), outStr, errStr)
-
-	return []byte(stdoutBuf.Bytes()), err
-}
-
-func (ad *adbd) devices() (devices []*Device) {
-	b, e := ad.run("devices", "-l")
-	if e != nil {
-		log.Errorf("DevERR: %v", e.Error())
-		return nil
-	}
-
-	s := strings.TrimPrefix(string(b), "List of devices attached\r\n")
-	s = strings.TrimSuffix(s, "\r\n\r\n")
+func Parse(s string) []string {
+	temp := strings.TrimPrefix(s, "List of devices attached\r\n")
+	s = strings.TrimSuffix(temp, "\r\n\r\n")
 	strdevices := strings.Split(s, "\r\n")
 
 	// fmt.Printf("All Devices (len: %v) --> \n%v\n", len(strdevices), strings.Join(strdevices, "\n"))
 	for _, v := range strdevices {
-		// fmt.Printf("\nDev # %v -->>> %v <<< \n", k, v)
 
 		// https://regex101.com/r/7YFfra/1
 		// https://regex101.com/r/7YFfra/2
@@ -252,74 +136,63 @@ func (ad *adbd) devices() (devices []*Device) {
 			for ind, subName := range r.SubexpNames() {
 				if subName != "" {
 					devinfo[subName] = match[ind]
-					// fmt.Printf("\n	<%v>:  	#>>> %v <<<", subName, match[ind])
 				}
 			}
 		}
 
-		onedev := &Device{devinfo: devinfo}
-		onedev.attachAdb()
-		devices = append(devices, onedev)
-		fmt.Printf("%v", devices)
 	}
-	return
+	return []string{s}
 }
 
-// func (d *Device) attachAdb(adb *adbd){
-// 	if
+// const (
+// 	state  string = "get-state"
+// 	target string = "-t"
+// )
 
+// const (
+// 	DEV_ID    = "tid"
+// 	NAME      = "name"
+// 	HOST      = "host"
+// 	PORT      = "port"
+// 	DEV_MODEL = "device"
+// 	STATE     = "state"
+// )
+
+// func (d *Device) String() string {
+// 	return fmt.Sprintf("\n# ADev: %v # < | > #Transport ID# [%v] < | >	HOSTNAME: < %v:%v >	<|>	STATE [%v]	>>> was <%v>	",
+// 		d.devinfo[DEV_MODEL], d.devinfo[DEV_ID], d.devinfo[HOST], d.devinfo[PORT], d.devinfo[STATE], d.devinfo[STATE])
 // }
-func (dev *Device) GoForward(x, y int) {
-	xPos := strconv.Itoa(x)
-	yPos := strconv.Itoa(y)
-	dev.Input(tap, xPos, yPos)
-}
 
-func (dev *Device) GoBack() {
-	dev.Input(back)
-}
+// // Exec sh on remote Device
+// func (dev *Device) sh(args ...string) ([]byte, error) {
+// 	if len(args) < 1 {
+// 		return nil, errors.New("Shell: 1 subcommand required")
+// 	}
+// 	shellArgs := strings.Join(args, " ")
+// 	dev.attachAdb()
+// 	res, err := dev.run(shell, shellArgs)
+// 	return res, err
+// }
 
-func (c *Connection) Alive() bool {
-	state, _ := c.run(state)
-	return string(state) == "device"
-}
+// // Screenshot to PWD
+// func (dev *Device) Capture(name string) string {
+// 	dev.Screencap(name)
+// 	fpath := dev.PullScreen(name)
+// 	return fpath
+// }
 
-// Screenshot to PWD
-func (dev *Device) Capture(name string) string {
-	dev.Screencap(name)
-	fpath := dev.PullScreen(name)
-	return fpath
-}
+// func (dev *Device) Screencap(scrname string) ([]byte, error) {
+// 	if len(scrname) < 1 {
+// 		return nil, errors.New("Screencap: filename required")
+// 	}
 
-func (dev *Device) Screencap(scrname string) ([]byte, error) {
-	if len(scrname) < 1 {
-		return nil, errors.New("Screencap: filename required")
-	}
+// 	res, err := dev.sh(screencap, sharedFolder+scrname+screenExt)
+// 	return res, err
+// }
 
-	res, err := dev.sh(screencap, sharedFolder+scrname+screenExt)
-	return res, err
-}
-
-// made by screencap from sharedfolder
-func (dev *Device) PullScreen(scrname string) string {
-	filename := scrname + screenExt
-	dev.Pull(sharedFolder + filename)
-	return filename
-}
-
-func (dev *Device) Pull(fname string) ([]byte, error) {
-	if len(fname) < 1 {
-		return nil, errors.New("Pull: Filename required") // Specify path to file. Output optional, if not set - wd")
-	}
-	res, err := dev.run(target, dev.devinfo[DEV_ID], pull, fname)
-	return res, err
-}
-
-func (dev *Device) Input(args ...string) error {
-	if len(args) < 2 {
-		return errors.New("Input: min 2 args required, input source/command and args")
-	}
-	shellArgs := strings.Join(args, " ")
-	_, err := dev.sh(input, shellArgs)
-	return err
-}
+// // made by screencap from sharedfolder
+// func (dev *Device) PullScreen(scrname string) string {
+// 	filename := scrname + screenExt
+// 	dev.Pull(sharedFolder + filename)
+// 	return filename
+// }

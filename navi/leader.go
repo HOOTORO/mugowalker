@@ -21,11 +21,10 @@ type FightStat struct {
 }
 
 func (board *Leaderboard) SetRegion(n int) {
-	//rectangle x29, y12,  x72, y15 (rel)
-	//need recognition
-	board.GoForward(28, 13)
-	//magic
-
+	// rectangle x29, y12,  x72, y15 (rel)
+	// need recognition
+	// board.GoForward(28, 13)
+	// magic
 }
 
 // func (board *Leaderboard) PlayersArea() []Player {
