@@ -1,5 +1,4 @@
 vendor
 _*
-navi
-datman
-esparia
+.*
+test

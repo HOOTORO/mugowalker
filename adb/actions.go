@@ -6,6 +6,7 @@ package adb
 import (
 	"fmt"
 	"strconv"
+	"time"
 )
 
 type AdbArgs interface {
@@ -33,6 +34,7 @@ func (d *Device) Tap(x, y string) {
 	if e != nil {
 		fmt.Printf("\nerr:%v\nduring run:%v", e, "tap")
 	}
+	time.Sleep(3 * time.Second)
 }
 
 // adb shell input swipe <x1> <y1> <x2> <y2> [duration(ms)]
@@ -50,7 +52,8 @@ func (dev *Device) Swipe(x, y, x1, y1, td int) {
 
 // "screencap -p /sdcard/ff.png"
 func (d *Device) Screencap(f string) {
-	e := d.Command(screencap, "-p", remotedir+f).Run()
+	// -p for png
+	e := d.Command(screencap, remotedir+f).Run()
 	if e != nil {
 		fmt.Printf("\nrun: %v err: %v", "scr", e.Error())
 	}

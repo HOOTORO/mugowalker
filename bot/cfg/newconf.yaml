@@ -1,0 +1,126 @@
+afkchest:
+    keywords:
+        - Tap on the blank area to\nclaim AFK Rewards
+    actions:
+        back:
+            point:
+                x: "10"
+                "y": "2500"
+            delay: 1
+battle:
+    keywords:
+        - Forntions
+        - formations
+    actions:
+        Battle:
+            point:
+                x: "530"
+                "y": "2450"
+            delay: 1
+        BeginBC:
+            point:
+                x: ""
+                "y": ""
+            delay: 1
+        BeginBoss:
+            point:
+                x: "530"
+                "y": "1800"
+            delay: 1
+        Friends:
+            point:
+                x: "970"
+                "y": "850"
+            delay: 1
+        quests:
+            point:
+                x: "300"
+                "y": "850"
+            delay: 1
+campain:
+    keywords:
+        - Fast Rewards
+        - World Map
+        - Tales
+    actions:
+        afkchest:
+            point:
+                x: "560"
+                "y": "2100"
+            delay: 1
+        darkforest:
+            point:
+                x: ""
+                "y": ""
+            delay: 1
+        fastreward:
+            point:
+                x: ""
+                "y": ""
+            delay: 1
+        heroes:
+            point:
+                x: ""
+                "y": ""
+            delay: 1
+        leftbanner:
+            point:
+                x: ""
+                "y": ""
+            delay: 1
+        ranhorn:
+            point:
+                x: ""
+                "y": ""
+            delay: 1
+        rightbanner:
+            point:
+                x: ""
+                "y": ""
+            delay: 1
+fastrewards:
+    keywords:
+        - Fast Rewards
+        - World Map
+        - Tales
+    actions:
+        back:
+            point:
+                x: "10"
+                "y": "2500"
+            delay: 1
+        usefr:
+            point:
+                x: "00"
+                "y": "1580"
+            delay: 1
+fightresult:
+    keywords:
+        - Continue
+        - Raise
+        - increase
+    actions:
+        Next:
+            point:
+                x: ""
+                "y": ""
+            delay: 1
+        Retry:
+            point:
+                x: "530"
+                "y": "2350"
+            delay: 1
+        Stat:
+            point:
+                x: "980"
+                "y": "2360"
+            delay: 1
+forrest:
+    keywords:
+        - Arena labyrnts
+    actions:
+        back:
+            point:
+                x: "10"
+                "y": "2500"
+            delay: 1

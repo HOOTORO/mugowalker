@@ -16,7 +16,7 @@ func main() {
 		port = "5615"
 	)
 	// TODO: scaling  adb shell wm size returns resolution
-	log.SetLevel(log.TraceLevel)
+	log.SetLevel(log.InfoLevel)
 
 	dev, e := adb.Connect(host, port)
 	if e != nil {
@@ -29,8 +29,9 @@ func main() {
 	// if e != nil {
 	// 	fmt.Printf("\nerr:%v\nduring run:%v", e.Error(), "pull")
 	// }
+	mission := "C:/Users/maruk/vscode/afkarena/worker/bot/cfg/daily.yaml"
 
-	runner := &bot.Daywalker{Job: "peek", Device: dev}
+	runner := bot.New(dev)
 
-	runner.Peek()
+	runner.Mission(mission)
 }

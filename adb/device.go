@@ -3,11 +3,17 @@ package adb
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 )
 
 // DevState represents the last queried state of an Android device.
 type DevState int
+
+type Point struct {
+	X string
+	Y string
+}
 
 // binary: DeviceState#Offline = offline
 // binary: DeviceState#Online = device
@@ -20,9 +26,10 @@ const (
 
 // Device represents an attached Android device.
 type Device struct {
-	Serial string
-	State  DevState
-	abi    string
+	Serial     string
+	State      DevState
+	resolution Point
+	abi        string
 }
 
 // Command returns a new Cmd that will run the command with the specified name
@@ -87,6 +94,7 @@ func Connect(host, port string) (*Device, error) {
 	if out, err := cmd.Call(); err == nil {
 		fmt.Printf("Connect output --> %v", out)
 		dev := &Device{Serial: "", State: 1, abi: ""}
+		dev.Resolution()
 		dev.Abi()
 		return dev, nil
 	} else {
@@ -105,7 +113,33 @@ func (d *Device) Abi() string {
 	return d.abi
 }
 
+func (d *Device) Resolution() string {
+	if d.resolution == (Point{}) {
+		res, err := d.Command("vm", "size").Call()
+		if err == nil {
+			r := regexp.MustCompile(`Physical size: (?P<x>\d+)x(?P<y>\d+)`)
+			fmt.Printf("%#v\n", r.FindStringSubmatch(res))
+			fmt.Printf("%#v\n", r.SubexpNames())
+			for k, v := range r.FindStringSubmatch(res) {
+				switch k {
+				case 0:
+					d.resolution.X = v
+					break
+				case 1:
+					d.resolution.Y = v
+					break
+				}
+			}
+		}
+	}
+	return d.abi
+}
+
 // String returns a string representing the device.
 func (d *Device) String() string {
-	return fmt.Sprintf("Device<%s>", d.Serial)
+	return fmt.Sprintf("Device<%s%s>[resolution:%v]", d.Serial, d.abi, d.resolution)
+}
+
+func (p *Point) String() string {
+	return fmt.Sprintf("%sx%s", p.X, p.Y)
 }

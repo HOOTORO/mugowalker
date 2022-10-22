@@ -1,103 +1,120 @@
 package bot
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"worker/adb"
 	"worker/imaginer"
+
+	"github.com/fatih/color"
 )
-
-// const (
-
-// )
 
 type Daywalker struct {
 	// Represents bot
-	State string
-	Job   string
+	Location Location
+	job      []Mission
+	locs     map[string]Location
+	actions  map[string]adb.Point
+	// supaloc  map[string]SupaLocation
 	*adb.Device
 }
 
+// Instance of bot
+func New(d *adb.Device) *Daywalker {
+	return &Daywalker{
+		Device:  d,
+		job:     make([]Mission, 0),
+		locs:    make(map[string]Location),
+		actions: make(map[string]adb.Point),
+	}
+}
+
+// OCRed Text
 func (w *Daywalker) Peek() string {
-	filename := "p.jpeg"
+	// TODO: Generate random filname
+	filename := "p.png"
 	w.Screencap(filename)
 	e := w.Pull(filename, ".")
 	if e != nil {
 		fmt.Printf("\nerr:%v\nduring run:%v ", e, "w.Peek()")
 	}
-
 	abspath, _ := filepath.Abs(filename)
-	text := imaginer.Txt(abspath)
-	fmt.Printf("Recognized text: %v", text)
-	return "defenitely somewhere i belong"
+
+	text := imaginer.Text(abspath)
+	color.HiWhite("Recognized text: %v", text)
+	return text
 }
 
-// func (dw *AfkBot) Walk(dst *navi.Location) {
-// 	log.Debugf("Let's take a walk from >>%v<< to >>%v<<", dw.Liveloc.Name, dst.Name)
-// 	for dw.Liveloc != dst {
-// 		dw.Step(dst.Nparent(dw.Liveloc.Depth + 1))
-// 		log.Debugf("Made a #%d step to --> %v", dw.Liveloc.Depth, dw.Liveloc.Name)
-// 	}
-// }
+// run user scenario([s] - path to scenario yaml)
+func (d *Daywalker) Mission(m string) error {
+	color.HiMagenta("I'M ON A MISSION!")
+	mission := d.Load(m)
+	// d.save(&d.Location)
+	// return errors.New("GO CHECK NEW CONF")
+	firsttask := mission[0]
+	if firsttask.Entry == "" {
+		return errors.New("MISSION FAILED! No entry point. First Task must have enty point")
+	}
+	d.Location = d.locs[firsttask.Entry]
+	if !d.IsFamiliarPlace(firsttask.Entry) {
+		return errors.New(
+			fmt.Sprintf("UNKNOWN LOCATION [%v], Please check:%v", firsttask.Entry, loccnf),
+		)
+	}
 
-// func (n *AfkBot) Step(target *navi.Location) {
-// 	log.Debugf("Little step for bot (>>%v>> to <<%v>>", n.Liveloc.Name, target.Name)
-// 	n.GoForward(target.Entry.X, target.Entry.Y)
-// 	// give oit time to load
-// 	time.Sleep(5 * time.Second)
+	if d.checkLocation() {
+		for _, task := range mission {
+			for k, v := range task.Plan {
+				color.HiGreen("GOTO -> [%v] | CHECK?: %v", k, v)
+				d.Tap(d.actions[k].X, d.actions[k].Y)
+				if v {
+					d.checkLocation()
+				}
+			}
+		}
+	}
 
-// 	screen := n.OpenPng(n.Capture(target.Name))
-// 	target.Etalons, _ = n.LocEtalons(target.Name)
+	return nil
+}
 
-// 	if len(target.Etalons) == 0 {
-// 		n.Candidate(target, screen)
-// 		log.Panicf("No etalons images for Location >>%v<<", target.Name)
-// 	}
-// 	// n.SaveImg("1.png", target.Etalons[0])
-// 	// n.SaveImg("2.png", screen)
-// 	n.cnt = 0
-// 	for !target.IsLocation(screen) {
-// 		time.Sleep(5 * time.Second)
-// 		screen = n.OpenPng(n.Capture(target.Name))
-// 		n.cnt++
-// 		if n.cnt > n.maxtry {
-// 			n.Unknownplace(target, screen, target.Entry)
-// 			panic("WE FAILED MASTA")
+func (d *Daywalker) checkLocation() (r bool) {
+	color.Cyan("Check location...")
+
+	for retry := 1; !r; retry++ {
+		screentext := d.Peek()
+		if retry > 20 {
+			color.HiRed(fmt.Sprintf("Is seems we are not in [%v]. ABORT MISSION", d.Location))
+			return false
+		}
+		for _, v := range d.Location.Keywords {
+			if strings.Contains(screentext, v) {
+				color.HiGreen("Alraight we done here, go next")
+				return true
+			}
+		}
+	}
+	return
+}
+
+func (d *Daywalker) IsFamiliarPlace(n string) bool {
+	_, ok := d.locs[n]
+	return ok
+}
+
+// func (w *Daywalker) Fight() {
+// 	for {
+// 		txt := w.Peek()
+// 		if strings.Contains(txt, "Formations") {
+// 			color.Red("\n >> FIGHT! <<\n")
+// 			w.Tap(["Battle"].X, cfg["Battle"].Y)
 // 		}
+// 		if strings.Contains(txt, "Continue") {
+// 			w.Tap(cfg["Retry"].X, cfg["Retry"].Y)
+// 			color.Blue("\nPress Continue...\n")
+// 		}
+// 		time.Sleep(1 * time.Second)
 // 	}
-// 	n.Liveloc = target
 // }
-
-// // func (b *AfkBot) InitEtalons(uimap map[string]*navi.Location) {
-
-// // 	for _, v := range uimap {
-// // 		for v.Depth > 2 {
-// // 			b.EtalonStep(v.Nparent(1))
-// // 			log.Debugf("# Let's take a walk from >>%v<< to >>%v<<", b.Liveloc.Name, v.Name)
-
-// // 			for b.Liveloc != v {
-// // 				b.EtalonStep(v.Nparent(b.Liveloc.Depth + 1))
-// // 				log.Debugf("### Made a #%d step to --> %v", b.Liveloc.Depth-1, b.Liveloc.Name)
-
-// // 			}
-// // 			for i := 1; i < v.Depth; i++ {
-// // 				b.GoBack()
-// // 				time.Sleep(3 * time.Second)
-// // 			}
-// // 	ReadWriter
-// // 	}
-
-// // }
-
-// // func (bt *AfkBot) EtalonStep(t *navi.Location) {
-// // 	log.Debugf(">>>>>>>>>>>> ETALON STEP for bot (>>%v>> to <<%v>>", bt.Liveloc.Name, t.Name)
-// // 	captscr := t.Capture(bt)
-// // 	bt.Liveloc.Etalons = append(bt.Liveloc.Etalons, captscr)
-
-// // 	// bt.Liveloc.Areas[t.Name] = captscr.Area(t.Entry.X, t.Entry.Y, 60)
-// // 	bt.Candidate(bt.Liveloc, captscr)
-// // 	bt.GoForward(t.Entry.X, t.Entry.Y)
-// // 	time.Sleep(10 * time.Second)
-// // 	bt.Liveloc = t
-// // }
