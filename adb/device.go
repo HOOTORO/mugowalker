@@ -92,10 +92,10 @@ func Connect(host, port string) (*Device, error) {
 	cmd := Cmd{Args: []string{"connect", fmt.Sprintf("%v:%v", host, port)}}
 
 	if out, err := cmd.Call(); err == nil {
-		fmt.Printf("Connect output --> %v", out)
 		dev := &Device{Serial: "", State: 1, abi: ""}
 		dev.Resolution()
 		dev.Abi()
+		fmt.Printf("--> %v <--\n", out)
 		return dev, nil
 	} else {
 		return nil, err
@@ -115,17 +115,15 @@ func (d *Device) Abi() string {
 
 func (d *Device) Resolution() string {
 	if d.resolution == (Point{}) {
-		res, err := d.Command("vm", "size").Call()
+		res, err := d.Command("wm", "size").Call()
 		if err == nil {
 			r := regexp.MustCompile(`Physical size: (?P<x>\d+)x(?P<y>\d+)`)
-			fmt.Printf("%#v\n", r.FindStringSubmatch(res))
-			fmt.Printf("%#v\n", r.SubexpNames())
 			for k, v := range r.FindStringSubmatch(res) {
 				switch k {
-				case 0:
+				case 1:
 					d.resolution.X = v
 					break
-				case 1:
+				case 2:
 					d.resolution.Y = v
 					break
 				}
@@ -137,9 +135,9 @@ func (d *Device) Resolution() string {
 
 // String returns a string representing the device.
 func (d *Device) String() string {
-	return fmt.Sprintf("Device<%s%s>[resolution:%v]", d.Serial, d.abi, d.resolution)
+	return fmt.Sprintf("Device<%s%s>[resolution:%s]", d.Serial, d.abi, d.resolution)
 }
 
-func (p *Point) String() string {
+func (p Point) String() string {
 	return fmt.Sprintf("%sx%s", p.X, p.Y)
 }

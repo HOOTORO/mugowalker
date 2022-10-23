@@ -23,15 +23,18 @@ func main() {
 		fmt.Printf("\ndev:%v\nerr:%v", dev, e)
 	}
 
-	// dev.Tap("100", "100")
-	// dev.Screencap("/sdcard/gg.png")
-	// e = dev.Pull("/sdcard/gg.png", ".")
-	// if e != nil {
-	// 	fmt.Printf("\nerr:%v\nduring run:%v", e.Error(), "pull")
-	// }
-	mission := "C:/Users/maruk/vscode/afkarena/worker/bot/cfg/daily.yaml"
+	mission := "C:/Users/maruk/vscode/afkarena/worker/bot/mission/task.yaml"
 
 	runner := bot.New(dev)
 
-	runner.Mission(mission)
+	// err := runner.Mission(mission)
+	// if err != nil {
+	// 	log.Fatalf("MISSION GOES ERRRRRRRRRRRRRRRRRRRRRRRRR%v", err.Error())
+	// }
+
+	scn := &bot.Scenario{Path: mission, Pattern: "if"}
+	err := runner.Snecnario(scn)
+	if err != nil {
+		log.Fatalf("MISSION GOES ERRRRRRRRRRRRRRRRRRRRRRRRR%v", err.Error())
+	}
 }

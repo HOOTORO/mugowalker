@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"worker/adb"
 	"worker/imaginer"
@@ -12,23 +13,14 @@ import (
 	"github.com/fatih/color"
 )
 
-type Daywalker struct {
-	// Represents bot
-	Location Location
-	job      []Mission
-	locs     map[string]Location
-	actions  map[string]adb.Point
-	// supaloc  map[string]SupaLocation
-	*adb.Device
-}
+var locs map[string]Location
 
 // Instance of bot
 func New(d *adb.Device) *Daywalker {
 	return &Daywalker{
-		Device:  d,
-		job:     make([]Mission, 0),
-		locs:    make(map[string]Location),
-		actions: make(map[string]adb.Point),
+		Device: d,
+		Tasks:  make([]Task, 0, 10),
+		Status: &Status{},
 	}
 }
 
@@ -44,77 +36,87 @@ func (w *Daywalker) Peek() string {
 	abspath, _ := filepath.Abs(filename)
 
 	text := imaginer.Text(abspath)
-	color.HiWhite("Recognized text: %v", text)
 	return text
 }
 
-// run user scenario([s] - path to scenario yaml)
-func (d *Daywalker) Mission(m string) error {
-	color.HiMagenta("I'M ON A MISSION!")
-	mission := d.Load(m)
-	// d.save(&d.Location)
-	// return errors.New("GO CHECK NEW CONF")
-	firsttask := mission[0]
-	if firsttask.Entry == "" {
-		return errors.New("MISSION FAILED! No entry point. First Task must have enty point")
-	}
-	d.Location = d.locs[firsttask.Entry]
-	if !d.IsFamiliarPlace(firsttask.Entry) {
-		return errors.New(
-			fmt.Sprintf("UNKNOWN LOCATION [%v], Please check:%v", firsttask.Entry, loccnf),
-		)
-	}
-
-	if d.checkLocation() {
-		for _, task := range mission {
-			for k, v := range task.Plan {
-				color.HiGreen("GOTO -> [%v] | CHECK?: %v", k, v)
-				d.Tap(d.actions[k].X, d.actions[k].Y)
-				if v {
-					d.checkLocation()
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-func (d *Daywalker) checkLocation() (r bool) {
-	color.Cyan("Check location...")
-
+func (d *Daywalker) IsLocation() (r bool) {
+	color.Cyan("Check location... %v", d.loc.Label)
+	color.HiYellow("Keywords => %v", d.loc.Keywords)
 	for retry := 1; !r; retry++ {
 		screentext := d.Peek()
+
+		words := OCRFields(screentext)
+
 		if retry > 20 {
-			color.HiRed(fmt.Sprintf("Is seems we are not in [%v]. ABORT MISSION", d.Location))
+			color.HiRed(fmt.Sprintf("It seems we are not in [%v].\nWELOST! ABORT MISSION", d.loc))
 			return false
 		}
-		for _, v := range d.Location.Keywords {
-			if strings.Contains(screentext, v) {
-				color.HiGreen("Alraight we done here, go next")
-				return true
+
+		color.HiCyan("OCRed Words => %v", words)
+		i := 0
+		for _, v := range d.loc.Keywords {
+			for _, ocrtxt := range words {
+				if strings.Contains(ocrtxt, v) {
+					// TODO hits count move to config
+					i++
+					if i >= d.loc.hits {
+						color.HiGreen("Location confirmed! <%v>", v)
+						return true
+					}
+				}
 			}
 		}
 	}
 	return
 }
 
-func (d *Daywalker) IsFamiliarPlace(n string) bool {
-	_, ok := d.locs[n]
+func Keys[K comparable, V any](m map[K]V) []K {
+	res := make([]K, 0, len(m))
+	for k := range m {
+		res = append(res, k)
+	}
+	return res
+}
+
+func (d *Daywalker) AllowedAction(n string) bool {
+	_, ok := locs[n]
 	return ok
 }
 
-// func (w *Daywalker) Fight() {
-// 	for {
-// 		txt := w.Peek()
-// 		if strings.Contains(txt, "Formations") {
-// 			color.Red("\n >> FIGHT! <<\n")
-// 			w.Tap(["Battle"].X, cfg["Battle"].Y)
-// 		}
-// 		if strings.Contains(txt, "Continue") {
-// 			w.Tap(cfg["Retry"].X, cfg["Retry"].Y)
-// 			color.Blue("\nPress Continue...\n")
-// 		}
-// 		time.Sleep(1 * time.Second)
-// 	}
-// }
+func (d *Daywalker) SetLocation(s string) {
+	d.loc = locs[s]
+	(d.loc).Label = s
+}
+
+func (d *Daywalker) Action(s string, props Properties) error {
+	action, ok := d.loc.Actions[s]
+	if !ok {
+		return errors.New(fmt.Sprintf("NO Action<%v> in context<%v>!", s, d.loc.Label))
+	}
+	d.last = action
+	action.run(d)
+	return nil
+}
+
+func (a Action) run(d *Daywalker) {
+	d.Tap(a.X, a.Y)
+	if a.Delay > 0 {
+		delay := time.Duration(a.Delay + a.BaseDelay)
+		time.Sleep(delay * time.Second)
+	}
+
+	if a.Check {
+		d.IsLocation()
+	}
+}
+
+func OCRFields(s string) []string {
+	res := strings.Fields(s)
+	var filtered []string
+	for _, v := range res {
+		if len(v) > 2 {
+			filtered = append(filtered, v)
+		}
+	}
+	return filtered
+}

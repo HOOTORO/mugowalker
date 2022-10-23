@@ -128,9 +128,7 @@ func ReadText(r io.Reader) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	result := strings.TrimSpace(string(bytes))
-	strings.ReplaceAll("\n", result, result)
-	return result, nil
+	return formatStr(strings.TrimSpace(string(bytes))), nil
 }
 
 func runOcr(in string, out string) error {
@@ -140,8 +138,9 @@ func runOcr(in string, out string) error {
 	}
 
 	cmd := exec.Command(ocr, in, out)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	// uncomment for ocr log
+	// cmd.Stdout = os.Stdout
+	// cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
@@ -165,4 +164,9 @@ func covertGrayscale(r io.Reader) (*os.File, error) {
 	}
 
 	return grayImg, nil
+}
+
+func formatStr(in string) string {
+	res := strings.Split(in, "\n")
+	return strings.Join(res, " ")
 }
