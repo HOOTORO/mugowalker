@@ -1,0 +1,344 @@
+battlescreen:
+    hits: 1
+    keywords:
+        - Forntions
+        - formations
+        - Formations
+        - Stage
+        - VS)
+    actions:
+        Fight:
+            point:
+                x: "530"
+                "y": "2450"
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        Formations:
+            point:
+                x: ""
+                "y": ""
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+battleresult:
+    hits: 2
+    label:
+    keywords:
+        - Continue
+        - Raise
+        - increase
+        - strength
+        - Tier
+        - using
+        - methods
+        - below.
+        - Level
+    actions:
+        Next:
+            point:
+                x: ""
+                "y": ""
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        Retry:
+            point:
+                x: "530"
+                "y": "2350"
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        Stat:
+            point:
+                x: "980"
+                "y": "2360"
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+afkchest:
+    hits: 2
+    keywords:
+        - Tap
+        - the
+        - blank
+        - area 
+        - to\nclaim 
+        - AFK
+        - Rewards
+    actions:
+        back:
+            point:
+                x: "10"
+                "y": "2500"
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+campain:
+    hits: 2
+    keywords:
+        - Fast 
+        - Rewards
+        - World 
+        - Map
+        - Tales
+    actions:
+        BeginCampain:
+            point:
+                x: "530"
+                "y": "2300"
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        BeginBoss:
+            point:
+                x: "530"
+                "y": "1800"
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        afkchest:
+            point:
+                x: "560"
+                "y": "2100"
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        darkforest:
+            point:
+                x: ""
+                "y": ""
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        fastreward:
+            point:
+                x: "930"
+                "y": "2300"
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        heroes:
+            point:
+                x: ""
+                "y": ""
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        leftbanner:
+            point:
+                x: ""
+                "y": ""
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        ranhorn:
+            point:
+                x: ""
+                "y": ""
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        rightbanner:
+            point:
+                x: ""
+                "y": ""
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        back:
+            point:
+                x: "10"
+                "y": "2500"
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        usefr:
+            point:
+                x: "600"
+                "y": "1580"
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        darkforrest:
+            point:
+                x: "320"
+                "y": "2450"
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+campainBoss:
+    hits: 2
+    keywords:
+        - Enemny
+        - Formation
+        - Completition
+        - Rewards
+        - ormavion
+    actions:
+        BeginBoss:
+            point:
+                x: "530"
+                "y": "1800"
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        back:
+            point:
+                x: "930"
+                "y": "2300"
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+fastrewards:
+    hits: 0
+    keywords: []
+    actions:
+        back:
+            point:
+                x: "930"
+                "y": "2300"
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        usefr:
+            point:
+                x: "600"
+                "y": "1580"
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+forrest:
+    hits: 1
+    keywords:
+        - Arena 
+        - labyrnts
+    actions:
+        back:
+            point:
+                x: "10"
+                "y": "2500"
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        darkforest:
+            point:
+                x: ""
+                "y": ""
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        heroes:
+            point:
+                x: ""
+                "y": ""
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        leftbanner:
+            point:
+                x: ""
+                "y": ""
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        ranhorn:
+            point:
+                x: ""
+                "y": ""
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+        rightbanner:
+            point:
+                x: ""
+                "y": ""
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
+victory:
+    keywords:
+       - next
+       - Fall
+       - Rewards 
+       - Next 
+       - Stage 
+       - in> 
+       - Tap 
+       - Continue
+    actions:
+        stat:
+            point:
+                x: "1000"
+                "y": "2360"
+        next: 
+            point:
+                x: "500"
+                "y": "2360"
+stat:
+    keywords:
+       - Statistics
+    actions:
+        back:
+            point:
+                x: "930"
+                "y": "2300"
+ranhorn:
+    keywords:
+       

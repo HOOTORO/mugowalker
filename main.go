@@ -1,10 +1,10 @@
 package main
 
 import (
+	"fmt"
+
 	"worker/adb"
 	"worker/bot"
-	"worker/datman"
-	"worker/esperia"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -12,24 +12,29 @@ import (
 func main() {
 	const (
 		name = "Bluestacks"
-		host = "localhost"
-		port = "62065"
+		host = "127.0.0.1"
+		port = "5615"
 	)
-	log.SetLevel(log.DebugLevel)
-	//fshelp.CreateFolder("_workdir")
-	datman.SetWD("_workdir")
-	blueStacks := adb.New(name, host, port)
-	// blueStacks.Adb("kill-server")
-	// blueStacks.Adb("start-server")
-	afkbot := bot.New(blueStacks)
+	// TODO: scaling  adb shell wm size returns resolution
+	log.SetLevel(log.InfoLevel)
 
-	some := esperia.ClownRealm
-	// log.Printf("some: %v", some.Nparent(3))
-	log.Printf("some: %v", some)
-	// afkbot.Screencap("so")
-	// afkbot.Pull("so")
-	// return
-	afkbot.TransferTo(some)
-	_ = some
+	dev, e := adb.Connect(host, port)
+	if e != nil {
+		fmt.Printf("\ndev:%v\nerr:%v", dev, e)
+	}
 
+	mission := "C:/Users/maruk/vscode/afkarena/worker/bot/mission/task.yaml"
+
+	runner := bot.New(dev)
+
+	// err := runner.Mission(mission)
+	// if err != nil {
+	// 	log.Fatalf("MISSION GOES ERRRRRRRRRRRRRRRRRRRRRRRRR%v", err.Error())
+	// }
+
+	scn := &bot.Scenario{Path: mission, Pattern: "if"}
+	err := runner.Snecnario(scn)
+	if err != nil {
+		log.Fatalf("MISSION GOES ERRRRRRRRRRRRRRRRRRRRRRRRR%v", err.Error())
+	}
 }

@@ -1,172 +1,198 @@
 package adb
 
 import (
+	"bytes"
 	"errors"
-	"fmt"
+	"io"
+	"os"
 	"os/exec"
-	"strconv"
+	"path/filepath"
+	"regexp"
 	"strings"
 )
 
-type Adb interface {
-	New(string) *Adb
-	Connect(string)
-	Shell(string) (string, error)
-	Screencap(string) string
-	ShareFolder() string
-	Adb(string) ([]byte, error)
-}
+// ErrADBNotFound is returned when the ADB executable is not found.
+var ErrADBNotFound = errors.New("ADB command not found on PATH")
 
-type Device struct {
-	Name    string
-	adbpath string
-	*Connection
-}
+// ErrDeviceUnauthorized is returned by ADB commands when the device has not
+// authorized ADB debugging. Check the confirmation dialog on the device.
+var ErrDeviceUnauthorized = errors.New("Device unauthorized")
 
-type Connection struct {
-	host   string
-	port   string
-	status bool
-}
+// The path to the adb executable, or an empty string if the adb executable was
+// not found.
+var adb string
 
-const sharedFolder = "/mnt/windows/BstSharedFolder/"
-const screenExt = ".png"
-
-func (c *Connection) Alive() bool {
-	return c.status
-}
-
-const (
-	adb       string = "adb"
-	shell            = "shell"
-	devices          = "devices"
-	connect          = "connect"
-	screencap        = "screencap -p"
-	pull             = "pull"
-	input            = "input"
-	tap              = "tap"
-	back             = "keyevent 4"
-	swipe            = "swipe"
-)
-
-func New(name, host, port string) *Device {
-	checkExeExists(adb)
-	conn := &Connection{host: host, port: port, status: false}
-	return &Device{Name: name, Connection: conn}
-}
-
-func (d *Device) Connect() error {
-	if !d.Alive() {
-		dest := d.host + ":" + d.port
-		_, err := d.Adb(connect, dest)
-		if err != nil {
-			d.status = false
-			return errors.New("Connection: FAIL")
+func init() {
+	// Search for ADB using ANDROID_HOME
+	if home := os.Getenv("ANDROID_HOME"); home != "" {
+		path, err := filepath.Abs(filepath.Join(home, "platform-tools", "adb")) //+ maker.HostExecutableExtension)
+		if err == nil {
+			if _, err := os.Stat(path); err == nil {
+				adb = path
+				return
+			}
 		}
-		d.status = true
 	}
-	return nil
+	// Fallback to searching on PATH.
+	if p, err := exec.LookPath("adb"); err == nil {
+		if p, err = filepath.Abs(p); err == nil {
+			adb = p
+		}
+	}
 }
 
-//Run Adb, first agrgument must be a adb subcommand
-func (d *Device) Adb(args ...string) ([]byte, error) {
-	if len(args) < 1 {
-		return nil, errors.New("Adb: 1 subcommand required")
+// Cmd represents a command that can be run on an Android device.
+type Cmd struct {
+	// Path is the path of the command to run on the device.
+	//
+	// If the string is empty, the command is treated as a ADB command for Device.
+	Path string
+	// Args holds the command line arguments to pass to the command.
+	Args []string
+	// The device this command should be run on. If nil, then any one of the
+	// attached devices will execute the command.
+	Device *Device
+	// Stdout and Stderr specify the process's standard output and error.
+	//
+	// If either is nil, Run connects the corresponding file descriptor
+	// to the null device (os.DevNull).
+	//
+	// If Stdout and Stderr are the same writer, at most one
+	// goroutine at a time will call Write.
+	Stdout io.Writer
+	Stderr io.Writer
+}
+
+// Run starts the specified command and waits for it to complete.
+// The returned error is nil if the command runs, has no problems copying
+// stdout and stderr, and exits with a zero exit status.
+func (c *Cmd) Run() error {
+	args := []string{}
+	if c.Device != nil {
+		args = append(args, "-s", c.Device.Serial)
 	}
+	if c.Path != "" {
+		args = append(args, "shell", c.Path)
+	}
+	args = append(args, c.Args...)
 	cmd := exec.Command(adb, args...)
-	res, err := cmd.CombinedOutput()
-
-	// cmd = exec.Command("adb", "connect", "localhost:1111")
-	// exec.Command("adb", "shell", "input", "tap", "100", "200")
-	// exec.Command("adb", "screeencap", "- p ", "/sdcard/ff.png")
-	exec.Command("adb", "pull", "/sdcard/ff.pmng")
-
-	return res, err
+	cmd.Stdout = c.Stdout
+	cmd.Stderr = c.Stderr
+	return cmd.Run()
 }
 
-func (d *Device) Shell(args ...string) ([]byte, error) {
-	if len(args) < 1 {
-		return nil, errors.New("Shell: 1 subcommand required")
+// Call starts the specified command and waits for it to complete, returning the
+// all stdout as a string.
+// The returned error is nil if the command runs, has no problems copying
+// stdout and stderr, and exits with a zero exit status.
+func (c *Cmd) Call() (string, error) {
+	clone := *c // Don't change c's Stdout
+	stdout := &bytes.Buffer{}
+	if clone.Stdout != nil {
+		clone.Stdout = io.MultiWriter(clone.Stdout, stdout)
+	} else {
+		clone.Stdout = stdout
 	}
-	shellArgs := strings.Join(args, " ")
-	res, err := d.Adb(shell, shellArgs)
-	return res, err
-}
-
-func (d *Device) Screencap(scrname string) ([]byte, error) {
-	if len(scrname) < 1 {
-		//screencap -p /sdcard/screenshot.png
-
-		return nil, errors.New("Screencap: filename required")
+	stderr := &bytes.Buffer{}
+	if clone.Stdout != nil {
+		clone.Stderr = io.MultiWriter(clone.Stdout, stderr)
+	} else {
+		clone.Stderr = stderr
 	}
-	// for usablility set shared folder
-	// shellArgs := strings.Join(fname, " ")
-
-	res, err := d.Shell(screencap, sharedFolder+scrname+screenExt)
-	return res, err
-}
-
-// made by screencap from sharedfolder
-func (d *Device) PullScreen(scrname string) string {
-	filename := scrname + screenExt
-	d.Pull(sharedFolder + filename)
-	return filename
-}
-
-func (d *Device) Pull(fname string) ([]byte, error) {
-	if len(fname) < 1 {
-		return nil, errors.New("Pull: Filename required") //Specify path to file. Output optional, if not set - wd")
+	err := clone.Run()
+	if err != nil && strings.Contains(stderr.String(), "error: device unauthorized.") {
+		err = ErrDeviceUnauthorized
 	}
-	//shellArgs := strings.Join(args, " ")
-	res, err := d.Adb(pull, fname)
-	return res, err
+	return stdout.String(), err
 }
 
-func (d *Device) Input(args ...string) error {
-	if len(args) < 2 {
-		return errors.New("Input: min 2 args required, input source/command and args")
+func Parse(s string) []string {
+	temp := strings.TrimPrefix(s, "List of devices attached\r\n")
+	s = strings.TrimSuffix(temp, "\r\n\r\n")
+	strdevices := strings.Split(s, "\r\n")
+
+	// fmt.Printf("All Devices (len: %v) --> \n%v\n", len(strdevices), strings.Join(strdevices, "\n"))
+	for _, v := range strdevices {
+
+		// https://regex101.com/r/7YFfra/1
+		// https://regex101.com/r/7YFfra/2
+
+		r := regexp.
+			MustCompile(
+				`(?P<host>(?:\d{1,3}\.){3}\d{1,3}|` +
+					`(?P<name>\w+))+` +
+					`[-|:]?(?P<port>\d+)+` +
+					`[^\r]+(?P<state>offline|bootloader|device)[\s]+` +
+					`product:(?P<product>\w+)\s` +
+					`model:(?P<model>\w+)\s` +
+					`device:(?P<device>\w+)\s` +
+					`transport_id:(?P<tid>\d)`)
+
+		params := r.FindAllStringSubmatch(v, -1)
+		devinfo := make(map[string]string, 0)
+
+		for _, match := range params {
+			// fmt.Printf("\nParams  #%v; val => %v", k, match)
+			for ind, subName := range r.SubexpNames() {
+				if subName != "" {
+					devinfo[subName] = match[ind]
+				}
+			}
+		}
+
 	}
-	shellArgs := strings.Join(args, " ")
-	_, err := d.Shell(input, shellArgs)
-	return err
+	return []string{s}
 }
 
-func (d *Device) GoForward(x, y int) {
-	xPos := strconv.Itoa(x)
-	yPos := strconv.Itoa(y)
-	d.Input(tap, xPos, yPos)
-}
+// const (
+// 	state  string = "get-state"
+// 	target string = "-t"
+// )
 
-func (d *Device) GoBack() {
-	d.Input(back)
-}
+// const (
+// 	DEV_ID    = "tid"
+// 	NAME      = "name"
+// 	HOST      = "host"
+// 	PORT      = "port"
+// 	DEV_MODEL = "device"
+// 	STATE     = "state"
+// )
 
-// nargs: swipe <x1> <y1> <x2> <y2> [duration(ms)]
-func (d *Device) Swipe(x, y, x1, y1, td int) {
-
-	xPos := strconv.Itoa(x)
-	yPos := strconv.Itoa(y)
-	x1Pos := strconv.Itoa(x1)
-	y1Pos := strconv.Itoa(y1)
-	duration := strconv.Itoa(td)
-	d.Input(swipe, xPos, yPos, x1Pos, y1Pos, duration)
-}
-
-// func (d *Device) ShareFolder() (docpath, picpath string) {
-// 	//bluestacks shared folders	 (read-only)
-// 	// screenrecord --verbose /mnt/windows/BstSharedFolder/silasruinder.mp4
-// 	// screeenpshot path /sdcard/Pictures/Screenshots/
-// 	docpath = "/mnt/windows/Documents/"
-// 	picpath = "/mnt/windows/Pictures/"
-// 	return
+// func (d *Device) String() string {
+// 	return fmt.Sprintf("\n# ADev: %v # < | > #Transport ID# [%v] < | >	HOSTNAME: < %v:%v >	<|>	STATE [%v]	>>> was <%v>	",
+// 		d.devinfo[DEV_MODEL], d.devinfo[DEV_ID], d.devinfo[HOST], d.devinfo[PORT], d.devinfo[STATE], d.devinfo[STATE])
 // }
 
-func checkExeExists(program string) {
-	// fmt.Printf("Current Env: %v", os.Environ())
-	path, err := exec.LookPath(program)
-	if err != nil {
-		fmt.Printf("didn't find '%v' executable\n", program)
-	} else {
-		fmt.Printf("'%v' executable is in '%s'\n", program, path)
-	}
-}
+// // Exec sh on remote Device
+// func (dev *Device) sh(args ...string) ([]byte, error) {
+// 	if len(args) < 1 {
+// 		return nil, errors.New("Shell: 1 subcommand required")
+// 	}
+// 	shellArgs := strings.Join(args, " ")
+// 	dev.attachAdb()
+// 	res, err := dev.run(shell, shellArgs)
+// 	return res, err
+// }
+
+// // Screenshot to PWD
+// func (dev *Device) Capture(name string) string {
+// 	dev.Screencap(name)
+// 	fpath := dev.PullScreen(name)
+// 	return fpath
+// }
+
+// func (dev *Device) Screencap(scrname string) ([]byte, error) {
+// 	if len(scrname) < 1 {
+// 		return nil, errors.New("Screencap: filename required")
+// 	}
+
+// 	res, err := dev.sh(screencap, sharedFolder+scrname+screenExt)
+// 	return res, err
+// }
+
+// // made by screencap from sharedfolder
+// func (dev *Device) PullScreen(scrname string) string {
+// 	filename := scrname + screenExt
+// 	dev.Pull(sharedFolder + filename)
+// 	return filename
+// }

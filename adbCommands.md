@@ -2,11 +2,11 @@ adb help // List all comands
 
 == Adb Server
 adb kill-server
-adb start-server 
+adb start-server
 
 == Adb Reboot
 adb reboot
-adb reboot recovery 
+adb reboot recovery
 adb reboot-bootloader
 adb root //restarts adb with root permissions
 
@@ -20,7 +20,7 @@ adb devices -l //devices (product/model)
 adb connect ip_address_of_device
 
 == Get device android version
-adb shell getprop ro.build.version.release 
+adb shell getprop ro.build.version.release
 
 == LogCat
 adb logcat
@@ -55,7 +55,7 @@ adb devices | tail -n +2 | cut -sf 1 | xargs -IX adb -s X uninstall com.myAppPac
 
 == Update app
 adb install -r yourApp.apk  //  -r means re-install the app and keep its data on the device.
-adb install –k <.apk file path on computer> 
+adb install –k <.apk file path on computer>
 
 == Home button
 adb shell am start -W -c android.intent.category.HOME -a android.intent.action.MAIN
@@ -70,10 +70,9 @@ adb shell am start -a android.intent.action.CALL -d tel:+972527300294 // Make a 
 adb shell am start -a android.intent.action.SENDTO -d sms:+972527300294   --es  sms_body "Test --ez exit_on_sent false
 
 // Reset permissions
-adb shell pm reset-permissions -p your.app.package 
-adb shell pm grant [packageName] [ Permission]  // Grant a permission to an app. 
+adb shell pm reset-permissions -p your.app.package
+adb shell pm grant [packageName] [ Permission]  // Grant a permission to an app.
 adb shell pm revoke [packageName] [ Permission]   // Revoke a permission from an app.
-
 
 // Emulate device
 adb shell wm size 2048x1536
@@ -116,91 +115,91 @@ adb shell input keyevent 207 // Contacts
 adb shell input keyevent 220 / 221 // Brightness down/up
 adb shell input keyevent 277 / 278 /279 // Cut/Copy/Paste
 
-0 -->  "KEYCODE_0" 
-1 -->  "KEYCODE_SOFT_LEFT" 
-2 -->  "KEYCODE_SOFT_RIGHT" 
-3 -->  "KEYCODE_HOME" 
-4 -->  "KEYCODE_BACK" 
-5 -->  "KEYCODE_CALL" 
-6 -->  "KEYCODE_ENDCALL" 
-7 -->  "KEYCODE_0" 
-8 -->  "KEYCODE_1" 
-9 -->  "KEYCODE_2" 
-10 -->  "KEYCODE_3" 
-11 -->  "KEYCODE_4" 
-12 -->  "KEYCODE_5" 
-13 -->  "KEYCODE_6" 
-14 -->  "KEYCODE_7" 
-15 -->  "KEYCODE_8" 
-16 -->  "KEYCODE_9" 
-17 -->  "KEYCODE_STAR" 
-18 -->  "KEYCODE_POUND" 
-19 -->  "KEYCODE_DPAD_UP" 
-20 -->  "KEYCODE_DPAD_DOWN" 
-21 -->  "KEYCODE_DPAD_LEFT" 
-22 -->  "KEYCODE_DPAD_RIGHT" 
-23 -->  "KEYCODE_DPAD_CENTER" 
-24 -->  "KEYCODE_VOLUME_UP" 
-25 -->  "KEYCODE_VOLUME_DOWN" 
-26 -->  "KEYCODE_POWER" 
-27 -->  "KEYCODE_CAMERA" 
-28 -->  "KEYCODE_CLEAR" 
-29 -->  "KEYCODE_A" 
-30 -->  "KEYCODE_B" 
-31 -->  "KEYCODE_C" 
-32 -->  "KEYCODE_D" 
-33 -->  "KEYCODE_E" 
-34 -->  "KEYCODE_F" 
-35 -->  "KEYCODE_G" 
-36 -->  "KEYCODE_H" 
-37 -->  "KEYCODE_I" 
-38 -->  "KEYCODE_J" 
-39 -->  "KEYCODE_K" 
-40 -->  "KEYCODE_L" 
-41 -->  "KEYCODE_M" 
-42 -->  "KEYCODE_N" 
-43 -->  "KEYCODE_O" 
-44 -->  "KEYCODE_P" 
-45 -->  "KEYCODE_Q" 
-46 -->  "KEYCODE_R" 
-47 -->  "KEYCODE_S" 
-48 -->  "KEYCODE_T" 
-49 -->  "KEYCODE_U" 
-50 -->  "KEYCODE_V" 
-51 -->  "KEYCODE_W" 
-52 -->  "KEYCODE_X" 
-53 -->  "KEYCODE_Y" 
-54 -->  "KEYCODE_Z" 
-55 -->  "KEYCODE_COMMA" 
-56 -->  "KEYCODE_PERIOD" 
-57 -->  "KEYCODE_ALT_LEFT" 
-58 -->  "KEYCODE_ALT_RIGHT" 
-59 -->  "KEYCODE_SHIFT_LEFT" 
-60 -->  "KEYCODE_SHIFT_RIGHT" 
-61 -->  "KEYCODE_TAB" 
-62 -->  "KEYCODE_SPACE" 
-63 -->  "KEYCODE_SYM" 
-64 -->  "KEYCODE_EXPLORER" 
-65 -->  "KEYCODE_ENVELOPE" 
-66 -->  "KEYCODE_ENTER" 
-67 -->  "KEYCODE_DEL" 
-68 -->  "KEYCODE_GRAVE" 
-69 -->  "KEYCODE_MINUS" 
-70 -->  "KEYCODE_EQUALS" 
-71 -->  "KEYCODE_LEFT_BRACKET" 
-72 -->  "KEYCODE_RIGHT_BRACKET" 
-73 -->  "KEYCODE_BACKSLASH" 
-74 -->  "KEYCODE_SEMICOLON" 
-75 -->  "KEYCODE_APOSTROPHE" 
-76 -->  "KEYCODE_SLASH" 
-77 -->  "KEYCODE_AT" 
-78 -->  "KEYCODE_NUM" 
-79 -->  "KEYCODE_HEADSETHOOK" 
-80 -->  "KEYCODE_FOCUS" 
-81 -->  "KEYCODE_PLUS" 
-82 -->  "KEYCODE_MENU" 
-83 -->  "KEYCODE_NOTIFICATION" 
-84 -->  "KEYCODE_SEARCH" 
+0 -->  "KEYCODE_0"
+1 -->  "KEYCODE_SOFT_LEFT"
+2 -->  "KEYCODE_SOFT_RIGHT"
+3 -->  "KEYCODE_HOME"
+4 -->  "KEYCODE_BACK"
+5 -->  "KEYCODE_CALL"
+6 -->  "KEYCODE_ENDCALL"
+7 -->  "KEYCODE_0"
+8 -->  "KEYCODE_1"
+9 -->  "KEYCODE_2"
+10 -->  "KEYCODE_3"
+11 -->  "KEYCODE_4"
+12 -->  "KEYCODE_5"
+13 -->  "KEYCODE_6"
+14 -->  "KEYCODE_7"
+15 -->  "KEYCODE_8"
+16 -->  "KEYCODE_9"
+17 -->  "KEYCODE_STAR"
+18 -->  "KEYCODE_POUND"
+19 -->  "KEYCODE_DPAD_UP"
+20 -->  "KEYCODE_DPAD_DOWN"
+21 -->  "KEYCODE_DPAD_LEFT"
+22 -->  "KEYCODE_DPAD_RIGHT"
+23 -->  "KEYCODE_DPAD_CENTER"
+24 -->  "KEYCODE_VOLUME_UP"
+25 -->  "KEYCODE_VOLUME_DOWN"
+26 -->  "KEYCODE_POWER"
+27 -->  "KEYCODE_CAMERA"
+28 -->  "KEYCODE_CLEAR"
+29 -->  "KEYCODE_A"
+30 -->  "KEYCODE_B"
+31 -->  "KEYCODE_C"
+32 -->  "KEYCODE_D"
+33 -->  "KEYCODE_E"
+34 -->  "KEYCODE_F"
+35 -->  "KEYCODE_G"
+36 -->  "KEYCODE_H"
+37 -->  "KEYCODE_I"
+38 -->  "KEYCODE_J"
+39 -->  "KEYCODE_K"
+40 -->  "KEYCODE_L"
+41 -->  "KEYCODE_M"
+42 -->  "KEYCODE_N"
+43 -->  "KEYCODE_O"
+44 -->  "KEYCODE_P"
+45 -->  "KEYCODE_Q"
+46 -->  "KEYCODE_R"
+47 -->  "KEYCODE_S"
+48 -->  "KEYCODE_T"
+49 -->  "KEYCODE_U"
+50 -->  "KEYCODE_V"
+51 -->  "KEYCODE_W"
+52 -->  "KEYCODE_X"
+53 -->  "KEYCODE_Y"
+54 -->  "KEYCODE_Z"
+55 -->  "KEYCODE_COMMA"
+56 -->  "KEYCODE_PERIOD"
+57 -->  "KEYCODE_ALT_LEFT"
+58 -->  "KEYCODE_ALT_RIGHT"
+59 -->  "KEYCODE_SHIFT_LEFT"
+60 -->  "KEYCODE_SHIFT_RIGHT"
+61 -->  "KEYCODE_TAB"
+62 -->  "KEYCODE_SPACE"
+63 -->  "KEYCODE_SYM"
+64 -->  "KEYCODE_EXPLORER"
+65 -->  "KEYCODE_ENVELOPE"
+66 -->  "KEYCODE_ENTER"
+67 -->  "KEYCODE_DEL"
+68 -->  "KEYCODE_GRAVE"
+69 -->  "KEYCODE_MINUS"
+70 -->  "KEYCODE_EQUALS"
+71 -->  "KEYCODE_LEFT_BRACKET"
+72 -->  "KEYCODE_RIGHT_BRACKET"
+73 -->  "KEYCODE_BACKSLASH"
+74 -->  "KEYCODE_SEMICOLON"
+75 -->  "KEYCODE_APOSTROPHE"
+76 -->  "KEYCODE_SLASH"
+77 -->  "KEYCODE_AT"
+78 -->  "KEYCODE_NUM"
+79 -->  "KEYCODE_HEADSETHOOK"
+80 -->  "KEYCODE_FOCUS"
+81 -->  "KEYCODE_PLUS"
+82 -->  "KEYCODE_MENU"
+83 -->  "KEYCODE_NOTIFICATION"
+84 -->  "KEYCODE_SEARCH"
 85 -->  "KEYCODE_MEDIA_PLAY_PAUSE"
 86 -->  "KEYCODE_MEDIA_STOP"
 87 -->  "KEYCODE_MEDIA_NEXT"
@@ -214,25 +213,30 @@ adb shell input keyevent 277 / 278 /279 // Cut/Copy/Paste
 ...
 122 -->  "KEYCODE_MOVE_HOME"
 123 -->  "KEYCODE_MOVE_END"
-// https://developer.android.com/reference/android/view/KeyEvent.html
-
+// <https://developer.android.com/reference/android/view/KeyEvent.html>
 
 == ShPref
+
 # replace org.example.app with your application id
 
-# Add a value to default shared preferences.
+# Add a value to default shared preferences
+
 adb shell 'am broadcast -a org.example.app.sp.PUT --es key key_name --es value "hello world!"'
 
-# Remove a value to default shared preferences.
+# Remove a value to default shared preferences
+
 adb shell 'am broadcast -a org.example.app.sp.REMOVE --es key key_name'
 
-# Clear all default shared preferences.
+# Clear all default shared preferences
+
 adb shell 'am broadcast -a org.example.app.sp.CLEAR --es key key_name'
 
-# It's also possible to specify shared preferences file.
+# It's also possible to specify shared preferences file
+
 adb shell 'am broadcast -a org.example.app.sp.PUT --es name Game --es key level --ei value 10'
 
 # Data types
+
 adb shell 'am broadcast -a org.example.app.sp.PUT --es key string --es value "hello world!"'
 adb shell 'am broadcast -a org.example.app.sp.PUT --es key boolean --ez value true'
 adb shell 'am broadcast -a org.example.app.sp.PUT --es key float --ef value 3.14159'
@@ -240,6 +244,7 @@ adb shell 'am broadcast -a org.example.app.sp.PUT --es key int --ei value 2015'
 adb shell 'am broadcast -a org.example.app.sp.PUT --es key long --el value 9223372036854775807'
 
 # Restart application process after making changes
+
 adb shell 'am broadcast -a org.example.app.sp.CLEAR --ez restart true'
 
 == Monkey
@@ -290,7 +295,6 @@ adb shell dumpsys battery reset (reset the battery)
 adb shell dumpsys battery set usb <n> (change the status of USB connection. ON or OFF)
 adb shell wm size WxH (sets the resolution to WxH)
 
-
 == Device Related Commands
 adb reboot-recovery (reboot device into recovery mode)
 adb reboot fastboot (reboot device into recovery mode)
@@ -318,28 +322,32 @@ adb sideload //  Push and flash custom ROMs and zips from your computer.
 
 fastboot devices
 // Check connection and get basic information about devices connected to the computer.
-// This is essentially the same command as adb devices from earlier. 
+// This is essentially the same command as adb devices from earlier.
 //However, it works in the bootloader, which ADB does not. Handy for ensuring that you have properly established a connection.
-
 
 --------------------------------------------------------------------------------
 Shared Preferences
 
 # replace org.example.app with your application id
 
-# Add a value to default shared preferences.
+# Add a value to default shared preferences
+
 adb shell 'am broadcast -a org.example.app.sp.PUT --es key key_name --es value "hello world!"'
 
-# Remove a value to default shared preferences.
+# Remove a value to default shared preferences
+
 adb shell 'am broadcast -a org.example.app.sp.REMOVE --es key key_name'
 
-# Clear all default shared preferences.
+# Clear all default shared preferences
+
 adb shell 'am broadcast -a org.example.app.sp.CLEAR --es key key_name'
 
-# It's also possible to specify shared preferences file.
+# It's also possible to specify shared preferences file
+
 adb shell 'am broadcast -a org.example.app.sp.PUT --es name Game --es key level --ei value 10'
 
 # Data types
+
 adb shell 'am broadcast -a org.example.app.sp.PUT --es key string --es value "hello world!"'
 adb shell 'am broadcast -a org.example.app.sp.PUT --es key boolean --ez value true'
 adb shell 'am broadcast -a org.example.app.sp.PUT --es key float --ef value 3.14159'
@@ -347,11 +355,12 @@ adb shell 'am broadcast -a org.example.app.sp.PUT --es key int --ei value 2015'
 adb shell 'am broadcast -a org.example.app.sp.PUT --es key long --el value 9223372036854775807'
 
 # Restart application process after making changes
+
 adb shell 'am broadcast -a org.example.app.sp.CLEAR --ez restart true'
 --------------------------------------------------------------------------------
 
 === Few bash snippets ===
-@Source (https://jonfhancock.com/bash-your-way-to-better-android-development-1169bc3e0424)
+@Source (<https://jonfhancock.com/bash-your-way-to-better-android-development-1169bc3e0424>)
 
 === Using tail -n
 //Use tail to remove the first line. Actually two lines. The first one is just a newline. The second is “List of devices attached.”
@@ -371,14 +380,14 @@ $ adb devices | tail -n +2 | cut -sf -1 | xargs -I X echo X aw yiss
 adb devices | tail -n +2 | cut -sf -1 | xargs -I X adb -s X shell getprop ro.build.version.release  
 
 === Using alias
--- Example 1 
+-- Example 1
 alias tellMeMore=echo
 tellMeMore "hi there"
 Output => hi there
 -- Example 2
 // Define alias
 alias apkinstall="adb devices | tail -n +2 | cut -sf 1 | xargs -I X adb -s X install -r $1"
-// And you can use it later 
+// And you can use it later
 apkinstall ~/Downloads/MyAppRelease.apk  // Install an apk on all devices
 -- Example 3
 alias rmapp="adb devices | tail -n +2 | cut -sf 1 | xargs -I X adb -s X uninstall $1"
@@ -388,8 +397,7 @@ alias clearapp="adb devices | tail -n +2 | cut -sf 1 | xargs -I X adb -s X shell
 clearapp com.example.myapp  // Clear data on all devices (leave installed)
 -- Example 5
 alias startintent="adb devices | tail -n +2 | cut -sf 1 | xargs -I X adb -s X shell am start $1"
-startintent https://twitter.com/JonFHancock // Launch a deep link on all devices
-
+startintent <https://twitter.com/JonFHancock> // Launch a deep link on all devices
 
 Setting up your .bash_profile
 Finally, to make this all reusable even after rebooting your computer (aliases only last through the current session), we have to add these to your .bash_profile. You might or might not already have a .bash_profile, so let’s make sure we append to it rather than overwriting it. Just open a terminal, and run the following command
@@ -403,8 +411,8 @@ alias apkinstall="adb devices | tail -n +2 | cut -sf 1 | xargs -I X adb -s X ins
 alias rmapp="adb devices | tail -n +2 | cut -sf 1 | xargs -I X adb -s X uninstall $1"
 alias clearapp="adb devices | tail -n +2 | cut -sf 1 | xargs -I X adb -s X shell pm clear $1"
 
-
 ===============================================================
 Sources:
+
 - Internet
-- https://www.automatetheplanet.com/adb-cheat-sheet/
+- <https://www.automatetheplanet.com/adb-cheat-sheet/>

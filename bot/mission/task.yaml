@@ -1,0 +1,36 @@
+- entry: campain
+  actions:
+    - BeginCampain:
+        check: false
+        delay: 0
+        repeat: 0
+    - BeginBoss:
+        check: false
+        delay: 0
+        repeat: 0
+  exit: battlescreen
+  repeat: 0
+- entry: battlescreen
+  actions:
+    - Fight:
+        check: false
+        delay: 0
+        repeat: 0
+    - Retry:
+        check: false
+        delay: 0
+        repeat: 0
+  exit: battleresult
+  repeat: 0
+- entry: battleresult
+  actions:
+    - Fight:
+        check: true
+        delay: 0
+        repeat: 0
+    - Retry:
+        check: false
+        delay: 0
+        repeat: 0
+  exit: battlescreen
+  repeat: 0
