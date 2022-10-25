@@ -194,6 +194,15 @@ campain:
                 delay: 0
                 repeat: 0
             basedelay: 1
+        darkforrest:
+            point:
+                x: "320"
+                "y": "2450"
+            properties:
+                check: false
+                delay: 0
+                repeat: 0
+            basedelay: 1
 campainBoss:
     hits: 2
     keywords:
@@ -303,3 +312,33 @@ forrest:
                 delay: 0
                 repeat: 0
             basedelay: 1
+victory:
+    keywords:
+       - next
+       - Fall
+       - Rewards 
+       - Next 
+       - Stage 
+       - in> 
+       - Tap 
+       - Continue
+    actions:
+        stat:
+            point:
+                x: "1000"
+                "y": "2360"
+        next: 
+            point:
+                x: "500"
+                "y": "2360"
+stat:
+    keywords:
+       - Statistics
+    actions:
+        back:
+            point:
+                x: "930"
+                "y": "2300"
+ranhorn:
+    keywords:
+       

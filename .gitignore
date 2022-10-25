@@ -2,3 +2,5 @@ vendor
 _*
 .*
 test
+bot/cfg/
+bot/scenaries/

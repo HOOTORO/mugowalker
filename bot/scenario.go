@@ -1,9 +1,15 @@
 package bot
 
 import (
+	"regexp"
+
+	"worker/ocr"
+
 	"github.com/fatih/color"
 	"golang.org/x/exp/slices"
 )
+
+var locs map[string]Location
 
 func (d *Daywalker) Snecnario(s *Scenario) (e error) {
 	s.Tasks = d.Load(s.Path)
@@ -15,24 +21,6 @@ func (d *Daywalker) Snecnario(s *Scenario) (e error) {
 	}
 
 	return nil
-}
-
-func WhereIs(d *Daywalker) string {
-	current := OCRFields(d.Peek())
-	color.HiYellow("##### Where we? ##############################\n## %v ##\n", current)
-	maxhits, loc := 0, ""
-	for name, v := range locs {
-		hits := KeywordHits(v.Keywords, current)
-		if hits > maxhits {
-			maxhits = hits
-			loc = name
-		}
-
-	}
-	if loc != "" {
-		color.HiBlue("######## %v ########\n", loc)
-	}
-	return loc
 }
 
 func KeywordHits(kw, ocr []string) int {
@@ -60,11 +48,12 @@ func Loop(s *Scenario, d *Daywalker) error {
 
 func Logic(s *Scenario, d *Daywalker) error {
 	for {
-		runnn(s, d)
+		Decision(s, d)
 	}
 }
 
-func runnn(s *Scenario, d *Daywalker) error {
+// TODO run different psm in tesseract --psm 6 ,11, 12 show something GOOD
+func Decision(s *Scenario, d *Daywalker) error {
 	switch currentloc := WhereIs(d); currentloc {
 	case "campain":
 		color.HiGreen("### RUN => CAMP ########\n")
@@ -78,6 +67,46 @@ func runnn(s *Scenario, d *Daywalker) error {
 	case "campainBoss":
 		color.HiGreen("####RUN => BEGIN BOSS #####\n")
 		locs["campainBoss"].Actions["BeginBoss"].run(d)
+	case "victory":
+		color.HiGreen("####RUN => VICTORY, NEXT #####\n")
+		locs["victory"].Actions["next"].run(d)
 	}
 	return nil
+}
+
+func Regex(s string) {
+	r := regexp.MustCompile(`Stage:(?P<chapter>\d+)-(?P<stage>\d+)`)
+	ch, stg := "", ""
+	for k, v := range r.FindStringSubmatch(s) {
+		switch k {
+		case 1:
+			ch = v
+			breakP
+		case 2:
+			stg = v
+			break
+		}
+	}
+	if ch != "" {
+		color.HiMagenta("##### STAGE: %v-%v ###########", ch, stg)
+	}
+}
+
+func WhereIs(d *Daywalker) string {
+	current := ocr.OCRFields(d.Peek())
+	color.HiYellow("##### Where we? ##############################\n## %v ##\n", current)
+	maxhits, loc := 0, ""
+	for name, v := range locs {
+		hits := KeywordHits(v.Keywords, current)
+		if hits > maxhits {
+			maxhits = hits
+			loc = name
+		}
+
+	}
+	if loc != "" {
+		color.HiBlue("######## %v ########\n", loc)
+	}
+
+	return loc
 }

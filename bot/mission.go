@@ -1,8 +1,6 @@
 package bot
 
 import (
-	"errors"
-
 	"github.com/fatih/color"
 )
 
@@ -16,7 +14,7 @@ func (d *Daywalker) Mission(t string) error {
 func (d *Daywalker) RunTasks(ts []Task) error {
 	for _, task := range ts {
 		d.SetLocation(task.Entry)
-		e := d.Run(task)
+		e := d.Do(task)
 		if e != nil {
 			return e
 		}
@@ -25,16 +23,12 @@ func (d *Daywalker) RunTasks(ts []Task) error {
 }
 
 // run user scenario([s] - path to scenario yaml)
-func (d *Daywalker) Run(t Task) error {
-	if !d.IsLocation() {
-		return errors.New(
-			color.HiRedString("LOCATION MISMATCH[%v], Please check entries", d.loc))
-	}
+func (d *Daywalker) Do(t Task) (e error) {
 	for k, v := range t.Properties {
 		for actionName, prop := range v {
 			color.HiGreen("GO ACTION #%v [%v]", k, actionName)
-			d.Action(actionName, prop)
+			e = d.Action(actionName, prop)
 		}
 	}
-	return nil
+	return
 }
