@@ -81,7 +81,7 @@ func Regex(s string) {
 		switch k {
 		case 1:
 			ch = v
-			breakP
+			break
 		case 2:
 			stg = v
 			break
