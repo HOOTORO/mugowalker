@@ -1,3 +1,6 @@
+#######################################################################
+################## FIGHT RELATED LOCATIONS ############################
+#######################################################################
 battlescreen:
     name: battlescreen
     hits: 1
@@ -18,12 +21,39 @@ battlescreen:
                 repeat: 0
         Formations:
             point:
-                x: ""
-                "y": ""
+                x: "950"
+                "y": "2450"
             properties:
                 check: false
                 delay: 1
                 repeat: 0
+campvictory:
+    name: victory
+    hits: 1
+    keywords:
+       - next
+       - Fall
+       - Rewards 
+       - Next 
+       - Stage 
+       - in> 
+       - Tap 
+       - Continue
+    actions:
+        battlestat:
+            point:
+                x: "1000"
+                "y": "2360"
+            properties:
+                check: false
+                delay: 1
+        next: 
+            point:
+                x: "500"
+                "y": "2360"
+            properties:
+                check: false
+                delay: 1
 losecampain:
     hits: 2
     name: battleresult
@@ -38,14 +68,6 @@ losecampain:
         - below.
         - Level
     actions:
-        Next:
-            point:
-                x: ""
-                "y": ""
-            properties:
-                check: false
-                delay: 1
-                repeat: 0
         Retry:
             point:
                 x: "530"
@@ -54,7 +76,7 @@ losecampain:
                 check: false
                 delay: 1
                 repeat: 0
-        Stat:
+        battlestat:
             point:
                 x: "980"
                 "y": "2360"
@@ -62,26 +84,34 @@ losecampain:
                 check: false
                 delay: 1
                 repeat: 0
-afkchest:
-    hits: 2
-    name: afkchest
+
+battlestat:
+    hits: 1
+    name: stat
     keywords:
-        - Tap
-        - the
-        - blank
-        - area 
-        - to\nclaim 
-        - AFK
-        - Rewards
+       - Statistics
     actions:
         back:
             point:
-                x: "10"
-                "y": "2500"
+                x: "999"
+                "y": "350"
             properties:
                 check: false
                 delay: 1
-                repeat: 0
+        heroinfo:
+            point:
+                x: "370"
+                "y": "2050"
+            properties:
+                check: false
+                delay: 1
+
+#######################################################################
+################## MAIN SCREEN LOCATIONS ##############################
+#######################################################################
+################## Global locations ###################################
+#######################################################################
+
 campain:
     name: campain
     hits: 2
@@ -188,54 +218,6 @@ campain:
                 check: false
                 delay: 1
                 repeat: 0
-campainBoss:
-    name: campainBoss
-    hits: 2
-    keywords:
-        - Enemny
-        - Formation
-        - Completition
-        - Rewards
-        - ormavion
-    actions:
-        BeginBoss:
-            point:
-                x: "530"
-                "y": "1800"
-            properties:
-                check: false
-                delay: 1
-                repeat: 0
-        back:
-            point:
-                x: "930"
-                "y": "2300"
-            properties:
-                check: false
-                delay: 1
-                repeat: 0
-fastrewards:
-    name: fastrewards
-    hits: 0
-    keywords: []
-    actions:
-        back:
-            point:
-                x: "930"
-                "y": "2300"
-            properties:
-                check: false
-                delay: 1
-                repeat: 0
-        usefr:
-            point:
-                x: "600"
-                "y": "1580"
-            properties:
-                check: false
-                delay: 1
-                repeat: 0
-
 forrest:
     name: forrest
     hits: 1
@@ -309,128 +291,6 @@ forrest:
                 check: false
                 delay: 1
                 repeat: 0
-
-kingstower:
-    name: kt
-    hits: 2
-    keywords:
-        - forsaken
-        - necropolis
-        - World
-        - tree
-        - infernal
-        - fortress
-        - sanctum
-        - tower
-        - light
-        - 
-    actions:
-        kt: 
-            point:
-                x:
-                "y":
-            properties:
-                check: false
-                delay: 1
-        cele: 
-            point:
-                x:
-                "y":
-            properties:
-                check: false
-                delay: 1
-        back:
-            point:
-                x: "930"
-                "y": "2300"
-            properties:
-                check: false
-                delay: 1
-                repeat: 0
-
-
-                
-arena: 
-    name: arena
-    hits: 2
-    keywords:
-        - season
-        - challeger
-        - tournament
-        - championship
-        - starts
-        - gladiator
-    actions:
-        oneonone: 
-            point:
-                x:
-                "y":
-            properties:
-                check: false
-                delay: 1
-        3team: 
-            point:
-                x:
-                "y":
-            properties:
-                check: false
-                delay: 1
-        back:
-            point:
-                x: "930"
-                "y": "2300"
-            properties:
-                check: false
-                delay: 1
-                repeat: 0
-
-campvictory:
-    name: victory
-    hits: 1
-    keywords:
-       - next
-       - Fall
-       - Rewards 
-       - Next 
-       - Stage 
-       - in> 
-       - Tap 
-       - Continue
-    actions:
-        battlestat:
-            point:
-                x: "1000"
-                "y": "2360"
-            properties:
-                check: false
-                delay: 1
-        next: 
-            point:
-                x: "500"
-                "y": "2360"
-            properties:
-                check: false
-                delay: 1
-        heroinfo:
-            point:
-                x: "1000"
-                "y": "2360"
-            properties:
-                check: false
-                delay: 1
-stat:
-    hits: 1
-    name: stat
-    keywords:
-       - Statistics
-    actions:
-        back:
-            point:
-                x: "930"
-                "y": "2300"
-            properties:
-                check: false
-                delay: 1
 ranhorn:
     name: ranhorn
     hits: 3
@@ -469,24 +329,30 @@ ranhorn:
                 check: false
                 delay: 1
 
-guild:
-    name:
-    hits:
+#######################################################################
+##################### BANNERS CHILD LOCATIONS #########################
+#######################################################################
+# Not work rn, manipulation with dynamic content hard to develop
+# TODO: collect dailies
+leftbanner:
+    name: leftbanner
+    hits: 2
     keywords:
-        - #word1
-        - #word2
+        - Merchants
+        - Purchase Gift
+        - Events
     actions:
-        bosses: 
+        merch: 
             point:
-                x:
-                "y":
+                x: 100
+                "y": 300
             properties:
                 check: false
                 delay: 1
-        hell: 
+        events: 
             point:
-                x:
-                "y":
+                x: 100
+                "y": 500
             properties:
                 check: false
                 delay: 1
@@ -498,6 +364,267 @@ guild:
                 check: false
                 delay: 1
                 repeat: 0
+rightbanner:
+    name: rightbanner
+    hits: 2
+    keywords:
+        - Quests
+        - Bag
+        - Mail
+        - Friends
+        - Solemn
+        - Vow
+        - Community
+    actions:
+        quest: 
+            point:
+                x: 950
+                "y": 300
+            properties:
+                check: false
+                delay: 1
+        bag: 
+            point:
+                x: 950
+                "y": 500
+            properties:
+                check: false
+                delay: 1
+        mail: 
+            point:
+                x: 950
+                "y": 700
+            properties:
+                check: false
+                delay: 1
+        friends: 
+            point:
+                x: 950
+                "y": 900
+            properties:
+                check: false
+                delay: 1
+        back:
+            point:
+                x: "50"
+                "y": "2480"
+            properties:
+                check: false
+                delay: 1
+                repeat: 0
+friends:
+    name: friends
+    keywords:
+        - Friends
+        - Garrisoned
+    actions:
+        sendrecive:
+            point:
+                x: 900
+                "y": 2250
+        back:
+            point:
+                x: "50"
+                "y": "2480"
+            properties:
+                check: false
+                delay: 1
+                repeat: 0
+#######################################################################
+##################### CAMPAIN CHILD LOCATIONS #########################
+#######################################################################
+
+campainBoss:
+    name: campainBoss
+    hits: 2
+    keywords:
+        - Enemny
+        - Formation
+        - Completition
+        - Rewards
+        - ormavion
+    actions:
+        BeginBoss:
+            point:
+                x: "530"
+                "y": "1800"
+            properties:
+                check: false
+                delay: 1
+                repeat: 0
+        back:
+            point:
+                x: "50"
+                "y": "2480"
+                # x: "930"
+                # "y": "2300"
+            properties:
+                check: false
+                delay: 1
+                repeat: 0
+fastrewards:
+    name: fastrewards
+    hits: 0
+    keywords: []
+    actions:
+        back:
+            point:
+                # x: "930"
+                # "y": "2300"
+                x: "50"
+                "y": "2480"
+            properties:
+                check: false
+                delay: 1
+                repeat: 0
+        usefr:
+            point:
+                x: "600"
+                "y": "1580"
+            properties:
+                check: false
+                delay: 1
+                repeat: 0
+afkchest:
+    hits: 2
+    name: afkchest
+    keywords:
+        - Tap
+        - the
+        - blank
+        - area 
+        - to\nclaim 
+        - AFK
+        - Rewards
+    actions:
+        back:
+            point:
+                x: "50"
+                "y": "2480"
+            properties:
+                check: false
+                delay: 1
+                repeat: 0
+
+#######################################################################
+##################### DARK FOREST CHILD LOCATIONS #####################
+#######################################################################
+
+arena: 
+    name: arena
+    hits: 2
+    keywords:
+        - season
+        - challeger
+        - tournament
+        - championship
+        - starts
+        - gladiator
+    actions:
+        oneonone: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        3team: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        back:
+            point:
+                x: "50"
+                "y": "2480"
+            properties:
+                check: false
+                delay: 1
+                repeat: 0
+kingstower:
+    name: kt
+    hits: 2
+    keywords:
+        - forsaken
+        - necropolis
+        - World
+        - tree
+        - infernal
+        - fortress
+        - sanctum
+        - tower
+        - light
+        - 
+    actions:
+        kt: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        cele: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        back:
+            point:
+                x: "50"
+                "y": "2480"
+            properties:
+                check: false
+                delay: 1
+                repeat: 0
+
+#######################################################################
+####################### RANHORNY TAB CHILD LOCATIONS ##################
+#######################################################################
+
+guild:
+    name: guildgrounds
+    hits: 2
+    keywords:
+        - Guild
+        - Hall
+        - Hellscape
+        - Grounds
+        - Hunting
+    actions:
+        bosses: 
+            point:
+                x: 300
+                "y": 900
+            properties:
+                check: false
+                delay: 1
+        hell: 
+            point:
+                x: 300
+                "y": 750
+            properties:
+                check: false
+                delay: 1
+        back:
+            point:
+                x: "50"
+                "y": "2480"
+            properties:
+                check: false
+                delay: 1
+                repeat: 0
+wrizz:
+    name: wrizz
+    hits: 1
+    keywords:
+        - wrizz
+        - Challenge
+    actions:
+        Fight:
 
 shop:
     name: shop
@@ -508,7 +635,7 @@ shop:
     actions:
         buydust: 
             point:
-                x:
+                x: 
                 "y":
             properties:
                 check: false
@@ -543,14 +670,12 @@ shop:
                 delay: 1
         back:
             point:
-                x: "930"
-                "y": "2300"
+                x: "50"
+                "y": "2480"
             properties:
                 check: false
                 delay: 1
                 repeat: 0
-
-
 bosses:
     name: bosses
     hits: 1
@@ -573,8 +698,8 @@ bosses:
                 delay: 1
         back:
             point:
-                x: "930"
-                "y": "2300"
+                x: "50"
+                "y": "2480"
             properties:
                 check: false
                 delay: 1

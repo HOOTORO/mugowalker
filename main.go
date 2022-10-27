@@ -39,7 +39,8 @@ func main() {
 	// scn := &bot.Scenario{Path: mission, Pattern: "if"}
 
 	// err := runner.Snecnario(scn)
-	err := gm.Push()
+	// err := gm.Push()
+	err := gm.Daily()
 	if err != nil {
 		log.Fatalf("MISSION GOES ERRRRRRRRRRRRRRRRRRRRRRRRR%v", err.Error())
 	}

@@ -1,7 +1,7 @@
 package game
 
 import (
-	"errors"
+	"database/sql"
 	"fmt"
 
 	"worker/bot"
@@ -31,6 +31,7 @@ const (
 
 type Game struct {
 	Name      string
+	User      *repository.User
 	Active    bool
 	Locations map[string]bot.Location
 	b         *bot.Daywalker
@@ -44,20 +45,49 @@ type Game struct {
 func New(c, g string, d *bot.Daywalker) *Game {
 	color.HiMagenta("Launch %v!", g)
 	locs := bot.GameLocations(c)
+	user := repository.GetUser(d.Character)
 	// TODO: app check and start
 
 	// e := d.RunTasks(tasks)
-	return &Game{Name: g, Locations: locs, Active: true, b: d}
+	return &Game{Name: g, Locations: locs, Active: true, b: d, User: user}
 }
 
 func (g *Game) Daily() error {
-	return errors.New(fmt.Sprintf("Daily fails! err :> %v", "ffff"))
+	var lastDaily repository.Daily
+	// if len(g.User.Daily) == 0 {
+	// 	lastDaily = repository.Daily{}
+	// } else {
+	// 	lastDaily =  g.User.Daily[len(g.User.Daily)-1]
+	// }
+
+	// if lastDaily.UpdatedAt.Day() > time.Now().Day(){
+	// 	return errors.New(fmt.Sprintf("Daily fails! err :> %v", "Already done"))
+	// }
+	currentloc := g.b.WhereIs(g.Locations)
+
+	currentloc.Actions[AFKCHEST].Run(g.b)
+	currentloc.Actions["back"].Run(g.b)
+	lastDaily.Loot = sql.NullBool{Bool: true}
+	currentloc.Actions[FR].Run(g.b)
+	currentloc.Actions["usefr"].Run(g.b)
+	currentloc.Actions["back"].Run(g.b)
+	currentloc.Actions["back"].Run(g.b)
+	lastDaily.FastRewards = sql.NullBool{Bool: true}
+	currentloc.Actions["fiends"].Run(g.b)
+	currentloc.Actions["sendrecive"].Run(g.b)
+	currentloc.Actions["back"].Run(g.b)
+	lastDaily.Likes.Bool = true
+	g.User.SaveUserInfo()
+	return nil
 }
 
 func (g *Game) Push() error {
 	for {
-		user := repository.GetUser(g.b.Character)
+
 		currentloc := g.b.WhereIs(g.Locations)
+		if currentloc.Name == "" {
+			continue
+		}
 		color.HiGreen("#### YOU ARE HERE => %v #####\n", currentloc.Name)
 		var nextMove string
 		switch {
@@ -74,20 +104,20 @@ func (g *Game) Push() error {
 
 		}
 
-		color.HiGreen("#### MOVE TO => %v#####\n", nextMove)
 		stgchregex := `Stage:(?P<chapter>\d+)-(?P<stage>\d+)`
 		campain := bot.Regex(g.b.Peek(), stgchregex)
-		if len(campain) > 0 && campain[0] != user.Chapter && campain[1] != user.Stage {
+		if len(campain) > 0 && campain[0] != g.User.Chapter && campain[1] != g.User.Stage {
 			color.HiMagenta("##### STAGE: %v-%v ###########", campain[0], campain[1])
-			user.Stage = campain[0]
-			user.Chapter = campain[1]
-			user.SaveUserInfo()
+			g.User.Chapter = campain[0]
+			g.User.Stage = campain[1]
+			g.User.SaveUserInfo()
 
 		}
 
 		if nextMove == "screenstats" {
-			bsfname, hifname := fmt.Sprintf("stats_%v-%v.png", user.Stage, user.Chapter), fmt.Sprintf("info_%v-%v.png", user.Stage, user.Chapter)
+			bsfname, hifname := fmt.Sprintf("stats_%v-%v.png", g.User.Stage, g.User.Chapter), fmt.Sprintf("info_%v-%v.png", g.User.Stage, g.User.Chapter)
 			color.HiGreen("####RUN => VICTORY, GO STATS #####\n")
+			// TODO move run action to Game(?) method
 			currentloc.Actions["battlestat"].Run(g.b)
 			g.b.Screencap(bsfname)
 			g.b.Pull(bsfname, ".")
@@ -98,8 +128,10 @@ func (g *Game) Push() error {
 			currentloc.Actions["back"].Run(g.b)
 			color.HiGreen("####RUN => VICTORY, NEXT #####\n")
 			currentloc.Actions["next"].Run(g.b)
+		} else {
+			color.HiGreen("#### MOVE TO => %v #####\n", nextMove)
+			currentloc.Actions[nextMove].Run(g.b)
 		}
-		currentloc.Actions[nextMove].Run(g.b)
 
 	}
 }

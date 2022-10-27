@@ -47,6 +47,6 @@ func (d *Daywalker) WhereIs(locs map[string]Location) Location {
 	if locName != "" {
 		color.HiBlue("######## %v ########\n", locName)
 	}
-
+	d.SetLocation(locs[locName])
 	return locs[locName]
 }
