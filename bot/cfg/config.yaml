@@ -1,4 +1,5 @@
 battlescreen:
+    name: battlescreen
     hits: 1
     keywords:
         - Forntions
@@ -13,21 +14,19 @@ battlescreen:
                 "y": "2450"
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         Formations:
             point:
                 x: ""
                 "y": ""
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
-battleresult:
+losecampain:
     hits: 2
-    label:
+    name: battleresult
     keywords:
         - Continue
         - Raise
@@ -45,29 +44,27 @@ battleresult:
                 "y": ""
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         Retry:
             point:
                 x: "530"
                 "y": "2350"
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         Stat:
             point:
                 x: "980"
                 "y": "2360"
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
 afkchest:
     hits: 2
+    name: afkchest
     keywords:
         - Tap
         - the
@@ -83,10 +80,10 @@ afkchest:
                 "y": "2500"
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
 campain:
+    name: campain
     hits: 2
     keywords:
         - Fast 
@@ -101,109 +98,98 @@ campain:
                 "y": "2300"
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         BeginBoss:
             point:
                 x: "530"
                 "y": "1800"
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         afkchest:
             point:
                 x: "560"
                 "y": "2100"
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         darkforest:
             point:
                 x: ""
                 "y": ""
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         fastreward:
             point:
                 x: "930"
                 "y": "2300"
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         heroes:
             point:
                 x: ""
                 "y": ""
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         leftbanner:
             point:
                 x: ""
                 "y": ""
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         ranhorn:
             point:
                 x: ""
                 "y": ""
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         rightbanner:
             point:
                 x: ""
                 "y": ""
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         back:
             point:
                 x: "10"
                 "y": "2500"
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         usefr:
             point:
                 x: "600"
                 "y": "1580"
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         darkforrest:
             point:
                 x: "320"
                 "y": "2450"
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
 campainBoss:
+    name: campainBoss
     hits: 2
     keywords:
         - Enemny
@@ -218,19 +204,18 @@ campainBoss:
                 "y": "1800"
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         back:
             point:
                 x: "930"
                 "y": "2300"
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
 fastrewards:
+    name: fastrewards
     hits: 0
     keywords: []
     actions:
@@ -240,19 +225,19 @@ fastrewards:
                 "y": "2300"
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         usefr:
             point:
                 x: "600"
                 "y": "1580"
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
+
 forrest:
+    name: forrest
     hits: 1
     keywords:
         - Arena 
@@ -264,55 +249,144 @@ forrest:
                 "y": "2500"
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         darkforest:
             point:
                 x: ""
                 "y": ""
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
+
         heroes:
             point:
                 x: ""
                 "y": ""
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         leftbanner:
             point:
                 x: ""
                 "y": ""
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
+
         ranhorn:
             point:
                 x: ""
                 "y": ""
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
         rightbanner:
             point:
                 x: ""
                 "y": ""
             properties:
                 check: false
-                delay: 0
+                delay: 1
                 repeat: 0
-            basedelay: 1
-victory:
+        kingstower:
+            point:
+                x: ""
+                "y": ""
+            properties:
+                check: false
+                delay: 1
+                repeat: 0
+        arena:
+            point:
+                x: ""
+                "y": ""
+            properties:
+                check: false
+                delay: 1
+                repeat: 0
+
+kingstower:
+    name: kt
+    hits: 2
+    keywords:
+        - forsaken
+        - necropolis
+        - World
+        - tree
+        - infernal
+        - fortress
+        - sanctum
+        - tower
+        - light
+        - 
+    actions:
+        kt: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        cele: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        back:
+            point:
+                x: "930"
+                "y": "2300"
+            properties:
+                check: false
+                delay: 1
+                repeat: 0
+
+
+                
+arena: 
+    name: arena
+    hits: 2
+    keywords:
+        - season
+        - challeger
+        - tournament
+        - championship
+        - starts
+        - gladiator
+    actions:
+        oneonone: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        3team: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        back:
+            point:
+                x: "930"
+                "y": "2300"
+            properties:
+                check: false
+                delay: 1
+                repeat: 0
+
+campvictory:
+    name: victory
+    hits: 1
     keywords:
        - next
        - Fall
@@ -323,15 +397,30 @@ victory:
        - Tap 
        - Continue
     actions:
-        stat:
+        battlestat:
             point:
                 x: "1000"
                 "y": "2360"
+            properties:
+                check: false
+                delay: 1
         next: 
             point:
                 x: "500"
                 "y": "2360"
+            properties:
+                check: false
+                delay: 1
+        heroinfo:
+            point:
+                x: "1000"
+                "y": "2360"
+            properties:
+                check: false
+                delay: 1
 stat:
+    hits: 1
+    name: stat
     keywords:
        - Statistics
     actions:
@@ -339,6 +428,184 @@ stat:
             point:
                 x: "930"
                 "y": "2300"
+            properties:
+                check: false
+                delay: 1
 ranhorn:
+    name: ranhorn
+    hits: 3
     keywords:
-       
+        - Guild
+        - Shop
+        - Library
+        - Resonating
+        - Crystal
+        - Beast
+        - Grounds
+        - Rickety
+        - Cart
+        - Noble
+        - Tavern
+    actions:
+        shop:
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        guild:
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        oak: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+
+guild:
+    name:
+    hits:
+    keywords:
+        - #word1
+        - #word2
+    actions:
+        bosses: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        hell: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        back:
+            point:
+                x: "930"
+                "y": "2300"
+            properties:
+                check: false
+                delay: 1
+                repeat: 0
+
+shop:
+    name: shop
+    hits: 2
+    keywords:
+        - goods
+        - barracks
+    actions:
+        buydust: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        buypoegold: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        buypoedia: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        buycoresy: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        reset: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        back:
+            point:
+                x: "930"
+                "y": "2300"
+            properties:
+                check: false
+                delay: 1
+                repeat: 0
+
+
+bosses:
+    name: bosses
+    hits: 1
+    keywords:
+        - wrizz
+    actions:
+        challenge: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        quikfigt: 
+            point:
+                x:
+                "y":
+            properties:
+                check: false
+                delay: 1
+        back:
+            point:
+                x: "930"
+                "y": "2300"
+            properties:
+                check: false
+                delay: 1
+                repeat: 0
+
+# <location>:
+#     name:
+#     hits:
+#     keywords:
+#         - #word1
+#         - #word2
+#     actions:
+#         <act1>: 
+#             point:
+#                 x:
+#                 "y":
+#             properties:
+#                 check: false
+#                 delay: 1
+#         <act2>: 
+#             point:
+#                 x:
+#                 "y":
+#             properties:
+#                 check: false
+#                 delay: 1
+        # back:
+        #     point:
+        #         x: "930"
+        #         "y": "2300"
+        #     properties:
+        #         check: false
+        #         delay: 1
+        #         repeat: 0

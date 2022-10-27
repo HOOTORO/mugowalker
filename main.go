@@ -5,6 +5,7 @@ import (
 
 	"worker/adb"
 	"worker/bot"
+	"worker/game"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -23,17 +24,22 @@ func main() {
 		fmt.Printf("\ndev:%v\nerr:%v", dev, e)
 	}
 
-	mission := "C:/Users/maruk/vscode/afkarena/worker/bot/mission/task.yaml"
+	gamecfg := "C:/Users/maruk/vscode/afkarena/worker/bot/cfg/config.yaml"
 
-	runner := bot.New(dev)
+	namaewa := "Devitool"
+	bt := bot.New(dev, namaewa)
+	gm := game.New(gamecfg, "afkarena", bt)
 
+	// mission := "C:/Users/maruk/vscode/afkarena/worker/bot/mission/task.yaml"
 	// err := runner.Mission(mission)
 	// if err != nil {
 	// 	log.Fatalf("MISSION GOES ERRRRRRRRRRRRRRRRRRRRRRRRR%v", err.Error())
 	// }
 
-	scn := &bot.Scenario{Path: mission, Pattern: "if"}
-	err := runner.Snecnario(scn)
+	// scn := &bot.Scenario{Path: mission, Pattern: "if"}
+
+	// err := runner.Snecnario(scn)
+	err := gm.Push()
 	if err != nil {
 		log.Fatalf("MISSION GOES ERRRRRRRRRRRRRRRRRRRRRRRRR%v", err.Error())
 	}

@@ -10,21 +10,22 @@ import (
 )
 
 const (
-	newconf = "../vscode/afkarena/worker/bot/cfg/config.yaml"
-	save    = "../vscode/afkarena/worker/bot/cfg/save.yaml"
+	afkarenaconf = "../vscode/afkarena/worker/bot/cfg/config.yaml"
+	save         = "../vscode/afkarena/worker/bot/cfg/save.yaml"
 )
 
-func init() {
-	locs = make(map[string]Location)
-	parse(newconf, locs)
-	color.HiYellow("Loaded config... \n%v", locs)
+func GameLocations(pathToConfig string) map[string]Location {
+	l := make(map[string]Location)
+	parse(pathToConfig, l)
+	color.HiYellow("Loaded config... \n%v", l)
+	return l
 }
 
 func (d *Daywalker) Load(p string) []Task {
 	parse(taskfile, &d.Tasks)
-	if !IsValid(d.Tasks, locs) {
-		color.HiRed("Invalid Data")
-	}
+	// if !IsValid(d.Tasks, Locs) {
+	// 	color.HiRed("Invalid Data")
+	// }
 	return d.Tasks
 }
 

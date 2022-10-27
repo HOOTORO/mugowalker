@@ -8,15 +8,15 @@ import (
 
 	"worker/adb"
 	"worker/ocr"
-	// "github.com/fatih/color"
 )
 
 // Instance of bot
-func New(d *adb.Device) *Daywalker {
+func New(d *adb.Device, ch string) *Daywalker {
 	return &Daywalker{
-		Device: d,
-		Tasks:  make([]Task, 0, 10),
-		Status: &Status{},
+		Character: ch,
+		Device:    d,
+		Tasks:     make([]Task, 0, 10),
+		Status:    &Status{},
 	}
 }
 
@@ -35,30 +35,24 @@ func (w *Daywalker) Peek() string {
 	return text
 }
 
-func (d *Daywalker) AllowedAction(n string) bool {
-	_, ok := locs[n]
-	return ok
+func (d *Daywalker) SetLocation(l Location) {
+	d.loc = l
 }
 
-func (d *Daywalker) SetLocation(s string) {
-	d.loc = locs[s]
-	(d.loc).Label = s
-}
-
-func (d *Daywalker) Action(s string, props Properties) error {
+func (d *Daywalker) Action(s string) error {
 	action, ok := d.loc.Actions[s]
 	if !ok {
-		return errors.New(fmt.Sprintf("NO Action<%v> in context<%v>!", s, d.loc.Label))
+		return errors.New(fmt.Sprintf("NO Action<%v> in context<%v>!", s, d.loc.Name))
 	}
 	d.last = action
-	action.run(d)
+	action.Run(d)
 	return nil
 }
 
-func (a Action) run(d *Daywalker) {
+func (a Action) Run(d *Daywalker) {
 	d.Tap(a.X, a.Y)
 	if a.Delay > 0 {
-		delay := time.Duration(a.Delay + a.BaseDelay)
+		delay := time.Duration(a.Delay)
 		time.Sleep(delay * time.Second)
 	}
 }

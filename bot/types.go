@@ -3,7 +3,8 @@ package bot
 import "worker/adb"
 
 type Daywalker struct {
-	Tasks []Task
+	Character string
+	Tasks     []Task
 	*Status
 	*adb.Device
 }
@@ -11,10 +12,16 @@ type Daywalker struct {
 const taskfile = "../vscode/afkarena/worker/bot/mission/task.yaml"
 
 type Scenario struct {
-	Tasks    []Task // filepath
-	Path     string
-	Pattern  string //
-	Duration int
+	Character string
+	Tasks     []Task // filepath
+	Path      string
+	Pattern   string //
+	Duration  int
+}
+type Screen interface {
+	Label() string
+	Action(string) Action
+	Actions() []Action
 }
 
 /*
@@ -27,13 +34,14 @@ repeat - only if entry = exit
 */
 
 type Task struct {
-	Entry      string                  `yaml:"entry"`
-	Exit       string                  `yaml:"exit"`
-	Properties []map[string]Properties `yaml:"actions"`
-	Repeat     int                     `yaml:"repeat,omitempty"`
+	Entry        string   `yaml:"entry"`
+	Exit         string   `yaml:"exit"`
+	NamedActions []string `yaml:"actions"`
+	Repeat       int      `yaml:"repeat,omitempty"`
 }
+
 type Location struct {
-	Label    string            `yaml:"label,omitempty"`
+	Name     string            `yaml:"name,omitempty"`
 	hits     int               `yaml:"hits,omitempty"`
 	Keywords []string          `yaml:"keywords"`
 	Actions  map[string]Action `yaml:"actions"`
@@ -41,12 +49,6 @@ type Location struct {
 
 type Action struct {
 	*adb.Point
-	Properties
-	BaseDelay int
-}
-
-type Properties struct {
-	Order  int  `yaml:"order,omitempty"`
 	Check  bool `yaml:"check,omitempty"`
 	Delay  int  `yaml:"delay,omitempty"`
 	Repeat int  `yaml:"repeat,omitempty"`

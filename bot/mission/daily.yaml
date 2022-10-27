@@ -1,28 +1,11 @@
 - entry: campain
   actions:
-    - afkchest:
-        check: false
-        delay: 0
-        repeat: 0
-    - back:
-        check: false
-        delay: 0
-        repeat: 0
+    - afkchest
+    - back
   exit: campain
-  repeat: 0
 - entry: campain
   actions:
-    - fastreward:
-        check: false
-        delay: 1
-        repeat: 0
-    - usefr:
-        check: false
-        delay: 1
-        repeat: 0
-    - back:
-        check: false
-        delay: 1
-        repeat: 1
+    - fastreward
+    - usefr
+    - back
   exit: campain
-  repeat: 0
