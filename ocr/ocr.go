@@ -5,7 +5,11 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
+
+	"golang.org/x/exp/slices"
 )
 
 func OCRFields(s string) []string {
@@ -63,4 +67,25 @@ func Text(img string) string {
 func formatStr(in string) string {
 	res := strings.Split(in, "\n")
 	return strings.Join(res, " ")
+}
+
+func KeywordHits(kw, ocr []string) int {
+	res := 0
+	for _, word := range kw {
+		if slices.Contains(ocr, word) {
+			res++
+		}
+	}
+	return res
+}
+
+func Regex(s, r string) (res []int) {
+	re := regexp.MustCompile(r)
+	for _, v := range re.FindStringSubmatch(s) {
+		i, err := strconv.Atoi(v)
+		if err == nil {
+			res = append(res, i)
+		}
+	}
+	return
 }

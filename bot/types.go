@@ -20,8 +20,9 @@ type Scenario struct {
 }
 type Screen interface {
 	Label() string
-	Action(string) Action
-	Actions() []Action
+	Hits() int
+	Keywords() []string
+	Actions() map[string]Action
 }
 
 /*
@@ -49,9 +50,10 @@ type Location struct {
 
 type Action struct {
 	*adb.Point
-	Check  bool `yaml:"check,omitempty"`
-	Delay  int  `yaml:"delay,omitempty"`
-	Repeat int  `yaml:"repeat,omitempty"`
+	Destination string `yaml:"destination,omitempty"`
+	Check       bool   `yaml:"check,omitempty"`
+	Delay       int    `yaml:"delay,omitempty"`
+	Repeat      int    `yaml:"repeat,omitempty"`
 }
 
 type Status struct {
