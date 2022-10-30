@@ -30,17 +30,8 @@ func main() {
 	bt := bot.New(dev, namaewa)
 	gm := game.New(gamecfg, "afkarena", bt)
 
-	// mission := "C:/Users/maruk/vscode/afkarena/worker/bot/mission/task.yaml"
-	// err := runner.Mission(mission)
-	// if err != nil {
-	// 	log.Fatalf("MISSION GOES ERRRRRRRRRRRRRRRRRRRRRRRRR%v", err.Error())
-	// }
-
-	// scn := &bot.Scenario{Path: mission, Pattern: "if"}
-
-	// err := runner.Snecnario(scn)
-	err := gm.Push()
-	// err := gm.Daily()
+	// err := gm.Push()
+	err := gm.Daily()
 	if err != nil {
 		log.Fatalf("MISSION GOES ERRRRRRRRRRRRRRRRRRRRRRRRR%v", err.Error())
 	}

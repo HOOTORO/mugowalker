@@ -26,6 +26,7 @@ type Script struct {
 const (
 	shell, input, tap, swipe = "shell", "input", "tap", "swipe"
 	screencap, screenrecord  = "screencap", "screenrecord"
+	keyevent, backbtn        = "keyevent", "4"
 )
 
 // "adb shell input tap x,y"
@@ -54,6 +55,14 @@ func (dev *Device) Swipe(x, y, x1, y1, td int) {
 func (d *Device) Screencap(f string) {
 	// -p for png
 	e := d.Command(screencap, remotedir+f).Run()
+	if e != nil {
+		fmt.Printf("\nrun: %v err: %v", "scr", e.Error())
+	}
+}
+
+// adb shell input keyevent 4
+func (d *Device) Back() {
+	e := d.Command(input, keyevent, backbtn).Run()
 	if e != nil {
 		fmt.Printf("\nrun: %v err: %v", "scr", e.Error())
 	}

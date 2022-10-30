@@ -17,7 +17,7 @@ const (
 func GameLocations(pathToConfig string) map[string]Location {
 	l := make(map[string]Location)
 	parse(pathToConfig, l)
-	color.HiYellow("Loaded config... \n%v", l)
+	// color.HiYellow("Loaded config... \n%v", l)
 	return l
 }
 
@@ -78,4 +78,12 @@ func IsValid(mission []Task, locations map[string]Location) bool {
 	// }
 	color.HiRed("MISSION Validatio.\n%v \n\nValid? %v", badentities, !fl)
 	return fl
+}
+
+func Keys[K comparable, V any](m map[K]V) []K {
+	res := make([]K, 0, len(m))
+	for k := range m {
+		res = append(res, k)
+	}
+	return res
 }

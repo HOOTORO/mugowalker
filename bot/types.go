@@ -25,6 +25,10 @@ type Screen interface {
 	Actions() map[string]Action
 }
 
+type Act interface {
+	Point() (x, y string)
+}
+
 /*
 	Representing complex action resulting location change
 

@@ -1,50 +1,19 @@
 package game
 
 import (
+	"errors"
 	"fmt"
+	"time"
 
 	"worker/bot"
 	"worker/game/repository"
 	"worker/ocr"
 
 	"github.com/fatih/color"
+	"golang.org/x/exp/slices"
 )
 
 // locations
-const (
-	CAMPAIN     = "campain"
-	BATTLE      = "battlescreen"
-	CAMPLOSE    = "losecampain"
-	AFKCHEST    = "afkchest"
-	BOSSSTAGE   = "campainBoss"
-	FR          = "fastrewards"
-	DARKFORREST = "forrest"
-	KT          = "kingstower"
-	PVP         = "arena"
-	CAMPWIN     = "campvictory"
-	BATTLESTAT  = "battlestat"
-	RANHORNY    = "ranhorn"
-	GI          = "guild"
-	HORNSHOP    = "shop"
-	GIBOSSES    = "bosses"
-)
-
-const (
-	HEROINFO = "heroinfo"
-)
-
-const (
-	kingone   = 700
-	kingtwo   = 950
-	facone    = 450
-	factwo    = 660
-	godone    = 350
-	stages40  = 19
-	chap1boss = 30
-	chap2boss = 32
-	chap3boss = 34
-	chap4boss = 35
-)
 
 type Game struct {
 	Name      string
@@ -52,6 +21,14 @@ type Game struct {
 	Active    bool
 	Locations map[string]bot.Location
 	*bot.Daywalker
+}
+
+type Position struct {
+	x, y string
+}
+
+func (p *Position) Point() (x, y string) {
+	return p.x, p.y
 }
 
 // type Location {
@@ -69,35 +46,56 @@ func New(c, g string, d *bot.Daywalker) *Game {
 	return &Game{Name: g, Locations: locs, Active: true, Daywalker: d, User: user}
 }
 
-// func (g *Game) Daily() error {
-// 	var lastDaily repository.Daily
-// 	// if len(g.User.Daily) == 0 {
-// 	// 	lastDaily = repository.Daily{}
-// 	// } else {
-// 	// 	lastDaily =  g.User.Daily[len(g.User.Daily)-1]
-// 	// }
+func (g *Game) Daily() error {
+	var lastDaily repository.Daily
+	if len(g.User.Daily) == 0 || g.User.Daily[len(g.User.Daily)-1].UpdatedAt.Day() < time.Now().Day() {
+		lastDaily = repository.Daily{}
+	} else {
+		lastDaily = g.User.Daily[len(g.User.Daily)-1]
+	}
 
-// 	// if lastDaily.UpdatedAt.Day() > time.Now().Day(){
-// 	// 	return errors.New(fmt.Sprintf("Daily fails! err :> %v", "Already done"))
-// 	// }
-// 	currentloc := g.b.WhereIs(g.Locations)
+	if lastDaily.UpdatedAt.Day() == time.Now().Day() {
+		return errors.New(fmt.Sprintf("Daily fails! err :> %v", "Already done"))
+	}
 
-//		currentloc.Actions[AFKCHEST].Run(g.b)
-//		currentloc.Actions["back"].Run(g.b)
-//		lastDaily.Loot = sql.NullBool{Bool: true}
-//		currentloc.Actions[FR].Run(g.b)
-//		currentloc.Actions["usefr"].Run(g.b)
-//		currentloc.Actions["back"].Run(g.b)
-//		currentloc.Actions["back"].Run(g.b)
-//		lastDaily.FastRewards = sql.NullBool{Bool: true}
-//		currentloc.Actions["fiends"].Run(g.b)
-//		currentloc.Actions["sendrecive"].Run(g.b)
-//		currentloc.Actions["back"].Run(g.b)
-//		lastDaily.Likes.Bool = true
-//		g.User.SaveUserInfo()
-//		return nil
-//	}
-//
+	for {
+		currentloc := g.WhereIs(g.Locations)
+		if slices.Contains(BottomPanel(), currentloc.Name) {
+			if currentloc.Name != CAMPAIN {
+				g.ChangeLoc(CAMPAIN)
+			}
+			break
+		}
+		g.Back()
+	}
+	// afkchest
+
+	e2 := g.Action(AFKCHEST)
+	if e2 == nil {
+		lastDaily.Loot.Bool = true
+	}
+	g.Action(BACK)
+
+	// Fast rewards
+	e1 := g.Action(FR)
+	e2 = g.Action(USEFR)
+	g.Action(BACK)
+	// g.Action(BACK)
+
+	if e1 == nil && e2 == nil {
+		lastDaily.FastRewards.Bool = true
+	}
+
+	// frind likes
+	g.ChangeLoc(RBANNER)
+	g.Action(FRIENDS)
+	e2 = g.Action(LIKESBTN)
+	g.Action(BACK)
+
+	g.User.SaveUserInfo()
+	return nil
+}
+
 // TODO: Handle POPUP Bannera, offers and guild chest
 // Ofer ocr example
 // ##### Where we? ##############################
@@ -114,22 +112,27 @@ func (g *Game) Push() error {
 		color.HiGreen("#### YOU ARE HERE => %v #####\n", currentloc.Name)
 		var nextMove string
 		switch {
+		case currentloc.Name == g.Locations[RBANNER].Name:
+			nextMove = "close"
 		case currentloc.Name == g.Locations[CAMPAIN].Name:
 			nextMove = "BeginCampain"
 		case currentloc.Name == g.Locations[BATTLE].Name:
 			nextMove = "Fight"
-		case currentloc.Name == g.Locations[CAMPLOSE].Name:
+		case currentloc.Name == g.Locations[LOSE].Name:
 			nextMove = "Retry"
 		case currentloc.Name == g.Locations[BOSSSTAGE].Name:
 			nextMove = "BeginBoss"
 		case currentloc.Name == g.Locations[CAMPWIN].Name:
-			nextMove = "screenstats"
+			// TODO params to control making/uploading screens
+			// action to save screens: "screenstats"
+			color.HiMagenta("#### PASSED STAGE => %v-%v #######\n", c, s)
+			g.SetStage(CampainNext(c, s))
+			nextMove = "next"
 
 		}
 
 		if nextMove == "screenstats" {
 			bsfname, hifname := fmt.Sprintf("stats_%v-%v.png", c, s), fmt.Sprintf("info_%v-%v.png", c, s)
-			color.HiMagenta("#### PASSED STAGE => %v-%v #######\n", g.User.Chapter, g.User.Stage)
 
 			// TODO move run action to Game(?) method
 			// currentloc.Actions["battlestat"].Run(g.b)
@@ -207,3 +210,12 @@ func CampainNext(c, s int) (int, int) {
 // 	}
 // 	return nil
 // }
+
+func (g *Game) ChangeLoc(s string) {
+	err := g.Action(s)
+	if err != nil {
+		panic("Cannot Action! >_< " + s + "\n" + err.Error())
+	}
+	g.Actlike(&Position{})
+	g.SetLocation(g.Locations[s])
+}

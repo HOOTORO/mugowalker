@@ -37,8 +37,6 @@ campvictory:
        - Next 
        - Stage 
        - in> 
-       - Tap 
-       - Continue
     actions:
         battlestat:
             point:
@@ -154,7 +152,7 @@ campain:
                 check: false
                 delay: 1
                 repeat: 0
-        fastreward:
+        fastrewards:
             point:
                 x: "930"
                 "y": "2300"
@@ -188,8 +186,8 @@ campain:
                 repeat: 0
         rightbanner:
             point:
-                x: ""
-                "y": ""
+                x: "970"
+                "y": "430"
             properties:
                 check: false
                 delay: 1
@@ -338,9 +336,9 @@ leftbanner:
     name: leftbanner
     hits: 2
     keywords:
-        - Merchants
-        - Purchase Gift
-        - Events
+        # - Merchants
+        # - Purchase Gift
+        # - Events
     actions:
         merch: 
             point:
@@ -364,11 +362,14 @@ leftbanner:
                 check: false
                 delay: 1
                 repeat: 0
+        close:
+            point:
+                x: 960
+                "y": 1350
 rightbanner:
     name: rightbanner
-    hits: 2
+    hits: 3
     keywords:
-        - Quests
         - Bag
         - Mail
         - Friends
@@ -412,6 +413,11 @@ rightbanner:
                 check: false
                 delay: 1
                 repeat: 0
+        close:
+            point:
+                x: 960
+                "y": 1350
+        
 friends:
     name: friends
     keywords:
@@ -430,6 +436,27 @@ friends:
                 check: false
                 delay: 1
                 repeat: 0
+mail:
+    name: mail
+    keywords:
+        - collect
+        - all
+        - delete
+    actions:
+        mailcollect:
+            point:
+                x: 800
+                "y": 2100
+            properties:
+                delay: 1
+        back:
+            point:
+                x: "50"
+                "y": "2480"
+            properties:
+                check: false
+                delay: 1
+                    
 #######################################################################
 ##################### CAMPAIN CHILD LOCATIONS #########################
 #######################################################################

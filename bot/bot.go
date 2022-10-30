@@ -43,6 +43,7 @@ func (d *Daywalker) SetLocation(l Location) {
 }
 
 func (d *Daywalker) Action(s string) error {
+	color.HiBlue("Avail. Actions >>>  %v", Keys(d.loc.Actions))
 	action, ok := d.loc.Actions[s]
 	if !ok {
 		return errors.New(fmt.Sprintf("NO Action<%v> in context<%v>!", s, d.loc.Name))
@@ -88,4 +89,8 @@ func (d *Daywalker) WhereIs(locs map[string]Location) Location {
 	}
 	d.SetLocation(locs[locName])
 	return locs[locName]
+}
+
+func (d *Daywalker) Actlike(a Act) {
+	d.Tap(a.Point())
 }
