@@ -1,3 +1,24 @@
+##########################################################
+####################### USEFULL ##########################
+##########################################################
+
+//GET APP STATUS
+adb shell 'ps | grep com.lilithgame.hgame.gp'
+
+// launch afk arena
+adb shell am start com.lilithgame.hgame.gp/sh.lilithgame.hgame.AppActivity
+
+// Stop afk-arena
+adb shell am force-stop com.lilithgame.hgame.gp
+
+//Kill all bg processses
+adb shell am kill-all
+
+//logcat  ActivityManager example
+adb logcat brief ActivityManager:D *:S -v color
+
+##########################################################
+##########################################################
 adb help // List all comands
 
 == Adb Server

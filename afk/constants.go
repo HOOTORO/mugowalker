@@ -1,4 +1,4 @@
-package game
+package afk
 
 type UserField int
 
@@ -19,7 +19,7 @@ func (uf UserField) String() string {
 }
 
 func BottomPanel() []string {
-	return []string{RANHORNY, DARKFORREST, CAMPAIN}
+	return []string{RANHORNY, DARKFORREST, CAMPBegin}
 }
 
 /*
@@ -29,22 +29,29 @@ func BottomPanel() []string {
 const (
 	BACK  = "back"
 	CLOSE = "close"
+	ENTRY = "entry"
+	FIGHT = "fight"
 )
 
 const (
+	PUSHc      = "pushcampain"
 	BATTLE     = "battlescreen"
-	LOSE       = "losecampain"
-	BOSSSTAGE  = "campainBoss"
-	CAMPWIN    = "campvictory"
+	LOSE     = "losecampain"
+	BOSSTAGE = "campainBoss"
+    BOSSBegin = "bossfight"
+	CAMPWIN  = "campvictory"
 	BATTLESTAT = "battlestat"
+	RETRY      = "retry"
+	NEXTSTAGE  = "nxt"
 )
 
 const (
-	CAMPAIN  = "campain"
-	AFKCHEST = "afkchest"
+	CAMPBegin = "campBegin"
+	AFKCHEST  = "afkchest"
 	FR       = "fastrewards"
 	USEFR    = "usefr"
-	RBANNER  = "rightbanner"
+	RBAN     = "rBanOpen"
+	LBAN
 	// actions
 	QUEST       = "quest"
 	BAG         = "bag"
@@ -56,7 +63,7 @@ const (
 
 const (
 	DARKFORREST = "forrest"
-	KT          = "kingstower"
+	KTower          = "kingstower"
 	PVP         = "arena"
 	SOLO        = "solo"
 )
@@ -72,6 +79,12 @@ const (
 const (
 	HEROINFO = "heroinfo"
 )
+
+const (
+	INFERNAL = "infortress"
+)
+// Actions
+
 
 const (
 	kingone   = 700

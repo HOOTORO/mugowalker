@@ -26,26 +26,28 @@ type Script struct {
 const (
 	shell, input, tap, swipe = "shell", "input", "tap", "swipe"
 	screencap, screenrecord  = "screencap", "screenrecord"
-	keyevent, backbtn        = "keyevent", "4"
+	keyevent, backbtn, home  = "keyevent", "4", "3"
+	enter, backspace         = "66", "67"
 )
 
 // "adb shell input tap x,y"
-func (d *Device) Tap(x, y string) {
+func (d *Device) Tap(x, y string) error {
 	e := d.Command(input, tap, x, y).Run()
 	if e != nil {
 		fmt.Printf("\nerr:%v\nduring run:%v", e, "tap")
 	}
 	time.Sleep(3 * time.Second)
+	return e
 }
 
 // adb shell input swipe <x1> <y1> <x2> <y2> [duration(ms)]
-func (dev *Device) Swipe(x, y, x1, y1, td int) {
+func (d *Device) Swipe(x, y, x1, y1, td int) {
 	xPos := strconv.Itoa(x)
 	yPos := strconv.Itoa(y)
 	x1Pos := strconv.Itoa(x1)
 	y1Pos := strconv.Itoa(y1)
 	duration := strconv.Itoa(td)
-	e := dev.Command(swipe, xPos, yPos, x1Pos, y1Pos, duration).Run()
+	e := d.Command(swipe, xPos, yPos, x1Pos, y1Pos, duration).Run()
 	if e != nil {
 		fmt.Printf("\nerr:%vduring run:%v", e, "swipe")
 	}
@@ -63,6 +65,13 @@ func (d *Device) Screencap(f string) {
 // adb shell input keyevent 4
 func (d *Device) Back() {
 	e := d.Command(input, keyevent, backbtn).Run()
+	if e != nil {
+		fmt.Printf("\nrun: %v err: %v", "scr", e.Error())
+	}
+}
+
+func (d *Device) Home() {
+	e := d.Command(input, keyevent, home).Run()
 	if e != nil {
 		fmt.Printf("\nrun: %v err: %v", "scr", e.Error())
 	}

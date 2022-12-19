@@ -1,34 +1,34 @@
 package bot
 
 import (
-	"errors"
-	"fmt"
-	"path/filepath"
-	"time"
+    "fmt"
+    "path/filepath"
 
-	"github.com/fatih/color"
-	"worker/adb"
-	"worker/ocr"
+    "worker/adb"
+    "worker/afk"
+    "worker/cfg"
+    "worker/ocr"
+
+    "github.com/fatih/color"
+    log "github.com/sirupsen/logrus"
 )
 
-// Instance of bot
-func New(d *adb.Device, ch string) *Daywalker {
+// New Instance of bot
+func New(d *adb.Device, game *afk.Game) *Daywalker {
 	return &Daywalker{
-		Character: ch,
-		Device:    d,
-		Tasks:     make([]Task, 0, 10),
-		Status:    &Status{},
+		Device:     d,
+		Tasks:      make([]Task, 0, 10),
+		CurrentLoc: game.GetLocation(afk.ENTRY),
 	}
 }
 
-// OCRed Text
-// TODO: maybe add args to peek like peek(data interface)
-// smth like this should be w.Peek(Location) \n w.Peek(Stage)
-func (w *Daywalker) Peek() string {
+// Peek OCRed Text TODO: maybe add args to peek like peek(data interface) smth like
+// this should be w.Peek(Location) \n w.Peek(Stage)
+func (dw *Daywalker) Peek() string {
 	// TODO: Generate random filname
 	filename := "p.png"
-	w.Screencap(filename)
-	e := w.Pull(filename, ".")
+	dw.Screencap(filename)
+	e := dw.Pull(filename, ".")
 	if e != nil {
 		fmt.Printf("\nerr:%v\nduring run:%v ", e, "Peek()")
 	}
@@ -38,59 +38,33 @@ func (w *Daywalker) Peek() string {
 	return text
 }
 
-func (d *Daywalker) SetLocation(l Location) {
-	d.loc = l
+func isLocation(loc *cfg.Location, b *Daywalker) bool {
+	var ok bool
+	recognizedText := ocr.OCRFields(b.Peek())
+	color.HiYellow("### Where we? ###\n ## %v ## \n", recognizedText)
+	hits := ocr.KeywordHits(loc.Keywords, recognizedText)
+	if hits >= loc.Threshold {
+		ok = true
+	}
+	return ok
 }
 
-func (d *Daywalker) Action(s string) error {
-	color.HiBlue("Avail. Actions >>>  %v", Keys(d.loc.Actions))
-	action, ok := d.loc.Actions[s]
-	if !ok {
-		return errors.New(fmt.Sprintf("NO Action<%v> in context<%v>!", s, d.loc.Name))
-	}
-	d.last = action
-	action.run(d)
-	// d.SetLocation(actionD)
-	return nil
+// Tap screen, grid 5x14
+func (dw *Daywalker) gridTap(x, y int) {
+    // Cell size
+	height := dw.WmSize.Y / 14
+	width := dw.WmSize.X / 5
+
+    // Center point
+	tx := x*width - width/2
+	ty := y*height - height/2
+
+	e := dw.Tap(fmt.Sprint(tx), fmt.Sprint(ty))
+    if e != nil {
+        log.Warnf("Have an error during tap: %v", e.Error())
+    }
 }
 
-func (a Action) run(d *Daywalker) {
-	d.Tap(a.X, a.Y)
-	if a.Delay > 0 {
-		delay := time.Duration(a.Delay)
-		time.Sleep(delay * time.Second)
-	}
-}
-
-// run user scenario([s] - path to scenario yaml)
-func (d *Daywalker) Do(t Task) (e error) {
-	for k, actionName := range t.NamedActions {
-		color.HiGreen("GO ACTION #%v [%v]", k, actionName)
-		e = d.Action(actionName)
-
-	}
-	return
-}
-
-func (d *Daywalker) WhereIs(locs map[string]Location) Location {
-	current := ocr.OCRFields(d.Peek())
-	color.HiYellow("### Where we? ###\n ## %v ## \n", current)
-	maxhits, locName := 0, ""
-	for name, v := range locs {
-		hits := ocr.KeywordHits(v.Keywords, current)
-		if hits > maxhits {
-			maxhits = hits
-			locName = name
-		}
-
-	}
-	if locName != "" {
-		color.HiBlue("### %v ###\n", locName)
-	}
-	d.SetLocation(locs[locName])
-	return locs[locName]
-}
-
-func (d *Daywalker) Actlike(a Act) {
-	d.Tap(a.Point())
+func(dw *Daywalker) Do(a *cfg.Action){
+    
 }

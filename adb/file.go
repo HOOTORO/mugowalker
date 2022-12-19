@@ -16,8 +16,9 @@ func init() {
 	wd := filepath.Join(usr, workdir)
 	_, e := os.Lstat(wd)
 	if e == nil || os.IsNotExist(e) {
-		os.MkdirAll(wd, os.ModeDir)
-		os.Chdir(wd)
+//		os.MkdirAll(wd, os.ModeDir)
+//		os.Chdir(wd)
+        wd, _ = os.Getwd()
 		fmt.Printf("\ninit: success; pwd: %v\n\n", wd)
 	} else {
 		pwd, _ := os.Getwd()
@@ -25,7 +26,7 @@ func init() {
 	}
 }
 
-// Pushes the local file to the remote one.
+// Push Pushes the local file to the remote one.
 func (d *Device) Push(local, remote string) error {
 	cmd := Cmd{Args: []string{
 		"-s", d.Serial,
@@ -35,7 +36,7 @@ func (d *Device) Push(local, remote string) error {
 	return err
 }
 
-// Pulls the remote file to the local one.
+// Pull Pulls the remote file to the local one.
 func (d *Device) Pull(remote, local string) error {
 	cmd := Cmd{Args: []string{
 		"-s", d.Serial,
