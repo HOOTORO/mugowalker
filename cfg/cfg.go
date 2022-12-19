@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	savefile = "../vscode/afkarena/worker/bot/cfg/save.yaml"
+	savefile = "cfg/save.yaml"
 )
 
 type Location struct {
