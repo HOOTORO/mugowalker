@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -10,13 +9,18 @@ import (
 	"worker/cfg"
 
 	"github.com/fatih/color"
+	log "github.com/sirupsen/logrus"
 )
+
+var maxattempt = 5
 
 type Daywalker struct {
 	LastActionResult error
 	Tasks            []Task
-	CurrentLoc       *cfg.Location
+	lastLoc          *cfg.Location
+	xmax, ymax, cnt  int
 	*adb.Device
+	*afk.Game
 }
 
 type Scenario struct {
@@ -43,200 +47,232 @@ type Task struct {
 	Repeat       int      `yaml:"repeat,omitempty"`
 }
 
-func (dw *Daywalker) WalkTo(afk *afk.Game, locid string) {
-	target := afk.GetLocation(locid)
-	x, y := target.Position()
-	dw.gridTap(x, y)
-	result := isLocation(target, dw)
+func (dw *Daywalker) WalkTo(locid string) {
+	target := dw.GetLocation(locid)
+	p := target.Position()
+	dw.gridTap(p.X, p.Y)
+	result := dw.isLocation(target.Key)
 	if result {
-		dw.CurrentLoc = target
+		dw.lastLoc = target
 	} else {
 		color.HiMagenta("Retry walk to %v", target.Key)
-		dw.WalkTo(afk, locid)
+		dw.WalkTo(locid)
 	}
 }
 
-func (dw *Daywalker) Push(game *afk.Game) error {
-	actualLoc := isLocation(dw.CurrentLoc, dw)
-	if !actualLoc {
-		return errors.New(fmt.Sprintf("Location mismatch\nWant -> %v", dw.CurrentLoc.Key))
-	}
-
-	screentext := dw.Peek()
-	c, s := game.Stage(screentext)
-
-	color.HiGreen("> #STATE# => %v\n", dw.CurrentLoc)
-	var nextMove string
-	switch {
-	case dw.CurrentLoc.Key == afk.ENTRY:
-		nextMove = afk.CAMPBegin
-	case dw.CurrentLoc.Key == afk.CAMPBegin:
-		nextMove = afk.BOSSTAGE
-	case dw.CurrentLoc.Key == afk.RBAN:
-		nextMove = afk.CLOSE
-	case dw.CurrentLoc.Key == afk.CAMPBegin:
-		nextMove = afk.PUSHc
-	case dw.CurrentLoc.Key == afk.BATTLE:
-		nextMove = afk.FIGHT
-	case dw.CurrentLoc.Key == afk.LOSE:
-		nextMove = afk.RETRY
-	case dw.CurrentLoc.Key == afk.PUSHc:
-		nextMove = afk.BOSSTAGE
-	case dw.CurrentLoc.Key == afk.CAMPWIN:
-		color.HiMagenta(">> PASSED STAGE => %v-%v\n", c, s)
-		game.SetStage(afk.CampainNext(c, s))
-		nextMove = afk.NEXTSTAGE
-
-		if nextMove == afk.BATTLESTAT {
-			bsfname, hifname := fmt.Sprintf("stats_%v-%v.png", c, s), fmt.Sprintf("info_%v-%v.png", c, s)
-
-			// TODO move run action to Game(?) method
-			// currentloc.Actions["battlestat"].Run(g.b)
-			dw.WalkTo(game, afk.BATTLESTAT)
-			if dw.LastActionResult != nil {
-				return dw.LastActionResult
+func (dw *Daywalker) Daily() (bool, error) {
+    color.HiRed("\n--> DAILY <-- %v\nBDstor:   [%08b] \nConstant: [%08b]", afk.HasAll(afk.Dailies, dw.ActiveDailies()),dw.ActiveDailies(), afk.Dailies)
+    if !afk.HasAll(dw.ActiveDailies(), afk.Dailies ) {
+		color.HiBlueString("ALRIGHT! TIME FOR SOME ROUTINES TO BE DONE!")
+		//        works!
+		if !afk.HasOneOf(afk.Wrizz, dw.ToDo) {
+			e := dw.Do(afk.GIBOSSES)
+			if e == nil {
+				dw.MarkDone(afk.Wrizz)
 			}
-
-			dw.Screencap(bsfname)
-			dw.Pull(bsfname, ".")
-
-			dw.WalkTo(game, afk.HEROINFO)
-			dw.Screencap(hifname)
-			dw.Pull(hifname, ".")
-
-			dw.Back()
-
-			color.HiGreen(">> VICTORY, NEXT\n")
-
-			game.SetStage(afk.CampainNext(c, s))
-			dw.WalkTo(game, afk.NEXTSTAGE)
-		} else {
-			color.HiGreen("> MOVE TO => [%v] #\n", nextMove)
-			dw.WalkTo(game, nextMove)
 		}
-
-	}
-    return nil
-}
-
-// func (g *AfkArena) Daily() error {
-// 	var lastDaily repository.Daily
-// 	if len(g.User.Daily) == 0 || g.User.Daily[len(g.User.Daily)-1].UpdatedAt.Day() < time.Now().Day() {
-// 		lastDaily = repository.Daily{}
-// 	} else {
-// 		lastDaily = g.User.Daily[len(g.User.Daily)-1]
-// 	}
-
-// 	if lastDaily.UpdatedAt.Day() == time.Now().Day() {
-// 		return errors.New(fmt.Sprintf("Daily fails! err :> %v", "Already done"))
-// 	}
-
-// 	for {
-// 		currentloc := g.CurrentLoc.Key
-// 		if slices.Contains(BottomPanel(), currentloc) {
-// 			if currentloc != CAMPBegin {
-// 				g.WalkTo(CAMPBegin)
-// 			}
-// 			break
-// 		}
-// 		g.Back()
-// 	}
-// 	// afkchest
-// 	g.WalkTo(AFKCHEST)
-// 	if g.LastActionResult == nil {
-// 		lastDaily.Loot.Bool = true
-// 	}
-// 	g.WalkTo(BACK)
-
-// 	// Fast rewards
-// 	g.WalkTo(FR)
-// 	g.WalkTo(USEFR)
-// 	g.WalkTo(BACK)
-// 	// g.Action(BACK)
-
-// 	if g.LastActionResult == nil {
-// 		lastDaily.FastRewards.Bool = true
-// 	}
-
-// 	// frind likes
-// 	g.WalkTo(RBAN)
-// 	g.WalkTo(FRIENDS)
-// 	g.WalkTo(LIKESBTN)
-// 	g.WalkTo(BACK)
-
-// 	g.User.SaveUserInfo()
-// 	return nil
-// }
-
-// TODO: Handle POPUP Bannera, offers and guild chest
-// Ofer ocr example
-// ##### Where we? ##############################
-// ## [Congratulations! You've completed stage 14-40! We've prepared valuable gift help you your way! Sr, Extra Purchase and receive the following rewards Bundle 01:59:28 Tap Anywhere Close] ##
-
-func (dw *Daywalker) Battle(game *afk.Game) (bool, error) {
-	if dw.CurrentLoc.Key != afk.BATTLE {
-		return false, errors.New("There is nothing to battle with...")
-	}
-	screentext := dw.Peek()
-	c, s := game.Stage(screentext)
-	dw.WalkTo(game, afk.FIGHT)
-	color.HiGreen("> #STATE# => %v\n", dw.CurrentLoc)
-	var nextMove string
-	switch {
-
-	case dw.CurrentLoc.Key == afk.BATTLE:
-		nextMove = "Fight"
-	case dw.CurrentLoc.Key == afk.LOSE:
-		nextMove = "Retry"
-	case dw.CurrentLoc.Key == afk.BOSSTAGE:
-		nextMove = "BeginBoss"
-	case dw.CurrentLoc.Key == afk.CAMPWIN:
-		// TODO params to control making/uploading screens
-		// action to save screens: "screenstats"
-		color.HiMagenta(">> PASSED STAGE => %v-%v\n", c, s)
-		game.SetStage(afk.CampainNext(c, s))
-		nextMove = "next"
-
-	}
-
-	if nextMove == "screenstats" {
-		bsfname, hifname := fmt.Sprintf("stats_%v-%v.png", c, s), fmt.Sprintf("info_%v-%v.png", c, s)
-
-		// TODO move run action to Game(?) method
-		// currentloc.Actions["battlestat"].Run(g.b)
-		dw.WalkTo(game, afk.BATTLESTAT)
-		if dw.LastActionResult != nil {
-			return false, dw.LastActionResult
+		if !afk.HasOneOf(afk.Oak, dw.ToDo) {
+            e := dw.Do(afk.OAK)
+            if e == nil {
+                dw.MarkDone(afk.Oak)
+            }
 		}
-
-		dw.Screencap(bsfname)
-		dw.Pull(bsfname, ".")
-
-		dw.WalkTo(game, afk.HEROINFO)
-		dw.Screencap(hifname)
-		dw.Pull(hifname, ".")
-
-		dw.Back()
-
-		color.HiGreen(">> VICTORY, NEXT\n")
-
-		game.SetStage(afk.CampainNext(c, s))
-		dw.WalkTo(game, afk.NEXTSTAGE)
-	} else {
-		color.HiGreen("> MOVE TO => [%v] #\n", nextMove)
-		dw.WalkTo(game, nextMove)
+//		if !afk.HasOneOf(afk.Arena1x1, dw.ToDo) {
+//			dw.ZeroPosition()
+//			dw.Peek()
+//			time.Sleep(time.Second)
+//			dw.gridTap(2, 18)
+//			time.Sleep(time.Second)
+//			dw.gridTap(4, 10)
+//			dw.Peek()
+//			time.Sleep(time.Second)
+//			dw.gridTap(3, 18)
+//			time.Sleep(time.Second)
+//			dw.gridTap(3, 7)
+//			time.Sleep(time.Second)
+//			dw.gridTap(3, 18)
+//			time.Sleep(time.Second)
+//			dw.GridTapOff(4, 12, 0)
+//			dw.Peek()
+//			time.Sleep(time.Second)
+//			dw.gridTap(3, 18)
+//			time.Sleep(time.Second)
+//			//skip dontwork
+//			dw.GridTapOff(4, 15, 0)
+//			time.Sleep(time.Second)
+//			dw.MarkDone(afk.Arena1x1)
+//		}
+//		if !afk.HasOneOf(afk.QKT, dw.ToDo) {
+//			dw.ZeroPosition()
+//			time.Sleep(time.Second)
+//			dw.gridTap(2, 18)
+//			time.Sleep(time.Second)
+//			dw.gridTap(3, 9)
+//			dw.Peek()
+//			time.Sleep(time.Second)
+//			dw.gridTap(3, 10)
+//			time.Sleep(time.Second)
+//			dw.gridTap(3, 18)
+//			dw.Peek()
+//			time.Sleep(time.Second)
+//			dw.GridTapOff(1, 15, 0)
+//			time.Sleep(time.Second)
+//			dw.gridTap(2, 10)
+//			time.Sleep(time.Second)
+//			dw.MarkDone(afk.QKT)
+//		}
+//		if !afk.HasOneOf(afk.QCamp, dw.ToDo) {
+//			dw.ZeroPosition()
+//			time.Sleep(time.Second)
+//			dw.gridTap(3, 18)
+//			dw.Peek()
+//			time.Sleep(time.Second)
+//			dw.gridTap(3, 17)
+//			time.Sleep(time.Second)
+//			dw.gridTap(3, 18)
+//			time.Sleep(time.Second)
+//			dw.gridTap(1, 15)
+//			dw.MyLocation()
+//			dw.Peek()
+//			time.Sleep(time.Second)
+//			dw.gridTap(2, 10)
+//			time.Sleep(time.Second)
+//			dw.gridTap(1, 18)
+//			time.Sleep(time.Second)
+//			dw.MarkDone(afk.QCamp)
+//		}
+//		if !afk.HasOneOf(afk.Loot, dw.ToDo) {
+//			dw.ZeroPosition()
+//			time.Sleep(time.Second)
+//			dw.gridTap(3, 18)
+//			dw.Peek()
+//			time.Sleep(time.Second)
+//			dw.gridTap(3, 16)
+//			time.Sleep(time.Second)
+//			dw.gridTap(3, 18)
+//			dw.Peek()
+//			time.Sleep(time.Second)
+//			dw.gridTap(5, 17)
+//			time.Sleep(time.Second)
+//			dw.gridTap(4, 12)
+//			time.Sleep(time.Second)
+//			dw.gridTap(1, 18)
+//			time.Sleep(time.Second)
+//			dw.MarkDone(afk.Loot)
+//			dw.MarkDone(afk.FastReward)
+//		}
+		//			if !daily.Loot.Bool {
+		//				res := dw.Do(afk.DailyLoOt)
+		//				if res == nil {
+		//					daily.Loot.Bool = true
+		//					dw.User.save()
+		//				}
+		//			}
+		//			if !daily.FastRewards.Bool {
+		//				res := dw.Do(afk.FastRewards)
+		//				if res == nil {
+		//					daily.FastRewards.Bool = true
+		//					dw.User.save()
+		//				}
+		//			}
+		//			if !daily.Likes.Bool {
+		//				res := dw.Do(afk.FRIENDS)
+		//				if res == nil {
+		//					daily.Likes.Bool = true
+		//					dw.User.save()
+		//				}
+		//			}
+		//		}
 	}
 	return true, nil
 }
 
-func (dw *Daywalker) SaveStatsFormation(g *afk.Game) {
-	if dw.CurrentLoc.Key == afk.BATTLESTAT {
-		filename := fmt.Sprintf("%v_%v.jpg", time.Now(), dw.CurrentLoc.Key)
-		dw.Screencap("1_" + filename)
-		dw.Pull("1_"+filename, ".")
-		dw.WalkTo(g, afk.HEROINFO)
-		dw.Screencap("2_" + filename)
-		dw.Pull("2_"+filename, ".")
-		dw.Back()
+// TODO: Handle POPUP Bannera, offers and guild chest
+// Ofer ocr example
+// ##### Where we? ##############################
+
+func (dw *Daywalker) Tower(tower afk.Tower) {
+	if dw.MyLocation() != afk.RANHORNY {
+		dw.ZeroPosition()
 	}
+	dw.WalkTo(afk.DARKFORREST)
+	dw.WalkTo(afk.KTower)
+	switch tower {
+	case afk.Kings:
+		//        dw.WalkTo(afk.KTower)
+		dw.gridTap(3, 10)
+		dw.ktpush()
+	}
+
+}
+
+func (dw *Daywalker) ktpush() error {
+	e := dw.Do(afk.TOWERCLIMB)
+	dw.gridTap(3, 10)
+	dw.ktpush()
+	return e
+}
+func (dw *Daywalker) Battle() (bool, error) {
+	screentext := dw.Peek()
+	c, s := dw.Stage(screentext)
+    dw.gridTap(3,18)
+	result := dw.Do(afk.FIGHT)
+	if result != nil && dw.MyLocation() == afk.BOSSTAGE {
+		dw.gridTap(3, 17)
+		return false, result
+	}
+
+	if dw.isLocation(afk.WIN) {
+		// TODO params to control making/uploading screens
+		// action to save screens: "screenstats"
+		color.HiMagenta(">> PASSED STAGE => %v-%v\n", c, s)
+		dw.SetStage(afk.CampainNext(c, s))
+		dw.SaveStatsFormation()
+		color.HiGreen(">> VICTORY, NEXT\n")
+	}
+
+	color.HiYellow("Loooser! ")
+	dw.gridTap(3, 17)
+	dw.Battle()
+	return true, nil
+}
+
+func (dw *Daywalker) SaveStatsFormation() {
+	if dw.lastLoc.Key == afk.STAT {
+		filename := fmt.Sprintf("%v_%v.png", time.Now(), dw.lastLoc.Key)
+		bsfname := fmt.Sprintf("stats_%v-%v_%v", dw.User.Chapter, dw.User.Chapter, filename)
+		hifname := fmt.Sprintf("info_%v-%v_%v", dw.User.Chapter, dw.User.Chapter, filename)
+		e := dw.Screenshot(bsfname)
+		dw.WalkTo(afk.HEROINFO)
+		e = dw.Screenshot(hifname)
+		dw.Back()
+		if e != nil {
+			log.Errorf("stst err: %v", e.Error())
+		}
+	}
+
+}
+
+func (dw *Daywalker) Screenshot(name string) error {
+	dw.Screencap(name)
+	err := dw.Pull(name, ".")
+	return err
+}
+
+func (dw *Daywalker) ZeroPosition() bool {
+	if dw.cnt > maxattempt {
+		dw.cnt = 0
+		log.Errorf("Reach recursion limit, quitting....")
+		return false
+	}
+	zero := dw.GetLocation(afk.RANHORNY).Position()
+    dw.lastLoc = nil
+	dw.gridTap(zero.X, zero.Y)
+	if dw.MyLocation() != afk.RANHORNY {
+		dw.cnt++
+		dw.ZeroPosition()
+
+	}
+	dw.cnt = 0
+	return true
 }

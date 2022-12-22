@@ -1,14 +1,14 @@
 package repository
 
 import (
-	"database/sql"
-	"errors"
+    "errors"
+    "time"
+    // "worker/game"
 
-	// "worker/game"
-
-	"github.com/fatih/color"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
+    "github.com/fatih/color"
+    log "github.com/sirupsen/logrus"
+    "gorm.io/driver/sqlite"
+    "gorm.io/gorm"
 )
 
 const appdata = "afkarena.db"
@@ -29,32 +29,17 @@ type User struct {
 	Stage     int
 	Diamonds  int
 	Gold      int
-	Daily     []Daily
+	Dailies   []Daily `gorm:"foreignKey:UserID"`
 }
 
 type Daily struct {
 	gorm.Model
-	Loot          sql.NullBool `gorm:"default:false"`
-	FastRewards   sql.NullBool `gorm:"default:false"`
-	FRqty         uint8        `gorm:"default:1"`
-	Likes         sql.NullBool `gorm:"default:false"`
-	GuildBoss     sql.NullBool `gorm:"default:false"`
-	Arena         sql.NullBool `gorm:"default:false"`
-	ArenaTopEnemy sql.NullBool `gorm:"default:false"`
-	UserID        uint
+    Quests     uint8 `gorm:"default:0"`
+	UserID     uint
 }
 
 func init() {
 	db = CreateDBConnection(appdata)
-}
-
-func GetUser(user string) *User {
-	var usr User
-	r := db.Where("username = ?", user).First(&usr)
-	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
-		usr = User{Username: user}
-	}
-	return &usr
 }
 
 func CreateDBConnection(dbname string) *gorm.DB {
@@ -67,10 +52,20 @@ func CreateDBConnection(dbname string) *gorm.DB {
 	if e != nil {
 		color.HiWhite("\nerr:%v\nduring run:%v", e, "db connect")
 	}
+
 	return db
 }
 
-func (u *User) SaveUserInfo() {
+func GetUser(user string) *User {
+	var usr User
+	r := db.Where("username = ?", user).First(&usr)
+	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
+		usr = User{Username: user}
+		usr.save()
+	}
+	return &usr
+}
+func (u *User) save() {
 	r := db.Save(u)
 	color.HiWhite("\ndb: %v user updated", r.RowsAffected)
 	if r.Error != nil {
@@ -78,17 +73,49 @@ func (u *User) SaveUserInfo() {
 	}
 }
 
-// func PrevousRun(p interface{}) (string, bool) {
-// 	db := CreateDBConnection(appdata)
+func (u *User) AfterUpdate(tx *gorm.DB) (err error) {
 
-// 	var cnf User
-// 	res := db.Last(&cnf)
-// 	if res.Error != nil {
-// 		panic("DB ERROR ON PREV RUN")
-// 	}
-// 	// if res.RowsAffected > 0 {
-// 	// 	f, ok := Last(cnf.User, p)
-// 	// 	return f, ok
-// 	// }
-// 	return "", false
-// }
+	u.save()
+
+	return
+}
+
+func (u *User) ActiveQuests() *Daily {
+	var td *Daily
+	r := db.Where("user_id = ? and created_at > ?", u.ID, Bod(time.Now())).First(&td)
+	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
+		td = &Daily{Quests: 0, UserID: u.ID}
+		db.Save(td)
+	}
+
+	return td
+}
+
+func (u *Daily) Update(quest uint8) {
+	u.Quests = quest
+	r := db.Save(u)
+	color.HiWhite("\ndb: %v user updated", r.RowsAffected)
+	if r.Error != nil {
+		panic("DB ERROR : " + r.Error.Error())
+	}
+}
+
+
+func Bod(t time.Time) time.Time {
+	year, month, day := t.Date()
+	return time.Date(year, month, day, 0, 0, 0, 0, t.Location())
+}
+
+func Truncate(t time.Time) time.Time {
+	return t.Truncate(24 * time.Hour)
+}
+
+func NowInMoscow() time.Time {
+	moscow, err := time.LoadLocation("Europe/Moscow")
+	if err != nil {
+		log.Warn(err)
+		return time.Now()
+	}
+	return time.Now().In(moscow)
+
+}

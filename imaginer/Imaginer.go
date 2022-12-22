@@ -5,7 +5,6 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/vitali-fedulov/images/v2"
-	// "gopkg.in/gographics/imagick.v3/imagick"
 )
 
 type Cutter interface {

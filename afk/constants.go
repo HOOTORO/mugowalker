@@ -2,6 +2,35 @@ package afk
 
 type UserField int
 
+type DailyQuest uint8
+
+func (dq DailyQuest) String() string {
+    if dq < Dailies{
+        return [...]string{"Loot", "FastRewards", "Friendship", "Wrizz", "Arena", "OakInn"}[dq-1]
+    }    else {
+        return ""
+    }
+
+}
+func  (dq DailyQuest) Indx() uint8{
+    return uint8(dq)
+}
+
+
+const (
+    Loot DailyQuest = 1 << iota 
+    FastReward
+    Friendship
+    Wrizz
+    Arena1x1
+    Oak
+    QCamp
+    QKT
+    Dailies = Loot | FastReward | Friendship | Wrizz | Arena1x1 | Oak | QCamp | QKT
+)
+
+type Tower int
+
 var strs = [...]string{"", "name", "account_id", "vip", "chapter", "stage", "diamonds", "gold"}
 
 const (
@@ -14,6 +43,15 @@ const (
 	GOLD
 )
 
+const (
+    Kings Tower = iota +1
+    Celestial
+    Infernal
+    Light
+    Mauler
+    Wilder
+    Graveborn
+)
 func (uf UserField) String() string {
 	return strs[uf]
 }
@@ -27,43 +65,31 @@ func BottomPanel() []string {
 */
 //General
 const (
-	BACK  = "back"
-	CLOSE = "close"
-	ENTRY = "entry"
-	FIGHT = "fight"
+	ENTRY = "campain"
 )
 
 const (
-	PUSHc      = "pushcampain"
-	BATTLE     = "battlescreen"
+	BATTLE   = "prepare"
+	WIN      = "victory"
 	LOSE     = "losecampain"
-	BOSSTAGE = "campainBoss"
-    BOSSBegin = "bossfight"
-	CAMPWIN  = "campvictory"
-	BATTLESTAT = "battlestat"
-	RETRY      = "retry"
-	NEXTSTAGE  = "nxt"
+	STAT     = "stat"
+	BOSSTAGE = "bossnode"
 )
 
 const (
 	CAMPBegin = "campBegin"
-	AFKCHEST  = "afkchest"
-	FR       = "fastrewards"
-	USEFR    = "usefr"
-	RBAN     = "rBanOpen"
+
+	RBAN = "rBanOpen"
 	LBAN
 	// actions
-	QUEST       = "quest"
-	BAG         = "bag"
-	MAIL        = "mail"
-	MAILCOLLECT = "mailcollect"
-	FRIENDS     = "friends"
-	LIKESBTN    = "sendrecive"
+	QUEST = "quest"
+	BAG   = "bag"
 )
 
 const (
+    CAMPAIN = "campain"
 	DARKFORREST = "forrest"
-	KTower          = "kingstower"
+	KTower      = "kt"
 	PVP         = "arena"
 	SOLO        = "solo"
 )
@@ -72,8 +98,6 @@ const (
 	RANHORNY = "ranhorn"
 	HORNSHOP = "shop"
 	GI       = "guild"
-	GIBOSSES = "bosses"
-	OAK      = "oak"
 )
 
 const (
@@ -83,8 +107,19 @@ const (
 const (
 	INFERNAL = "infortress"
 )
-// Actions
 
+// Actions
+const (
+	FIGHT = "Battle"
+	TOWERCLIMB = "climb"
+
+	DailyLoOt   = "loot"
+	FastRewards = "fastrewards"
+	MAIL        = "mail"
+	FRIENDS     = "friends"
+	GIBOSSES    = "wrizz"
+	OAK         = "oak"
+)
 
 const (
 	kingone   = 700

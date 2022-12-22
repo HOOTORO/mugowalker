@@ -2,7 +2,8 @@ package ocr
 
 import (
 	"fmt"
-	"io"
+//    log "github.com/sirupsen/logrus"
+    "io"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -16,7 +17,7 @@ func OCRFields(s string) []string {
 	res := strings.Fields(s)
 	var filtered []string
 	for _, v := range res {
-		if len(v) > 2 {
+		if len(v) > 3 {
 			filtered = append(filtered, v)
 		}
 	}

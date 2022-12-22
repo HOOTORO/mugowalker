@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 )
 
@@ -106,40 +105,3 @@ func (c *Cmd) Call() (string, error) {
 	return stdout.String(), err
 }
 
-func Parse(s string) []string {
-	temp := strings.TrimPrefix(s, "List of devices attached\r\n")
-	s = strings.TrimSuffix(temp, "\r\n\r\n")
-	strdevices := strings.Split(s, "\r\n")
-
-	// fmt.Printf("All Devices (len: %v) --> \n%v\n", len(strdevices), strings.Join(strdevices, "\n"))
-	for _, v := range strdevices {
-
-		// https://regex101.com/r/7YFfra/1
-		// https://regex101.com/r/7YFfra/2
-
-		r := regexp.
-			MustCompile(
-				`(?P<host>(?:\d{1,3}\.){3}\d{1,3}|` +
-					`(?P<name>\w+))+` +
-					`[-|:]?(?P<port>\d+)+` +
-					`[^\r]+(?P<state>offline|bootloader|device)[\s]+` +
-					`product:(?P<product>\w+)\s` +
-					`model:(?P<model>\w+)\s` +
-					`device:(?P<device>\w+)\s` +
-					`transport_id:(?P<tid>\d)`)
-
-		params := r.FindAllStringSubmatch(v, -1)
-		devinfo := make(map[string]string, 0)
-
-		for _, match := range params {
-			// fmt.Printf("\nParams  #%v; val => %v", k, match)
-			for ind, subName := range r.SubexpNames() {
-				if subName != "" {
-					devinfo[subName] = match[ind]
-				}
-			}
-		}
-
-	}
-	return []string{s}
-}

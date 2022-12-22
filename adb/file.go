@@ -9,6 +9,7 @@ import (
 const (
 	workdir   = ".adb"
 	remotedir = "/sdcard/"
+	localdir  = ".afk_data"
 )
 
 func init() {
@@ -16,10 +17,16 @@ func init() {
 	wd := filepath.Join(usr, workdir)
 	_, e := os.Lstat(wd)
 	if e == nil || os.IsNotExist(e) {
-//		os.MkdirAll(wd, os.ModeDir)
-//		os.Chdir(wd)
-        wd, _ = os.Getwd()
+		//		os.MkdirAll(wd, os.ModeDir)
+		wd, _ = os.Getwd()
+		e := os.MkdirAll(filepath.Join(wd, localdir), os.ModeDir)
+		e = os.Chdir(localdir)
 		fmt.Printf("\ninit: success; pwd: %v\n\n", wd)
+        _, e = os.Lstat("app.log")
+        if os.IsNotExist(e){
+            _, e = os.Create("app.log")
+        }
+
 	} else {
 		pwd, _ := os.Getwd()
 		fmt.Printf("init: fail; error: %v\npwd will be used: %v\n\n", e.Error(), pwd)

@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"worker/adb"
 
 	"github.com/fatih/color"
 
@@ -26,25 +27,34 @@ type Location struct {
 	// Actions   []*Point `yaml:"actions"`
 }
 type Action struct {
-    Name string `yaml:"name"`
-    Grid string `yaml:"grid"`
-    Loc string  `yaml:"startloc"`
-    MidlocId string `yaml:"midloc"`
-    FinlocId string `yaml:"final"`
+	Name     string `yaml:"name"`
+	Grid     string `yaml:"grid"`
+	Delay    int    `yaml:"delay"`
+	Loc      string `yaml:"startloc"`
+	MidlocId string `yaml:"midloc"`
+	FinlocId string `yaml:"final"`
 }
+
 // Position on Grid
-func (l *Location) Position() (x, y int) {
-	sx, sy, success := strings.Cut(l.Grid, ":")
-	if success {
-		x = toInt(sx)
-		y = toInt(sy)
+func (l *Location) Position() *adb.Point {
+	return cutgrid(l.Grid)
+}
+
+func (act *Action) StartXY() *adb.Point {
+	return cutgrid(act.Grid)
+}
+
+func (act *Action) OverlayGrids() (taps []*adb.Point) {
+	if strings.Contains(act.MidlocId, "overlay") {
+		grids := strings.Split(strings.Trim(act.MidlocId, "overlay "), ";")
+		for _, v := range grids {
+			taps = append(taps, cutgrid(v))
+		}
 	}
-	return
+	return taps
 }
 
 func Parse(s string, out interface{}) {
-    pwd, _ := os.Getwd()
-    log.Warnf("pwd -> %v", pwd)
 	f, err := os.ReadFile(s)
 	if err != nil {
 		log.Fatal(err)
@@ -65,7 +75,9 @@ func UserInput(desc, def string) string {
 	text, _ := reader.ReadString('\n')
 	// convert CRLF to LF
 	text = strings.Replace(text, "\n", "", -1)
-
+	if len(text) == 0 {
+		text = def
+	}
 	return strings.Trim(text, "\r")
 }
 
@@ -75,4 +87,17 @@ func toInt(s string) int {
 		fmt.Printf("\nerr:%v\nduring run:%v", e, "intconv")
 	}
 	return num
+}
+
+func cutgrid(str string) (p *adb.Point) {
+	ords := strings.Split(str, ":")
+		p = &adb.Point{
+			X: toInt(ords[0]),
+			Y: toInt(ords[1]),
+            Offset: 1,
+		}
+	if len(ords)>2 {
+        p.Offset = toInt(ords[2])
+	}
+	return
 }
