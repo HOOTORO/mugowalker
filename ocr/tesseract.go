@@ -1,29 +1,32 @@
 package ocr
 
 import (
-	"image/jpeg"
+    "image/jpeg"
 	"image/png"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"worker/cfg"
+    "worker/imaginer"
 
-	"github.com/harrydb/go/img/grayscale"
+    "github.com/sirupsen/logrus"
+    "github.com/harrydb/go/img/grayscale"
 	// "github.com/otiai10/gosseract/v2"
 )
-
 var tesser string
+var tessAgrs []string
 
+var log *logrus.Logger
 func init() {
 	// Fallback to searching on PATH.
-	if p, err := exec.LookPath("tesseract"); err == nil {
-		if p, err = filepath.Abs(p); err == nil {
-			tesser = p
-		}
-	}
+	tesser = cfg.LookupPath("tesseract")
+	tessAgrs = cfg.OcrConf.Tesseract
+    log = cfg.Logger()
 }
-
+func OptimizeForOCR(f string) string {
+    res, _ := imaginer.Magick(f, cfg.OcrConf.Imagick...)
+    return res
+}
 func covertGrayscale(r io.Reader) (*os.File, error) {
 	src, err := png.Decode(r)
 	if err != nil {
@@ -31,7 +34,7 @@ func covertGrayscale(r io.Reader) (*os.File, error) {
 	}
 
 	gray := grayscale.Convert(src, grayscale.ToGrayLuminance)
-	grayImg, err := ioutil.TempFile("", "tesseract-gray-")
+	grayImg, err := os.CreateTemp("", "tesseract-gray-")
 	defer grayImg.Close()
 	if err != nil {
 		return nil, err
@@ -47,25 +50,12 @@ func covertGrayscale(r io.Reader) (*os.File, error) {
 }
 
 func runOcr(in string, out string) error {
-	ocr, err := filepath.Abs(tesser)
-	if err != nil {
-		return err
-	}
 
-	cmd := exec.Command(ocr, in, out, "--psm", "12")
+    args := append([]string{in,out}, tessAgrs...)
+    log.Tracef("Tesseract args -> %v", args)
+	cmd := exec.Command(tesser, args...)
 	// uncomment for ocr log
 	// cmd.Stdout = os.Stdout
 	// cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
-
-// func TextGOS(img string) string {
-// 	client := gosseract.NewClient()
-
-// 	defer client.Close()
-// 	client.SetImage(img)
-// 	text, _ := client.Text()
-// 	// fmt.Println(text)
-// 	// Hello, World!
-// 	return text
-// }

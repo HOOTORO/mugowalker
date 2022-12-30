@@ -1,7 +1,8 @@
 package afk
 
 import (
-	"worker/afk/repository"
+    "fmt"
+    "worker/afk/repository"
 	"worker/cfg"
 	"worker/ocr"
 
@@ -30,13 +31,14 @@ type Game struct {
 	Name      string
 	User      *repository.User
 	Active    bool
-	ToDo      DailyQuest
 	Locations []cfg.Location
 	Actions   []cfg.Action
 }
-
+func (g *Game) String() string{
+    return fmt.Sprintf("Name: %v\n User:%v\n", g.Name, g.User.Username)
+}
 func New(g, p string) *Game {
-	color.HiMagenta("Launch %v!", g)
+	color.HiMagenta("\nLaunch %v!", g)
 	locs := make([]cfg.Location, 1, 1)
 	acts := make([]cfg.Action, 1, 1)
 
@@ -70,10 +72,10 @@ func (g *Game) Action(name string) *cfg.Action {
 	}
 	return nil
 }
-func (g *Game) Stage(str string) (ch, stg int) {
+func (g *Game) Stage(ocr ocr.OcrResult) (ch, stg int) {
 	stgchregex := `Stage:(?P<chapter>\d+)-(?P<stage>\d+)`
 
-	campain := ocr.Regex(str, stgchregex)
+	campain := ocr.Regex(stgchregex)
 
 	if len(campain) > 0 && campain[0] != g.User.Chapter && campain[1] != g.User.Stage {
 		color.HiMagenta("### Campain data mismatch ###\n Actual STAGE: %v-%v ### \n >>> Fixing...", campain[0], campain[1])
@@ -108,40 +110,16 @@ func CampainNext(c, s int) (int, int) {
 }
 
 func (g *Game) ActiveDailies() DailyQuest {
-	g.ToDo = DailyQuest(g.User.ActiveQuests().Quests)
-	return g.ToDo
-	//	todo :=
-	//	for _, k := range g.User.Daily {
-	//
-	//    }
-	//	if time.Now().YearDay() > lastd.UpdatedAt.YearDay() {
-	//		if !lastd.Arena.Valid {
-	//			todo = append(todo, Arena1x1)
-	//		}
-	//		if !lastd.Loot.Valid {
-	//			todo = append(todo, Loot)
-	//		}
-	//		if !lastd.FastRewards.Valid {
-	//			todo = append(todo, FastReward)
-	//		}
-	//		if !lastd.Likes.Valid {
-	//			todo = append(todo, Friendship)
-	//		}
-	//		if !lastd.GuildBoss.Valid {
-	//			todo = append(todo, Wrizz)
-	//		}
-	//		if !lastd.CollectInn.Valid {
-	//			todo = append(todo, Oak)
-	//		}
-	//	}
-	//	return todo
+	return DailyQuest(g.User.ActiveQuests().Quests)
 }
 
 func (g *Game) MarkDone(quesst DailyQuest) {
-	if !HasOneOf(quesst, g.ToDo) {
-		g.ToDo = Set(g.ToDo, quesst)
-		g.User.ActiveQuests().Update(g.ToDo.Indx())
-        color.HiRed("--> DAILY <-- \nCurrent: [%08b] \nOverall: [%08b]", quesst, g.ToDo)
+	if !HasOneOf(quesst, g.ActiveDailies()) {
+        g.User.
+            ActiveQuests().
+            Update(
+                Set(g.ActiveDailies(), quesst).Indx())
+		color.HiRed("--> DAILY <-- \nCurrent: [%08b] \nOverall: [%08b]", quesst, g.ActiveDailies())
 	}
 }
 

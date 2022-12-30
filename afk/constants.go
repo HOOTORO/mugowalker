@@ -1,22 +1,27 @@
 package afk
 
+
 type UserField int
 
 type DailyQuest uint8
 
-func (dq DailyQuest) String() string {
-    if dq < Dailies{
-        return [...]string{"Loot", "FastRewards", "Friendship", "Wrizz", "Arena", "OakInn"}[dq-1]
-    }    else {
-        return ""
-    }
+var QuestNames = []string{"loot", "fastrewards", "friends", "wrizz", "arena1x1", "oak", "QCamp", "QKT"}
 
+
+func QString(k DailyQuest) []string {
+    var result []string
+    for i := 0; i < len(QuestNames); i++ {
+        if k&(1<<uint(i)) != 0 {
+            result = append(result, QuestNames[i])
+        }
+    }
+    return result
 }
 func  (dq DailyQuest) Indx() uint8{
     return uint8(dq)
 }
 
-
+//000000
 const (
     Loot DailyQuest = 1 << iota 
     FastReward
@@ -30,6 +35,8 @@ const (
 )
 
 type Tower int
+
+
 
 var strs = [...]string{"", "name", "account_id", "vip", "chapter", "stage", "diamonds", "gold"}
 
@@ -70,55 +77,45 @@ const (
 
 const (
 	BATTLE   = "prepare"
-	WIN      = "victory"
-	LOSE     = "losecampain"
-	STAT     = "stat"
+	RESULT = "result"
+	WIN    = "victory"
+	STAT   = "stat"
 	BOSSTAGE = "bossnode"
 )
 
 const (
 	CAMPBegin = "campBegin"
-
-	RBAN = "rBanOpen"
-	LBAN
-	// actions
-	QUEST = "quest"
-	BAG   = "bag"
 )
 
 const (
-    CAMPAIN = "campain"
+
 	DARKFORREST = "forrest"
 	KTower      = "kt"
-	PVP         = "arena"
-	SOLO        = "solo"
+    TowerInside = "tower"
+
 )
 
 const (
 	RANHORNY = "ranhorn"
-	HORNSHOP = "shop"
-	GI       = "guild"
+
 )
 
 const (
 	HEROINFO = "heroinfo"
 )
 
-const (
-	INFERNAL = "infortress"
-)
 
 // Actions
 const (
-	FIGHT = "Battle"
-	TOWERCLIMB = "climb"
+    DOPUSHCAMP    = "pushcamp"
+	DOTOWERCLIMB = "climb"
+	DOGIBOSSES    = "wrizz"
+	DOOAK         = "oak"
+)
 
-	DailyLoOt   = "loot"
-	FastRewards = "fastrewards"
-	MAIL        = "mail"
-	FRIENDS     = "friends"
-	GIBOSSES    = "wrizz"
-	OAK         = "oak"
+const (
+    GO2KT = "zero2kt"
+    GO2CAMP = "zero2camp"
 )
 
 const (

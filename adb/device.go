@@ -4,7 +4,8 @@ import (
 	"errors"
 	"fmt"
 	log "github.com/sirupsen/logrus"
-	"regexp"
+    "image"
+    "regexp"
 	"strconv"
 	"strings"
 )
@@ -20,8 +21,7 @@ var (
 // 1 -> center point
 // 2 -> xmax-1 height
 type Point struct {
-	X int
-	Y int
+    image.Point
     Offset int
 }
 
