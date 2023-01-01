@@ -4,14 +4,16 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-    "golang.org/x/exp/slices"
-    "image"
+	"image"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/exp/slices"
+
 	"worker/adb"
 	"worker/afk/repository"
 
@@ -25,50 +27,67 @@ const (
 	tmpdir      = "imag"
 	dbdir       = "db"
 	cfgdir      = "cfg"
+	stepsdir    = "steps"
 	localdir    = ".afk_data"
 	adbdir      = ".adb"
 	ocrsettings = "cfg/ocr.yaml"
+	emulator    = "cfg/emu.yaml"
 )
 
 var (
-    ErrWorkDirFail error = errors.New("working dirictories wasn't created. Exit")
-    ErrStepNotFound error = errors.New("Config error. Have conditional step, but no actions for it")
+	ErrWorkDirFail  error = errors.New("working dirictories wasn't created. Exit")
+	ErrStepNotFound error = errors.New("Config error. Have conditional step, but no actions for it")
 )
 var log *logrus.Logger
-var OcrConf *ocrConfig
 
-type ocrConfig struct {
-	Split     []string `yaml:"split"`
-	Imagick   []string `yaml:"imagick"`
-	Tesseract []string `yaml:"tesseract"`
+var (
+	OcrConf      *ocrConfig
+	EmulatorConf *emuConf
+)
+
+func init() {
+	log = Logger()
+	e := createDirStructure()
+	f, _ := os.OpenFile("app.log", os.O_APPEND|os.O_CREATE, 0o644)
+	log.SetLevel(logrus.TraceLevel)
+	log.SetOutput(f)
+	if e != nil {
+		panic(e)
+	}
+	OcrConf = loadOcr()
+	EmulatorConf = loadEmulator()
+	repository.DbInit(func(x string) string {
+		return filepath.Join(dbdir, x)
+	})
 }
-type Location struct {
-	Key       string   `yaml:"name"`
-	Grid      string   `yaml:"grid"`
-	Threshold int      `yaml:"hits,omitempty"`
-	Keywords  []string `yaml:"keywords"`
-	Wait      bool     `yaml:"wait"`
-	// Actions   []*Point `yaml:"actions"`
+
+func Logger() *logrus.Logger {
+	if log != nil {
+		return log
+	}
+	return &logrus.Logger{
+		Out: os.Stdout,
+		Formatter: &logrus.TextFormatter{
+			ForceColors:               true,
+			EnvironmentOverrideColors: true,
+			PadLevelText:              true,
+			TimestampFormat:           time.Stamp,
+		},
+		Level: logrus.InfoLevel,
+	}
 }
 
 func (l *Location) String() string {
-	return fmt.Sprintf("idloc: %v", l.Key)
+	return fmt.Sprintf("Location key: %v", l.Key)
 }
 
-type Action struct {
-	Name      string `yaml:"name"`
-    Start []string `yaml:"startloc,omitempty"`
-	Steps     []Step `yaml:"steps"`
-    Conditional []Step `yaml:"conditional,omitempty"`
-    FinlocId string `yaml:"final,omitempty"`
-}
-
-type Step struct {
-	Grid        string `yaml:"grid"`
-	Delay       int    `yaml:"delay,omitempty"`
-	Skiplocheck bool   `yaml:"skiplocheck"`
-	Wait        bool   `yaml:"wait,omitempty"`
-    Loc         []string `yaml:"loc,omitempty"`
+func (rt ReactiveTask) React(trigger string) *adb.Point {
+	for _, v := range rt.Reactions {
+		if trigger == v.If {
+			return cutgrid(v.Do)
+		}
+	}
+	return cutgrid("1:18")
 }
 
 // Position on Grid
@@ -81,29 +100,15 @@ func (s *Step) Target() *adb.Point {
 }
 
 func (s *Action) ConditionalStep(locid string) Step {
-    for _, step := range s.Conditional {
-        if slices.Contains(step.Loc, locid) {
-            return step
-        }
-    }
-    log.Errorf("%v:%v",locid, ErrStepNotFound.Error() )
-    panic(ErrStepNotFound)
+	for _, step := range s.Conditional {
+		if slices.Contains(step.Loc, locid) {
+			return step
+		}
+	}
+	log.Errorf("%v:%v", locid, ErrStepNotFound.Error())
+	panic(ErrStepNotFound)
 }
 
-func init() {
-	log = Logger()
-	e := createDirStructure()
-	f, _ := os.OpenFile("app.log", os.O_APPEND|os.O_CREATE, 0644)
-	log.SetLevel(logrus.TraceLevel)
-	log.SetOutput(f)
-	if e != nil {
-		panic(e)
-	}
-	OcrConf = loadOcr()
-	repository.DbInit(func(x string) string {
-		return filepath.Join(dbdir, x)
-	})
-}
 func Parse(s string, out interface{}) {
 	f, err := os.ReadFile(s)
 	if err != nil {
@@ -162,20 +167,10 @@ func loadOcr() *ocrConfig {
 	return res
 }
 
-func Logger() *logrus.Logger {
-	if log != nil {
-		return log
-	}
-	return &logrus.Logger{
-		Out: os.Stdout,
-		Formatter: &logrus.TextFormatter{
-			ForceColors:               true,
-			EnvironmentOverrideColors: true,
-			PadLevelText:              true,
-			TimestampFormat:           time.Stamp},
-		Level: logrus.InfoLevel,
-	}
-
+func loadEmulator() *emuConf {
+	res := &emuConf{}
+	Parse(emulator, res)
+	return res
 }
 
 func truncateDir(d string) {
@@ -206,6 +201,7 @@ func ImageDir(f string) string {
 	}
 	return filepath.Join(a, filepath.Base(f))
 }
+
 func createDirStructure() error {
 	//	usr := SafeEnv("USERPROFILE")
 	//	wd := filepath.Join(usr, adbdir)
@@ -214,12 +210,14 @@ func createDirStructure() error {
 	dbpath := filepath.Join(wd, localdir, dbdir)
 	imgpath := filepath.Join(wd, localdir, tmpdir)
 	cfgpath := filepath.Join(wd, localdir, cfgdir)
+	stepspath := filepath.Join(wd, localdir, stepsdir)
 
 	truncateDir(imgpath)
 
 	e = os.MkdirAll(cfgpath, os.ModeDir)
 	e = os.MkdirAll(dbpath, os.ModeDir)
 	e = os.MkdirAll(imgpath, os.ModeDir)
+	e = os.MkdirAll(stepspath, os.ModeDir)
 
 	if e != nil {
 		log.Errorf("%v", e)
@@ -231,7 +229,6 @@ func createDirStructure() error {
 		pwd, _ := os.Getwd()
 		fmt.Printf("\ninit: success; pwd: %v\n\n", pwd)
 	}
-	//	fmt.Printf("init: fail; error: %v\npwd will be used: %v\n\n", e.Error())
 	return e
 }
 
@@ -251,4 +248,37 @@ func LookupPath(name string) (path string) {
 		}
 	}
 	panic(fmt.Sprintf("Required programm: %v not found in path\n error: %v", name, err))
+}
+
+func Load(u *UserProfile) *adb.Device {
+	devs, e := adb.Devices()
+	if e != nil {
+		d, e := adb.Connect(u.ConnectionStr)
+		if e != nil {
+			panic("dev err")
+		}
+		devs = append(devs, d)
+
+	}
+	num := 0
+	if len(devs) > 1 {
+		var desc string = "Choose, which one will be used by bot\n"
+		for i, dev := range devs {
+			desc += fmt.Sprintf("%v: Serial-> %v,   id-> %v,    resolution-> %v\n", i, dev.Serial, dev.TransportId, dev.Resolution)
+		}
+		num, _ = strconv.Atoi(UserInput(desc, "0"))
+	}
+	return devs[num]
+}
+
+func (up *UserProfile) Task(id string) *ReactiveTask {
+	var reactiveTasks []ReactiveTask
+	var Task ReactiveTask
+	Parse(up.TaskConfigs, &reactiveTasks)
+	for _, v := range reactiveTasks {
+		if v.Name == id {
+			Task = v
+		}
+	}
+	return &Task
 }

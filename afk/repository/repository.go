@@ -10,8 +10,10 @@ import (
 	"gorm.io/gorm"
 )
 
-const appdata = "afkarena.db"
-const locations = "locations.db"
+const (
+	appdata   = "afkarena.db"
+	locations = "locations.db"
+)
 
 var udb, lcdb *gorm.DB
 
@@ -28,25 +30,37 @@ type RawLocation struct {
 type User struct {
 	gorm.Model
 	Username  string
-	AccountId int
-	Vip       int
-	Chapter   int
-	Stage     int
-	Diamonds  int
-	Gold      int
+	AccountId uint
+	Vip       uint
+	Diamonds  uint
+	Gold      uint
 	Dailies   []Daily `gorm:"foreignKey:UserID"`
 }
 
+type Progress struct {
+	UserID uint
+	gorm.Model
+	Chapter      uint
+	Stage        uint
+	Kingtower    uint
+	Lightbearers uint
+	Maulers      uint
+	Wilders      uint
+	Graveborn    uint
+	Celestial    uint
+	Hypogens     uint
+}
+
 type Daily struct {
+	UserID uint
 	gorm.Model
 	Quests uint8 `gorm:"default:0"`
-	UserID uint
 }
 
 func DbInit(fn func(string) string) {
 	udb = CreateDBConnection(fn(appdata))
-	migrateScheme(udb, &User{}, &Daily{})
-    lcdb = CreateDBConnection(fn(locations))
+	migrateScheme(udb, &User{}, &Daily{}, &Progress{})
+	lcdb = CreateDBConnection(fn(locations))
 	migrateScheme(lcdb, &RawLocation{})
 }
 
@@ -75,6 +89,7 @@ func GetUser(user string) *User {
 	}
 	return &usr
 }
+
 func (u *User) save() {
 	r := udb.Save(u)
 	color.HiWhite("\nudb: %v user updated", r.RowsAffected)
@@ -97,6 +112,28 @@ func (u *User) ActiveQuests() *Daily {
 	}
 
 	return td
+}
+
+func (u *User) GetProgress() *Progress {
+	var p *Progress
+	r := udb.Where("user_id = ?", u.ID).First(&p)
+	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
+		p = &Progress{
+			UserID:       u.ID,
+			Chapter:      0,
+			Stage:        0,
+			Kingtower:    0,
+			Lightbearers: 0,
+			Maulers:      0,
+			Wilders:      0,
+			Graveborn:    0,
+			Celestial:    0,
+			Hypogens:     0,
+		}
+		udb.Save(p)
+
+	}
+	return p
 }
 
 func (u *Daily) Update(quest uint8) {
@@ -124,10 +161,8 @@ func NowInMoscow() time.Time {
 		return time.Now()
 	}
 	return time.Now().In(moscow)
-
 }
 
 func RawLocData(loc, txt string) {
 	lcdb.Create(&RawLocation{Name: loc, Text: txt})
-
 }

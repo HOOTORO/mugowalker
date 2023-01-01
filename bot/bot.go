@@ -3,12 +3,15 @@ package bot
 import (
 	"errors"
 	"fmt"
-	"golang.org/x/exp/slices"
 	"math/rand"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"golang.org/x/exp/slices"
+
 	"worker/afk/repository"
 	"worker/cfg"
 
@@ -17,7 +20,6 @@ import (
 	"worker/ocr"
 
 	"github.com/fatih/color"
-	log "github.com/sirupsen/logrus"
 )
 
 type Offset int
@@ -32,8 +34,10 @@ var ErrLocationMismatch = errors.New("Wrong Location!")
 
 // var errActionFail = errors.New("smthg went wrong during Doing Action")
 
-var tempfile string = "temp"
-var step int = 0
+var (
+	tempfile string = "temp"
+	step     int    = 0
+)
 
 const (
 	maxattempt uint8 = 5
@@ -50,7 +54,7 @@ func New(d *adb.Device, game *afk.Game) *Daywalker {
 		fprefix: time.Now().Format("2006_01"),
 		Device:  d,
 		Game:    game,
-		Tasks:   make([]Task, 0, 10),
+		Tasks:   make([]cfg.Task, 0, 10),
 		lastLoc: game.GetLocation(afk.ENTRY),
 		xmax:    xgrid, ymax: ygrid, cnt: 0,
 	}
@@ -64,28 +68,31 @@ func (dw *Daywalker) Peek() ocr.OcrResult {
 	if e != nil {
 		log.Errorf("\nerr:%v\nduring run:%v ", e, "Peek()")
 	}
-	//    text := ocr.Text(abspath)
 	text := ocr.TextExtract(s)
 	log.Tracef("ocred: %v", text)
 	return text
 }
+
 func (dw *Daywalker) MyLocation() (locname string) {
 	recognizedText := dw.Peek()
 
 	if !dw.checkLoc(recognizedText) {
-		color.HiBlue("unknown loc, launch more accurate ocr...")
-		deep := ocr.ImprovedTextExtract(dw.lastscreenshot)
+		time.Sleep(5 * time.Second)
+		dw.MyLocation()
 
-		if !dw.checkLoc(deep) {
-			log.Errorf("UNKNOWN LOCATION, DROPPED\n Last ocr results --> %v", deep.Fields())
-		}
+		// color.HiBlue("unknown loc, launch more accurate ocr...")
+		// deep := ocr.ImprovedTextExtract(dw.lastscreenshot)
+		// if !dw.checkLoc(deep) {
+		// 	log.Errorf("UNKNOWN LOCATION, DROPPED\n Last ocr results --> %v", deep.Fields())
+		// 	time.Sleep(5 * time.Second)
+		// 	dw.MyLocation()
+		// }
 	}
 	color.HiYellow("My Location most likely -> %v", dw.lastLoc)
 	return dw.lastLoc.Key
 }
 
 func (dw *Daywalker) Do(action string) error {
-
 	dw.ActiveTask = action
 	color.HiBlue("Executing action : %v", action)
 	a := dw.Action(action)
@@ -98,17 +105,21 @@ func (dw *Daywalker) Do(action string) error {
 		step = i + 1
 		dw.makeStep(g)
 	}
+	color.HiGreen("Action done -> %v", action)
+	if a.Next != "" {
+		e := dw.Do(a.Next)
+		return e
+	}
 	return nil
-
 }
 
 func (dw *Daywalker) checkLoc(o ocr.OcrResult) (ok bool) {
 	maxh := 1
 	for k, loc := range dw.Locations {
 		hit := o.Intersect(loc.Keywords)
-		if len(hit) >= loc.Threshold && len(hit) > maxh {
+		if loc.Key != dw.lastLoc.Key && len(hit) >= loc.Threshold && len(hit) >= maxh {
 			maxh = len(hit)
-			color.HiYellow("## Got hit keywords -> %v ##...", hit)
+			color.HiYellow("## Keywords hit %v -> %v ##...", loc.Key, hit)
 			dw.lastLoc = &dw.Locations[k]
 			ok = true
 			repository.RawLocData(loc.Key, strings.Join(o.Fields(), ";"))
@@ -116,6 +127,7 @@ func (dw *Daywalker) checkLoc(o ocr.OcrResult) (ok bool) {
 	}
 	return
 }
+
 func (dw *Daywalker) makeStep(s cfg.Step) bool {
 	var cnt uint8
 	px, py, off := s.Target().X, s.Target().Y, s.Target().Offset
@@ -145,7 +157,6 @@ func (dw *Daywalker) makeStep(s cfg.Step) bool {
 	return true
 }
 
-// MyLocation TODO: remove, overkill i think
 // tapGrid screen, grid 5x1, default Yoffset = 2
 func (dw *Daywalker) tapGrid(x, y int) {
 	yo := 1
@@ -163,7 +174,7 @@ func (dw *Daywalker) TapGO(gx, gy, off int) {
 	px := gx*width - width/2
 	py := gy*height - int(o)*height/2
 
-	drawTap(px, py, dw)
+	// drawTap(px, py, dw)
 
 	e := dw.Tap(fmt.Sprint(px), fmt.Sprint(py))
 	color.HiGreen("Tap: Grid-> %v:%v, Point-> %vx%v px", gx, gy, px, py)
@@ -171,15 +182,17 @@ func (dw *Daywalker) TapGO(gx, gy, off int) {
 		log.Warnf("Have an error during tap: %v", e.Error())
 	}
 }
+
 func drawTap(tx, ty int, bot *Daywalker) {
 	step++
-	s, e := bot.Screenshot(fmt.Sprintf("%v.png", step))
+	s, e := bot.Screenshot(fmt.Sprintf("%v", step))
 	circle := fmt.Sprintf("circle %v,%v %v,%v", tx, ty, tx+20, ty+20)
 	no := fmt.Sprintf("+%v+%v", tx-20, ty+20)
-	cmd := exec.Command("magick", s, "-fill", "red", "-draw", circle, "-fill", "black", "-pointsize", "60", "-annotate", no, fmt.Sprintf("%v", step), filepath.Base(bot.lastscreenshot))
+	cmd := exec.Command("magick", s, "-fill", "red", "-draw", circle, "-fill", "black", "-pointsize", "60", "-annotate", no, fmt.Sprintf("%v", step), filepath.Join("steps", filepath.Base(bot.lastscreenshot)))
 	e = cmd.Run()
 
 	if e != nil {
 		log.Errorf("s:%v", e.Error())
 	}
+	os.Remove(s)
 }

@@ -2,33 +2,54 @@ package ocr
 
 import (
 	"fmt"
-    "github.com/fatih/color"
-    "image"
-    "time"
-    "worker/imaginer"
-
+	"image"
 	"io"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/fatih/color"
+
+	"worker/imaginer"
 
 	"golang.org/x/exp/slices"
 )
 
-type OcrResult struct{
-    raw string
-    fields []string
+var uni string = "“€”\"’^#@™&!~'‘|<$>«»,:¢\\/_;§®‘*~."
+
+type OcrResult struct {
+	raw    string
+	fields []string
 }
-func CleanText(s string) []string {
-	res := strings.Fields(s)
-	var filtered []string
-	for _, v := range res {
-		if len(v) > 3 || strings.ContainsAny(v, "01234356789") {
-            filtered = append(filtered, strings.Trim(v, "“€”\"’^#@™&!~'‘|<$>,:¢\\/_;§‘*~."))
-        }
+
+func (or OcrResult) String() string {
+	return strings.Join(or.fields, " | ")
+}
+
+func (or OcrResult) Fields() []string {
+	return or.fields
+}
+
+func (or OcrResult) Regex(r string) (res []int) {
+	re := regexp.MustCompile(r)
+	for _, v := range re.FindStringSubmatch(or.raw) {
+		i, err := strconv.Atoi(v)
+		if err == nil {
+			res = append(res, i)
+		}
 	}
-	return filtered
+	return
+}
+
+func (or OcrResult) Intersect(k []string) (r []string) {
+	for _, v := range k {
+		if slices.Contains(or.fields, v) {
+			r = append(r, v)
+		}
+	}
+	return r
 }
 
 // ReadTextFromFile read text from the file. It internally calls ReadText after reading the file.
@@ -73,79 +94,68 @@ func KeywordHits(kw, ocr []string) int {
 	return res
 }
 
-func (or OcrResult) Regex(r string) (res []int) {
-	re := regexp.MustCompile(r)
-	for _, v := range re.FindStringSubmatch(or.raw) {
-		i, err := strconv.Atoi(v)
-		if err == nil {
-			res = append(res, i)
-		}
-	}
-	return
-}
-
-func (or OcrResult) Intersect(k []string) (r []string){
-    for _, v := range or.fields {
-        if slices.Contains(k, v) {
-            r = append(r,v)
-        }
-    }
-    return r
-}
-
-func (or OcrResult) Fields() []string {
-    return or.fields
-}
-func (or OcrResult) String() string{
-    return strings.Join(or.fields, " | ")
-}
 func RegionText(img string, topleft, size image.Point) OcrResult {
-    defer timeTrack(time.Now(), "\nRegionText")
+	defer timeTrack(time.Now(), "\nRegionText")
 	cropedregion := imaginer.Concat(img, topleft, size)
-    prep:= OptimizeForOCR(cropedregion)
-    r, e := recognize(prep)
-    if e != nil{
-        log.Errorf("RegionText fails: %v", e)
-    }
-    return r
+	prep := OptimizeForOCR(cropedregion)
+	r, e := recognize(prep)
+	if e != nil {
+		log.Errorf("RegionText fails: %v", e)
+	}
+	return r
 }
 
 func ImprovedTextExtract(img string) OcrResult {
-    defer timeTrack(time.Now(), "ImprovedTextExtract")
+	defer timeTrack(time.Now(), "ImprovedTextExtract")
 	var result OcrResult
 	imgPrep := OptimizeForOCR(img)
 	images := imaginer.GridCrop(imgPrep)
 
 	for _, v := range images {
-        r , _ := recognize(v)
+		r, _ := recognize(v)
 		result.raw += r.raw
-        result.fields = append(result.fields, r.Fields()...)
+		result.fields = append(result.fields, r.Fields()...)
 	}
 	return result
 }
 
 func TextExtract(img string) OcrResult {
-    defer timeTrack(time.Now(), "RegularOcr")
-    imgPrep := OptimizeForOCR(img)
-    t, _ := recognize(imgPrep)
-    return t
+	defer timeTrack(time.Now(), "RegularOcr")
+	imgPrep := OptimizeForOCR(img)
+	t, _ := recognize(imgPrep)
+	return t
 }
+
+// recognize text on a given img
 func recognize(img string) (OcrResult, error) {
 	f, _ := tmpFile()
 	e := runOcr(img, f.Name())
 	raw, e := readTmp(f.Name())
-    r := OcrResult{
-        raw: formatStr(strings.TrimSpace(string(raw))),
-    }
-    r.fields = CleanText(r.raw)
+	r := OcrResult{
+		raw: formatStr(strings.TrimSpace(string(raw))),
+	}
+	log.Tracef("Raw OCR: %s", raw)
+	r.fields = CleanText(r.raw)
 	return r, e
 }
 
+func CleanText(s string) []string {
+	res := strings.Fields(s)
+	var filtered []string
+	for _, v := range res {
+		trimmed := strings.Trim(v, uni)
+		if len(trimmed) > 3 || strings.ContainsAny(trimmed, "01234356789") {
+			filtered = append(filtered, trimmed)
+		}
+	}
+	return filtered
+}
 
 func formatStr(in string) string {
 	res := strings.Split(in, "\n")
 	return strings.Join(res, " ")
 }
+
 func tmpFile() (*os.File, error) {
 	outfile, err := os.CreateTemp("", "ghost-tesseract-out-")
 	defer outfile.Close()
@@ -161,10 +171,10 @@ func readTmp(fname string) ([]byte, error) {
 		return nil, err
 	}
 	return bytes, nil
-
 }
 
 func timeTrack(start time.Time, name string) {
-    elapsed := time.Since(start)
-    color.HiWhite("%s took %s", name, elapsed)
+	c := color.New(color.BgHiWhite, color.FgHiRed, color.Underline, color.Bold).SprintfFunc()
+	elapsed := time.Since(start)
+	fmt.Printf("%v\n", c("[%s] %s", name, elapsed.Round(time.Millisecond)))
 }

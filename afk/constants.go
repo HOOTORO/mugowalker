@@ -1,42 +1,39 @@
 package afk
 
-
 type UserField int
 
 type DailyQuest uint8
 
 var QuestNames = []string{"loot", "fastrewards", "friends", "wrizz", "arena1x1", "oak", "QCamp", "QKT"}
 
-
 func QString(k DailyQuest) []string {
-    var result []string
-    for i := 0; i < len(QuestNames); i++ {
-        if k&(1<<uint(i)) != 0 {
-            result = append(result, QuestNames[i])
-        }
-    }
-    return result
-}
-func  (dq DailyQuest) Indx() uint8{
-    return uint8(dq)
+	var result []string
+	for i := 0; i < len(QuestNames); i++ {
+		if k&(1<<uint(i)) != 0 {
+			result = append(result, QuestNames[i])
+		}
+	}
+	return result
 }
 
-//000000
+func (dq DailyQuest) Indx() uint8 {
+	return uint8(dq)
+}
+
+// 000000
 const (
-    Loot DailyQuest = 1 << iota 
-    FastReward
-    Friendship
-    Wrizz
-    Arena1x1
-    Oak
-    QCamp
-    QKT
-    Dailies = Loot | FastReward | Friendship | Wrizz | Arena1x1 | Oak | QCamp | QKT
+	Loot DailyQuest = 1 << iota
+	FastReward
+	Friendship
+	Wrizz
+	Arena1x1
+	Oak
+	QCamp
+	QKT
+	Dailies = Loot | FastReward | Friendship | Wrizz | Arena1x1 | Oak | QCamp | QKT
 )
 
 type Tower int
-
-
 
 var strs = [...]string{"", "name", "account_id", "vip", "chapter", "stage", "diamonds", "gold"}
 
@@ -51,20 +48,17 @@ const (
 )
 
 const (
-    Kings Tower = iota +1
-    Celestial
-    Infernal
-    Light
-    Mauler
-    Wilder
-    Graveborn
+	Kings Tower = iota + 1
+	Celestial
+	Infernal
+	Light
+	Mauler
+	Wilder
+	Graveborn
 )
+
 func (uf UserField) String() string {
 	return strs[uf]
-}
-
-func BottomPanel() []string {
-	return []string{RANHORNY, DARKFORREST, CAMPBegin}
 }
 
 /*
@@ -72,14 +66,15 @@ func BottomPanel() []string {
 */
 //General
 const (
-	ENTRY = "campain"
+	ENTRY       = "campain"
+	EXTRAPOPOUT = "popextra"
 )
 
 const (
 	BATTLE   = "prepare"
-	RESULT = "result"
-	WIN    = "victory"
-	STAT   = "stat"
+	RESULT   = "result"
+	WIN      = "victory"
+	STAT     = "stat"
 	BOSSTAGE = "bossnode"
 )
 
@@ -88,34 +83,36 @@ const (
 )
 
 const (
-
 	DARKFORREST = "forrest"
 	KTower      = "kt"
-    TowerInside = "tower"
-
+	TowerTOL    = "tol"
+	TowerBC     = "bc"
+	TowerWT     = "wt"
+	TowerFN     = "fn"
+	TowerCS     = "cs"
+	TowerIF     = "if"
+	TowerInside = "tower"
 )
 
 const (
 	RANHORNY = "ranhorn"
-
 )
 
 const (
 	HEROINFO = "heroinfo"
 )
 
-
 // Actions
 const (
-    DOPUSHCAMP    = "pushcamp"
+	DOPUSHCAMP   = "push"
 	DOTOWERCLIMB = "climb"
-	DOGIBOSSES    = "wrizz"
-	DOOAK         = "oak"
+	DOGIBOSSES   = "wrizz"
+	DOOAK        = "oak"
 )
 
 const (
-    GO2KT = "zero2kt"
-    GO2CAMP = "zero2camp"
+	GO2KT   = "zero2kt"
+	GO2CAMP = "zero2camp"
 )
 
 const (

@@ -3,26 +3,27 @@ package adb
 import (
 	"errors"
 	"fmt"
-	log "github.com/sirupsen/logrus"
-    "image"
-    "regexp"
+	"image"
+	"regexp"
 	"strconv"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // DevState represents the last queried state of an Android device.
+
 type DevState int
-var (
-    ErrNoDevices =  errors.New("attached devices not found")
-)
+
+var ErrNoDevices = errors.New("attached devices not found")
 
 // Point Offset:
 // 0 -> full x*height
 // 1 -> center point
 // 2 -> xmax-1 height
 type Point struct {
-    image.Point
-    Offset int
+	image.Point
+	Offset int
 }
 
 func (p Point) String() string {
@@ -75,17 +76,17 @@ func Devices() ([]*Device, error) {
 	}
 }
 
-func Connect(host, port string) (*Device, error) {
+func Connect(hostport string) (*Device, error) {
 	if adb == "" {
 		return nil, ErrADBNotFound
 	}
-    serial := fmt.Sprintf("%v:%v", host, port)
-	cmd := Cmd{Args: []string{"connect", serial}}
+	// serial := fmt.Sprintf("%v:%v", host, port)
+	cmd := Cmd{Args: []string{"connect", hostport}}
 
 	if out, err := cmd.Call(); err == nil {
-		dev := &Device{Serial: serial, DevState: Online }
-        err = resolution(dev)
-        Abi(dev)
+		dev := &Device{Serial: hostport, DevState: Online}
+		err = resolution(dev)
+		Abi(dev)
 		log.Infof("--> %v <--\n", out)
 		return dev, nil
 	} else {
@@ -113,8 +114,8 @@ func parseDevices(out string) ([]*Device, error) {
 				DevState:    state(fields[1]),
 				TransportId: tid,
 			}
-            _ = resolution(device)
-            Abi(device)
+			_ = resolution(device)
+			Abi(device)
 			devices = append(devices, device)
 		default:
 			return nil, ErrNoDevices

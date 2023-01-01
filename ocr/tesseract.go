@@ -1,32 +1,38 @@
 package ocr
 
 import (
-    "image/jpeg"
+	"image/jpeg"
 	"image/png"
 	"io"
 	"os"
 	"os/exec"
-	"worker/cfg"
-    "worker/imaginer"
 
-    "github.com/sirupsen/logrus"
-    "github.com/harrydb/go/img/grayscale"
-	// "github.com/otiai10/gosseract/v2"
+	"worker/cfg"
+	"worker/imaginer"
+
+	"github.com/harrydb/go/img/grayscale"
+	"github.com/sirupsen/logrus"
 )
-var tesser string
-var tessAgrs []string
+
+var (
+	tesser   string
+	tessAgrs []string
+)
 
 var log *logrus.Logger
+
 func init() {
 	// Fallback to searching on PATH.
 	tesser = cfg.LookupPath("tesseract")
 	tessAgrs = cfg.OcrConf.Tesseract
-    log = cfg.Logger()
+	log = cfg.Logger()
 }
+
 func OptimizeForOCR(f string) string {
-    res, _ := imaginer.Magick(f, cfg.OcrConf.Imagick...)
-    return res
+	res, _ := imaginer.Magick(f, cfg.OcrConf.Imagick...)
+	return res
 }
+
 func covertGrayscale(r io.Reader) (*os.File, error) {
 	src, err := png.Decode(r)
 	if err != nil {
@@ -50,9 +56,8 @@ func covertGrayscale(r io.Reader) (*os.File, error) {
 }
 
 func runOcr(in string, out string) error {
-
-    args := append([]string{in,out}, tessAgrs...)
-    log.Tracef("Tesseract args -> %v", args)
+	args := append([]string{in, out}, tessAgrs...)
+	log.Tracef("Tesseract args -> %v", args)
 	cmd := exec.Command(tesser, args...)
 	// uncomment for ocr log
 	// cmd.Stdout = os.Stdout

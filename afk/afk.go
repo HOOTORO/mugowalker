@@ -1,8 +1,9 @@
 package afk
 
 import (
-    "fmt"
-    "worker/afk/repository"
+	"fmt"
+
+	"worker/afk/repository"
 	"worker/cfg"
 	"worker/ocr"
 
@@ -17,12 +18,15 @@ var (
 func Set(p, flag DailyQuest) DailyQuest {
 	return p | flag
 }
+
 func Clear(p, flag DailyQuest) DailyQuest {
 	return p &^ flag
 }
+
 func HasAll(p, flag DailyQuest) bool {
 	return p&flag == flag
 }
+
 func HasOneOf(p, flag DailyQuest) bool {
 	return p&flag != 0
 }
@@ -34,9 +38,11 @@ type Game struct {
 	Locations []cfg.Location
 	Actions   []cfg.Action
 }
-func (g *Game) String() string{
-    return fmt.Sprintf("Name: %v\n User:%v\n", g.Name, g.User.Username)
+
+func (g *Game) String() string {
+	return fmt.Sprintf("Name: %v\n User:%v\n", g.Name, g.User.Username)
 }
+
 func New(g, p string) *Game {
 	color.HiMagenta("\nLaunch %v!", g)
 	locs := make([]cfg.Location, 1, 1)
@@ -72,21 +78,25 @@ func (g *Game) Action(name string) *cfg.Action {
 	}
 	return nil
 }
-func (g *Game) Stage(ocr ocr.OcrResult) (ch, stg int) {
+
+func (g *Game) Stage(ocr ocr.OcrResult) (ch, stg uint) {
 	stgchregex := `Stage:(?P<chapter>\d+)-(?P<stage>\d+)`
 
 	campain := ocr.Regex(stgchregex)
 
-	if len(campain) > 0 && campain[0] != g.User.Chapter && campain[1] != g.User.Stage {
+	progress := g.User.GetProgress()
+
+	if len(campain) > 0 && campain[0] != int(progress.Chapter) && campain[1] != int(progress.Stage) {
 		color.HiMagenta("### Campain data mismatch ###\n Actual STAGE: %v-%v ### \n >>> Fixing...", campain[0], campain[1])
 		g.SetStage(campain[0], campain[1])
 	}
-	return g.User.Chapter, g.User.Stage
+	return progress.Chapter, progress.Chapter
 }
 
 func (g *Game) SetStage(c, s int) {
-	g.User.Chapter = c
-	g.User.Stage = s
+	p := g.User.GetProgress()
+	p.Chapter = uint(c)
+	p.Stage = uint(s)
 }
 
 func CampainNext(c, s int) (int, int) {
@@ -115,10 +125,10 @@ func (g *Game) ActiveDailies() DailyQuest {
 
 func (g *Game) MarkDone(quesst DailyQuest) {
 	if !HasOneOf(quesst, g.ActiveDailies()) {
-        g.User.
-            ActiveQuests().
-            Update(
-                Set(g.ActiveDailies(), quesst).Indx())
+		g.User.
+			ActiveQuests().
+			Update(
+				Set(g.ActiveDailies(), quesst).Indx())
 		color.HiRed("--> DAILY <-- \nCurrent: [%08b] \nOverall: [%08b]", quesst, g.ActiveDailies())
 	}
 }
@@ -135,5 +145,5 @@ func (g *Game) MarkDone(quesst DailyQuest) {
 // hard to implement
 // 10 Bounty
 // 20 summon
-//ArenaTopEnemy sql.NullBool `gorm:"default:false"`
+// ArenaTopEnemy sql.NullBool `gorm:"default:false"`
 //  FRqty         uint8        `gorm:"default:1"`
