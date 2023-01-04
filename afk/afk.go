@@ -2,8 +2,9 @@ package afk
 
 import (
 	"fmt"
+    "golang.org/x/exp/slices"
 
-	"worker/afk/repository"
+    "worker/afk/repository"
 	"worker/cfg"
 	"worker/ocr"
 
@@ -11,7 +12,7 @@ import (
 )
 
 var (
-	locations = "cfg/config.yaml"
+	locations = "cfg/locations.yaml"
 	actions   = "cfg/actions.yaml"
 )
 
@@ -24,11 +25,11 @@ func Clear(p, flag DailyQuest) DailyQuest {
 }
 
 func HasAll(p, flag DailyQuest) bool {
-	return p&flag == flag
+	return p & flag == flag
 }
 
 func HasOneOf(p, flag DailyQuest) bool {
-	return p&flag != 0
+	return p & flag != 0
 }
 
 type Game struct {
@@ -37,27 +38,32 @@ type Game struct {
 	Active    bool
 	Locations []cfg.Location
 	Actions   []cfg.Action
+	profile   *cfg.UserProfile
+	tasks     []cfg.ReactiveTask
 }
 
 func (g *Game) String() string {
 	return fmt.Sprintf("Name: %v\n User:%v\n", g.Name, g.User.Username)
 }
 
-func New(g, p string) *Game {
-	color.HiMagenta("\nLaunch %v!", g)
+func New(up *cfg.UserProfile) *Game {
+	color.HiMagenta("\nLaunch %v!", up)
 	locs := make([]cfg.Location, 1, 1)
 	acts := make([]cfg.Action, 1, 1)
 
 	cfg.Parse(locations, &locs)
 	cfg.Parse(actions, &acts)
-	user := repository.GetUser(p)
+
+	user := repository.GetUser(up.Account)
 
 	return &Game{
-		Name:      g,
+		Name:      up.Game,
 		Locations: locs,
 		Actions:   acts,
 		Active:    true,
 		User:      user,
+		profile:   up,
+		tasks:     cfg.LoadTask(up),
 	}
 }
 
@@ -79,71 +85,98 @@ func (g *Game) Action(name string) *cfg.Action {
 	return nil
 }
 
-func (g *Game) Stage(ocr ocr.OcrResult) (ch, stg uint) {
+func (g *Game) UpdateProgress(loc Level, or ocr.OcrResult) {
+	u := g.User
+	towerEx := `.*[lis|del|ght|ess|um|wer|ree](?P<floor>\d{3}|d{4}) Floors`
 	stgchregex := `Stage:(?P<chapter>\d+)-(?P<stage>\d+)`
 
-	campain := ocr.Regex(stgchregex)
-
-	progress := g.User.GetProgress()
-
-	if len(campain) > 0 && campain[0] != int(progress.Chapter) && campain[1] != int(progress.Stage) {
-		color.HiMagenta("### Campain data mismatch ###\n Actual STAGE: %v-%v ### \n >>> Fixing...", campain[0], campain[1])
-		g.SetStage(campain[0], campain[1])
-	}
-	return progress.Chapter, progress.Chapter
-}
-
-func (g *Game) SetStage(c, s int) {
-	p := g.User.GetProgress()
-	p.Chapter = uint(c)
-	p.Stage = uint(s)
-}
-
-func CampainNext(c, s int) (int, int) {
-	if s <= stages40 {
-		if s < 40 {
-			s++
-		} else {
-			s = 1
-			c++
-
+	switch loc {
+	case Chapter, Stage:
+		camp := or.Regex(stgchregex)
+		if len(camp) == 2 {
+			ch := u.GetProgress(Chapter.Id())
+			ch.Update(camp[0])
+			stg := u.GetProgress(Stage.Id())
+			stg.Update(camp[1])
 		}
-	} else {
-		if s < 60 {
-			s++
-		} else {
-			s = 1
-			c++
+	case Kings, Light, Mauler, Wilder, Graveborn, Celestial, Infernal:
+		floor := or.Regex(towerEx)
+		if len(floor) == 1 {
+			flr := u.GetProgress(loc.Id())
+			flr.Update(floor[0])
 		}
 	}
-	return c, s
 }
 
-func (g *Game) ActiveDailies() DailyQuest {
-	return DailyQuest(g.User.ActiveQuests().Quests)
+/*
+	|			|
+pt. |Quest  	| %b
+-----------------------
+10  |Loot x2	|	1
+10	|FastReward	|	1
+10  |Friendship	|	1
+10	|Wrizz		|	1
+20	|Arena1x1	|	1
+10  |Inn		|	1
+20	|Fight Camp	|	0
+10	|Fight KT	|	1
+
+
+hard to implement
+10 	|Bounty		|
+20	|summon		|
+	|ArenaTopEnemy
+	|FRqty		|
+*/
+
+func (g *Game) ActiveDailies() []DailyQuest {
+    var res []DailyQuest
+    userQuests := DailyQuest(g.User.DailyData().Quests)
+    for i:=0; i< len(QuestNames); i++{
+        if userQuests&(1<<uint(i)) == 0 {
+            res = append(res, DailyQuest(1<<uint(i)))
+        }
+    }
+    return res
 }
 
 func (g *Game) MarkDone(quesst DailyQuest) {
-	if !HasOneOf(quesst, g.ActiveDailies()) {
+    userQuests := DailyQuest(g.User.DailyData().Quests)
+	if !HasOneOf(quesst, userQuests) {
 		g.User.
-			ActiveQuests().
+            DailyData().
 			Update(
-				Set(g.ActiveDailies(), quesst).Indx())
+				Set(userQuests, quesst).Id())
 		color.HiRed("--> DAILY <-- \nCurrent: [%08b] \nOverall: [%08b]", quesst, g.ActiveDailies())
 	}
 }
 
-// 20 Fight Camp
-// 10  Loot x2
-// 10  Likes         sql.NullBool `gorm:"default:false"`
-// 10  FastRewards   sql.NullBool `gorm:"default:false"`
-// 10  GuildBoss     sql.NullBool `gorm:"default:false"`
-// 20 Arena         sql.NullBool `gorm:"default:false"`
-// 10 Fight KT
-// 10  Inn sql.NullBool `gorm:"default:false"`
+func (g *Game) Task(loc Level) *cfg.ReactiveTask {
+	var Task cfg.ReactiveTask
+	for _, v := range g.tasks {
+		if v.Name == loc.String() {
+			return &v
+		}
+	}
+	return &Task
+}
+func (g *Game) DailyTask(dly DailyQuest) *cfg.ReactiveTask {
+	var Task cfg.ReactiveTask
+	for _, v := range g.tasks {
+		if v.Name == dly.String() {
+			return &v
+		}
+	}
+	return &Task
+}
 
-// hard to implement
-// 10 Bounty
-// 20 summon
-// ArenaTopEnemy sql.NullBool `gorm:"default:false"`
-//  FRqty         uint8        `gorm:"default:1"`
+
+func (g *Game) Tasks() []cfg.ReactiveTask {
+    var nodaily []cfg.ReactiveTask
+    for _, v := range g.tasks {
+        if !slices.Contains(QuestNames, v.Name) {
+            nodaily = append(nodaily, v)
+        }
+    }
+	return nodaily
+}

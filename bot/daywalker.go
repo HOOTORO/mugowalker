@@ -2,20 +2,22 @@ package bot
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"worker/adb"
 	"worker/afk"
 	"worker/cfg"
+	"worker/ocr"
 
 	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 )
 
 type Daywalker struct {
 	id              uint32
 	xmax, ymax, cnt uint8
-	Tasks           []cfg.Task
 	ActiveTask      string
 	reactive        bool
 	lastLoc         *cfg.Location
@@ -42,92 +44,64 @@ func (dw *Daywalker) CurrentLocation() string {
 	return ""
 }
 
-func (dw *Daywalker) UP(r *cfg.ReactiveTask) {
+func (dw *Daywalker) UpAll() {
+	daily, err := dw.Daily()
+	if err != nil {
+		log.Errorf("Daily errr")
+	}
+	log.Infof("Daily done? %v", daily)
+	for _, v := range dw.Tasks() {
+		if availiableToday(v.Avail) {
+			dw.React(&v)
+		}
+	}
+}
+
+func (dw *Daywalker) React(r *cfg.ReactiveTask) error {
 	dw.reactive = true
-	for dw.reactive {
-		grid := r.React(dw.MyLocation())
+	cnt := 0
+	for dw.reactive && r.Limit >= cnt {
+		loc := dw.MyLocation()
+		grid := r.React(loc)
+		before, ok := r.Before(loc)
+
+		if ok {
+			dw.runBefore(r.Name, before)
+		}
+
 		dw.TapGO(grid.X, grid.Y, grid.Offset)
-	}
-}
 
-// Run entry point to run bot
-func (dw *Daywalker) Run(t cfg.Task) {
-	// availible to maintain  daily quiests
-	const CanDaily = afk.Wrizz | afk.Oak | afk.Arena1x1 | afk.QKT | afk.Loot | afk.FastReward | afk.QCamp
-	e := dw.runTask(t)
-	if e != nil {
-		panic(e)
-	}
-}
+		after, ok := r.After(loc)
 
-func (dw *Daywalker) runTask(t cfg.Task) error {
-	color.HiYellow("Run task --> %v", t.Name)
-	for _, a := range t.Actions {
-		e := dw.Do(a)
-		if e != nil {
-			return e
+		if ok {
+			dw.runAfter(loc, after)
+		}
+		if r.Limit > 0 && r.Criteria == loc {
+			cnt++
 		}
 	}
 	return nil
 }
 
+
 func (dw *Daywalker) Daily() (bool, error) {
-	color.HiRed("\n--> DAILY <-- \nBDstor:   [%08b] \nConstant: [%08b]", dw.ActiveDailies(), afk.Dailies)
-	if !afk.HasAll(dw.ActiveDailies(), afk.Dailies) {
-		//        works!
-		if !afk.HasOneOf(afk.Wrizz, dw.ActiveDailies()) {
-			e := dw.Do(afk.QString(afk.Wrizz)[0])
-			if e == nil {
-				dw.MarkDone(afk.Wrizz)
-			}
+	color.HiRed("\n--> DAILY <-- \nUndone:   %08b", dw.ActiveDailies())
+	var ignoredDailies = []afk.DailyQuest{afk.QCamp, afk.QKT}
+	for _, daily := range dw.ActiveDailies() {
+		color.HiRed("--> RUN # [%s]", daily)
+		if slices.Contains(ignoredDailies, daily) {
+			color.HiCyan("--> IGNORING # [%s]", daily)
+			dw.MarkDone(daily)
+            continue
 		}
-		if !afk.HasOneOf(afk.Oak, dw.ActiveDailies()) {
-			e := dw.Do(afk.QString(afk.Oak)[0])
-			if e == nil {
-				dw.MarkDone(afk.Oak)
-			}
-		}
-		if !afk.HasOneOf(afk.Arena1x1, dw.ActiveDailies()) {
-			e := dw.Do(afk.QString(afk.Arena1x1)[0])
-			if e == nil {
-				dw.MarkDone(afk.Arena1x1)
-			}
-		}
-		if !afk.HasOneOf(afk.QKT, dw.ActiveDailies()) {
-			e := dw.Do(afk.QString(afk.QKT)[0])
-			if e == nil {
-				dw.MarkDone(afk.QKT)
-			}
-		}
-		if !afk.HasOneOf(afk.FastReward, dw.ActiveDailies()) {
-			e := dw.Do(afk.QString(afk.FastReward)[0])
-			if e == nil {
-				dw.MarkDone(afk.FastReward)
-			}
-		}
-		if !afk.HasOneOf(afk.QCamp, dw.ActiveDailies()) {
-			e := dw.Do(afk.QString(afk.QCamp)[0])
-			if e == nil {
-				dw.MarkDone(afk.QCamp)
-			}
+		task := dw.DailyTask(daily)
+		e := dw.React(task)
+		if e == nil {
+			dw.MarkDone(daily)
+			dw.ZeroPosition()
 		}
 	}
 	return true, nil
-}
-
-func (dw *Daywalker) SaveStatsFormation() {
-	p := dw.User.GetProgress()
-	if dw.lastLoc.Key == afk.STAT {
-		filename := fmt.Sprintf("%v_%v.png", time.Now(), dw.lastLoc.Key)
-		bsfname := fmt.Sprintf("stats_%v-%v_%v", p.Chapter, p.Stage, filename)
-		hifname := fmt.Sprintf("info_%v-%v_%v", p.Chapter, p.Stage, filename)
-		_, e := dw.Screenshot(bsfname)
-		_, e = dw.Screenshot(hifname)
-		dw.Back()
-		if e != nil {
-			log.Errorf("stst err: %v", e.Error())
-		}
-	}
 }
 
 func (dw *Daywalker) Screenshot(name string) (string, error) {
@@ -154,3 +128,43 @@ func (dw *Daywalker) ZeroPosition() bool {
 		return false
 	}
 }
+
+func availiableToday(days string) bool {
+	d := strings.Split(days, "/")
+	weekday := time.Now().Weekday().String()
+	return slices.Contains(d, weekday[:3])
+}
+
+func (b *Daywalker) runBefore(loc, b4 string) {
+	switch b4 {
+	case "updProgress":
+
+        scr := b.Gameshot(fmt.Sprintf("%v", loc))
+		t := ocr.TextExtract(scr)
+		b.UpdateProgress(afk.LocLvl(loc), t)
+	default:
+		ords := cfg.StrToGrid(b4)
+		b.TapGO(ords.X, ords.Y, ords.Offset)
+	}
+}
+func (b *Daywalker) runAfter(loc, aft string) {
+	switch aft {
+	case "aft1", "HeroInfo":
+		time.Sleep(3 * time.Second)
+        pr:=    b.User.GetProgress(afk.LocLvl(loc).Id())
+        b.Gameshot(fmt.Sprintf("%v_heroinfo", pr.Level))
+		b.TapGO(1, 18, 1)
+        time.Sleep(time.Second)
+		b.TapGO(3, 17, 1)
+	case "markDone":
+		b.reactive = false
+	}
+}
+
+func (dw *Daywalker) Gameshot(name string) string {
+    f := fmt.Sprintf("%v_%v_%v.png", dw.fprefix, dw.id, name)
+    dw.Screencap(f)
+     _ = dw.Pull(f, cfg.UsrDir(""))
+    return cfg.UsrDir(f)
+}
+

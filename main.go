@@ -16,95 +16,106 @@ import (
 )
 
 func main() {
-	// log := cfg.Logger()
 
 	if len(os.Args) > 1 && os.Args[1] == "-t" {
-		// testloc("fn.png", afk.TowerFN)
-		testloc("statlow.png", afk.STAT)
-		// ocrtest()
+		color.HiRed("%v", "TEST RUN")
+		ocrtest()
 		return
-
 	}
+
 
 	// USER INPUT DATA
 	const (
 		player    = "Devitool"
 		game      = "afkarena"
-		rTaskConf = "cfg/reactions.yaml"
 		connect   = "localhost:5555"
 	)
-	user := cfg.User(player, game, rTaskConf, connect)
+        var rTaskConf = []string{"cfg/reactions.yaml", "cfg/daily.yaml"}
+        user := cfg.User(player, game,  connect, rTaskConf)
 
 	device := cfg.Load(user)
-	gm := afk.New(user.Account, user.Game)
+	gm := afk.New(user)
 	bt := bot.New(device, gm)
-	task := user.Task(afk.TowerFN)
-
-	bt.UP(task)
+	// task := user.Task(afk.Graveborn)
+	//	task := gm.Task(afk.Mauler)
+	//    bt.React(task)
+//    bt.MarkDone(afk.Wrizz)
+//    return
+	bt.UpAll()
 }
 
 func ocrtest() {
-	testlocs := make(map[string]string, 1)
+    b := afk.New(&cfg.UserProfile{Account: "test", Game: "afk", ConnectionStr: "localhost:5555", TaskConfigs: []string{"cfg/reactions.yaml"}})
 
-	testlocs[afk.DARKFORREST] = "df.png"
-	testlocs[afk.ENTRY] = "cpn.png"
-	testlocs[afk.RANHORNY] = "h.png"
-	testlocs[afk.BOSSTAGE] = "cpnb.png"
-	testlocs[afk.KTower] = "towers.png"
-	testlocs[afk.RESULT] = "lose.png"
-	var improved, casual int = 0, 0
-	for k, v := range testlocs {
-		imp, cas := testloc(v, k)
-		if imp {
-			improved++
+    var testdata = func(lo,im  string) *struct{loc, img string} {
+        return &struct{loc, img string }{img:im , loc: lo }
+    }
+    testlocs := make([]*struct{loc,img string}, 0)
+    testlocs = append(testlocs,
+        testdata(afk.DARKFORREST, "test/forrest.png"),
+        testdata( afk.ENTRY, "test/cpn1.png"),
+        testdata( afk.ENTRY, "test/cpn2.png"),
+        testdata( afk.RANHORNY, "test/h.png"),
+        testdata( afk.BOSSTAGE, "test/cpnb.png"),
+        testdata( afk.Kings.String(), "test/towers.png"),
+        testdata( afk.RESULT, "test/lose.png"),
+        testdata( afk.Loot.String(), "test/loot.png"),
+        testdata( afk.FastReward.String(),"test/fr.png"),
+        testdata( afk.BATTLE ,"test/btl_multstg.png"),
+        testdata( afk.BATTLE ,"test/btl_onestg.png"),
+        testdata( afk.STAT ,"test/stt1.png"),
+        testdata( afk.STAT ,"test/stt2.png"),
+        testdata( afk.WIN , "test/cpn_win.png"),
+//        testdata( "", ""),
+//        testdata( "", ""),
+//        testdata( "", ""),
+//        testdata( "", ""),
+        )
+
+
+	var overall = 0
+	for _, v := range testlocs {
+		res := testloc(v.img, b.GetLocation(v.loc))
+		if res {
+			overall++
 		}
-		if cas {
-			casual++
-		}
+
 	}
-	color.HiBlue("\nTest overall:\n   Split   --> %v/%v\n   OneImg  --> %v/%v\n", improved, len(testlocs), casual, len(testlocs))
+//    testRegion("test/btl_onestg_1.png")
+//    testRegion("test/btl_multstg_1.png")
+	color.HiBlue("\nTest overall:\n   Basic   --> %v/%v\n", overall, len(testlocs))
 }
 
-func testloc(img, loc string) (r1, r2 bool) {
+func testloc(img string, loc *cfg.Location) (r1 bool) {
 	fail := color.New(color.FgHiRed, color.Bold).SprintfFunc()
 	pass := color.New(color.FgHiGreen, color.Bold).SprintfFunc()
 	regular := color.New(color.FgHiYellow).SprintFunc()
-	improved := color.New(color.FgHiCyan).SprintFunc()
+	//	regular("%v - %v", img, loc)
 
-	b := afk.New("afk", "test")
-	loca := b.GetLocation(loc)
 	restr := "\nResult	-> %v\nHits	-> [%v/%v]\n\n"
 
-	fmt.Printf("Test location: [%v], source: %v\n\n", loca.Key, img)
-
 	mt := ocr.TextExtract(img)
-	ass := mt.Intersect(loca.Keywords)
+	fmt.Printf("Test location: [%v], source: %v\n\n", fail(loc.Key), fail(img))
+	ass := mt.Intersect(loc.Keywords)
+
 	fmt.Print(regular("General	-> "), highlight(mt.Fields(), ass, pass))
 
-	if r2 = len(ass) >= loca.Threshold; r2 {
-		fmt.Print(pass(restr, r2, len(ass), loca.Threshold))
+	if r1 = len(ass) >= loc.Threshold; r1 {
+		fmt.Print(pass(restr, r1, len(ass), loc.Threshold))
 	} else {
-		fmt.Print(fail(restr, r2, len(ass), loca.Threshold))
+		fmt.Print(fail(restr, r1, len(ass), loc.Threshold))
 	}
 
-	t := ocr.ImprovedTextExtract(img)
-	ass1 := t.Intersect(loca.Keywords)
-	fmt.Print(improved("Most Accurate:	-> "), highlight(t.Fields(), ass1, pass))
-	if r1 = len(ass1) >= loca.Threshold; r1 {
-		fmt.Print(pass(restr, r1, len(ass1), loca.Threshold))
-	} else {
-		fmt.Print(fail(restr, r1, len(ass1), loca.Threshold))
-	}
 	return
 }
 
-func testRegion() {
+func testRegion(img string) {
 	//    b := afk.New("afk", "test")
-	loc := "ch.png"
-	p1 := image.Point{X: 400, Y: 1400}
-	p2 := image.Point{X: 300, Y: 400}
+    loc := img
+	p1 := image.Point{X: 120, Y: 1500}
+	p2 := image.Point{X: 600, Y: 180}
 	r := ocr.RegionText(loc, p1, p2)
-	color.HiGreen("\nResult --> %v", r)
+	color.HiGreen("\nResult --> %v", r.String())
 }
 
 func highlight(k, s []string, fn func(s string, a ...interface{}) string) []string {

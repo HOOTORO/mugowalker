@@ -3,7 +3,6 @@ package ocr
 import (
 	"fmt"
 	"image"
-	"io"
 	"os"
 	"regexp"
 	"strconv"
@@ -17,27 +16,25 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-var uni string = "“€”\"’^#@™&!~'‘|<$>«»,:¢\\/_;§®‘*~."
-
 type OcrResult struct {
 	raw    string
 	fields []string
 }
 
 func (or OcrResult) String() string {
-	return strings.Join(or.fields, " | ")
+	return or.raw//strings.Join(or.fields, " | ")
 }
 
 func (or OcrResult) Fields() []string {
 	return or.fields
 }
 
-func (or OcrResult) Regex(r string) (res []int) {
+func (or OcrResult) Regex(r string) (res []uint) {
 	re := regexp.MustCompile(r)
 	for _, v := range re.FindStringSubmatch(or.raw) {
-		i, err := strconv.Atoi(v)
+		i, err := strconv.ParseUint(v, 10, 32)
 		if err == nil {
-			res = append(res, i)
+			res = append(res, uint(i))
 		}
 	}
 	return
@@ -52,48 +49,6 @@ func (or OcrResult) Intersect(k []string) (r []string) {
 	return r
 }
 
-// ReadTextFromFile read text from the file. It internally calls ReadText after reading the file.
-func ReadTextFromFile(f string) (string, error) {
-	r, err := os.Open(f)
-	if err != nil {
-		return "", err
-	}
-	defer r.Close()
-
-	return ReadText(r)
-}
-
-// ReadText read text from the given io.Reader r. It converts to grayscale first before pass it to tesseract.
-// It writes grayscale image and output text file to the os.TempFile.
-func ReadText(r io.Reader) (string, error) {
-	grayImg, err := covertGrayscale(r)
-	outfile, _ := tmpFile()
-
-	if err = runOcr(grayImg.Name(), outfile.Name()); err != nil {
-		return "", err
-	}
-	ocredBytes, _ := readTmp(outfile.Name())
-	return formatStr(strings.TrimSpace(string(ocredBytes))), nil
-}
-
-func Text(img string) string {
-	t, err := ReadTextFromFile(img)
-	if err != nil {
-		fmt.Printf("OCR Error: %v", err.Error())
-	}
-	return t
-}
-
-func KeywordHits(kw, ocr []string) int {
-	res := 0
-	for _, word := range kw {
-		if slices.Contains(ocr, word) {
-			res++
-		}
-	}
-	return res
-}
-
 func RegionText(img string, topleft, size image.Point) OcrResult {
 	defer timeTrack(time.Now(), "\nRegionText")
 	cropedregion := imaginer.Concat(img, topleft, size)
@@ -103,20 +58,6 @@ func RegionText(img string, topleft, size image.Point) OcrResult {
 		log.Errorf("RegionText fails: %v", e)
 	}
 	return r
-}
-
-func ImprovedTextExtract(img string) OcrResult {
-	defer timeTrack(time.Now(), "ImprovedTextExtract")
-	var result OcrResult
-	imgPrep := OptimizeForOCR(img)
-	images := imaginer.GridCrop(imgPrep)
-
-	for _, v := range images {
-		r, _ := recognize(v)
-		result.raw += r.raw
-		result.fields = append(result.fields, r.Fields()...)
-	}
-	return result
 }
 
 func TextExtract(img string) OcrResult {
@@ -135,17 +76,18 @@ func recognize(img string) (OcrResult, error) {
 		raw: formatStr(strings.TrimSpace(string(raw))),
 	}
 	log.Tracef("Raw OCR: %s", raw)
-	r.fields = CleanText(r.raw)
+//	color.HiCyan("Raw OCR: %s", raw)
+	r.fields = cleanText(r.raw)
 	return r, e
 }
 
-func CleanText(s string) []string {
+func cleanText(s string) []string {
 	res := strings.Fields(s)
 	var filtered []string
 	for _, v := range res {
-		trimmed := strings.Trim(v, uni)
-		if len(trimmed) > 3 || strings.ContainsAny(trimmed, "01234356789") {
-			filtered = append(filtered, trimmed)
+
+		if len(v) > 3 || strings.ContainsAny(v, "01234356789") {
+			filtered = append(filtered, v)
 		}
 	}
 	return filtered

@@ -1,7 +1,7 @@
 package ocr
 
 import (
-	"image/jpeg"
+    "image/jpeg"
 	"image/png"
 	"io"
 	"os"
@@ -57,8 +57,8 @@ func covertGrayscale(r io.Reader) (*os.File, error) {
 
 func runOcr(in string, out string) error {
 	args := append([]string{in, out}, tessAgrs...)
-	log.Tracef("Tesseract args -> %v", args)
 	cmd := exec.Command(tesser, args...)
+    log.Tracef("cmd tess : %v\n", cmd.String())
 	// uncomment for ocr log
 	// cmd.Stdout = os.Stdout
 	// cmd.Stderr = os.Stderr

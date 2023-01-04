@@ -1,5 +1,7 @@
 package cfg
 
+import "fmt"
+
 type Action struct {
 	Name        string   `yaml:"name"`
 	Start       []string `yaml:"startloc,omitempty"`
@@ -17,12 +19,17 @@ type Step struct {
 
 type ReactiveTask struct {
 	Name      string     `yaml:"name"`
+	Limit     int        `yaml:"limit"`
+	Criteria  string     `yaml:"criteria`
+	Avail     string     `yaml:"avail"`
 	Reactions []Reaction `yaml:"reactions"`
 }
 
 type Reaction struct {
-	If string `yaml:"if"`
-	Do string `yaml:"do"`
+	If     string `yaml:"if"`
+	Before string `yaml:"before"`
+	Do     string `yaml:"do"`
+	After  string `yaml:"after"`
 }
 
 type Task struct {
@@ -64,10 +71,13 @@ func (emu emuConf) Command(name string) []string {
 type UserProfile struct {
 	Account       string
 	Game          string
-	TaskConfigs   string
+    TaskConfigs   []string
 	ConnectionStr string
 }
 
-func User(accname, game, taskcfgpath, connect string) *UserProfile {
+func (up *UserProfile) String() string {
+    return fmt.Sprintf("\n--> Game: %v\n--> Acc: %v\n", up.Game, up.Account)
+}
+func User(accname, game, connect string, taskcfgpath []string) *UserProfile {
 	return &UserProfile{Account: accname, Game: game, TaskConfigs: taskcfgpath, ConnectionStr: connect}
 }

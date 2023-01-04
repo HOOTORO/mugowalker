@@ -4,9 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"os"
-	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -54,7 +51,6 @@ func New(d *adb.Device, game *afk.Game) *Daywalker {
 		fprefix: time.Now().Format("2006_01"),
 		Device:  d,
 		Game:    game,
-		Tasks:   make([]cfg.Task, 0, 10),
 		lastLoc: game.GetLocation(afk.ENTRY),
 		xmax:    xgrid, ymax: ygrid, cnt: 0,
 	}
@@ -74,19 +70,14 @@ func (dw *Daywalker) Peek() ocr.OcrResult {
 }
 
 func (dw *Daywalker) MyLocation() (locname string) {
-	recognizedText := dw.Peek()
-
-	if !dw.checkLoc(recognizedText) {
-		time.Sleep(5 * time.Second)
-		dw.MyLocation()
-
-		// color.HiBlue("unknown loc, launch more accurate ocr...")
-		// deep := ocr.ImprovedTextExtract(dw.lastscreenshot)
-		// if !dw.checkLoc(deep) {
-		// 	log.Errorf("UNKNOWN LOCATION, DROPPED\n Last ocr results --> %v", deep.Fields())
-		// 	time.Sleep(5 * time.Second)
-		// 	dw.MyLocation()
-		// }
+WaitForLoc:
+	for {
+		if !dw.checkLoc(dw.Peek()) {
+			time.Sleep(5 * time.Second)
+			continue WaitForLoc
+		} else {
+			break WaitForLoc
+		}
 	}
 	color.HiYellow("My Location most likely -> %v", dw.lastLoc)
 	return dw.lastLoc.Key
@@ -117,7 +108,7 @@ func (dw *Daywalker) checkLoc(o ocr.OcrResult) (ok bool) {
 	maxh := 1
 	for k, loc := range dw.Locations {
 		hit := o.Intersect(loc.Keywords)
-		if loc.Key != dw.lastLoc.Key && len(hit) >= loc.Threshold && len(hit) >= maxh {
+		if len(hit) >= loc.Threshold && len(hit) >= maxh {
 			maxh = len(hit)
 			color.HiYellow("## Keywords hit %v -> %v ##...", loc.Key, hit)
 			dw.lastLoc = &dw.Locations[k]
@@ -174,25 +165,9 @@ func (dw *Daywalker) TapGO(gx, gy, off int) {
 	px := gx*width - width/2
 	py := gy*height - int(o)*height/2
 
-	// drawTap(px, py, dw)
-
 	e := dw.Tap(fmt.Sprint(px), fmt.Sprint(py))
 	color.HiGreen("Tap: Grid-> %v:%v, Point-> %vx%v px", gx, gy, px, py)
 	if e != nil {
 		log.Warnf("Have an error during tap: %v", e.Error())
 	}
-}
-
-func drawTap(tx, ty int, bot *Daywalker) {
-	step++
-	s, e := bot.Screenshot(fmt.Sprintf("%v", step))
-	circle := fmt.Sprintf("circle %v,%v %v,%v", tx, ty, tx+20, ty+20)
-	no := fmt.Sprintf("+%v+%v", tx-20, ty+20)
-	cmd := exec.Command("magick", s, "-fill", "red", "-draw", circle, "-fill", "black", "-pointsize", "60", "-annotate", no, fmt.Sprintf("%v", step), filepath.Join("steps", filepath.Base(bot.lastscreenshot)))
-	e = cmd.Run()
-
-	if e != nil {
-		log.Errorf("s:%v", e.Error())
-	}
-	os.Remove(s)
 }

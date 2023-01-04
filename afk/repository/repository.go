@@ -34,21 +34,15 @@ type User struct {
 	Vip       uint
 	Diamonds  uint
 	Gold      uint
-	Dailies   []Daily `gorm:"foreignKey:UserID"`
+	Locations []Progress `gorm:"foreignKey:UserID"`
+	Dailies   []Daily    `gorm:"foreignKey:UserID"`
 }
 
 type Progress struct {
 	UserID uint
 	gorm.Model
-	Chapter      uint
-	Stage        uint
-	Kingtower    uint
-	Lightbearers uint
-	Maulers      uint
-	Wilders      uint
-	Graveborn    uint
-	Celestial    uint
-	Hypogens     uint
+	Location uint
+	Level    uint
 }
 
 type Daily struct {
@@ -103,37 +97,15 @@ func (u *User) AfterUpdate(tx *gorm.DB) (err error) {
 	return
 }
 
-func (u *User) ActiveQuests() *Daily {
+func (u *User) DailyData() *Daily {
 	var td *Daily
-	r := udb.Where("user_id = ? and created_at > ?", u.ID, Bod(time.Now().UTC())).First(&td)
+	r := udb.Where("user_id = ? and created_at > ?", u.ID, StartOfDay(time.Now().UTC())).First(&td)
 	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
 		td = &Daily{Quests: 0, UserID: u.ID}
 		udb.Save(td)
 	}
 
 	return td
-}
-
-func (u *User) GetProgress() *Progress {
-	var p *Progress
-	r := udb.Where("user_id = ?", u.ID).First(&p)
-	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
-		p = &Progress{
-			UserID:       u.ID,
-			Chapter:      0,
-			Stage:        0,
-			Kingtower:    0,
-			Lightbearers: 0,
-			Maulers:      0,
-			Wilders:      0,
-			Graveborn:    0,
-			Celestial:    0,
-			Hypogens:     0,
-		}
-		udb.Save(p)
-
-	}
-	return p
 }
 
 func (u *Daily) Update(quest uint8) {
@@ -145,7 +117,32 @@ func (u *Daily) Update(quest uint8) {
 	}
 }
 
-func Bod(t time.Time) time.Time {
+func (u *Progress) Update(level uint) {
+	u.Level = level
+	r := udb.Save(u)
+	color.HiWhite("\nudb: %v user updated", r.RowsAffected)
+	if r.Error != nil {
+		panic("DB ERROR : " + r.Error.Error())
+	}
+}
+
+func (u *User) GetProgress(loc uint) *Progress {
+	var p *Progress
+	r := udb.Where("user_id = ? and location = ?", u.ID, loc).Order("created_at DESC").First(&p)
+	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
+		log.Error("No entries rn")
+		p = &Progress{Location: loc, Level: 0, UserID: u.ID}
+		udb.Save(p)
+	}
+	return p
+}
+
+func (u *User) LocLevel(loc, level uint) {
+	u.Locations = append(u.Locations, Progress{Location: loc, Level: level})
+	udb.Save(u)
+}
+
+func StartOfDay(t time.Time) time.Time {
 	year, month, day := t.Date()
 	return time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
 }
@@ -166,3 +163,6 @@ func NowInMoscow() time.Time {
 func RawLocData(loc, txt string) {
 	lcdb.Create(&RawLocation{Name: loc, Text: txt})
 }
+
+
+

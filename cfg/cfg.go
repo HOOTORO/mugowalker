@@ -32,6 +32,7 @@ const (
 	adbdir      = ".adb"
 	ocrsettings = "cfg/ocr.yaml"
 	emulator    = "cfg/emu.yaml"
+    usrfolder = "usrdata"
 )
 
 var (
@@ -88,6 +89,24 @@ func (rt ReactiveTask) React(trigger string) *adb.Point {
 		}
 	}
 	return cutgrid("1:18")
+}
+
+func (rt ReactiveTask) Before(trigger string) (string, bool) {
+	for _, v := range rt.Reactions {
+		if trigger == v.If && v.Before != "" {
+			return v.Before, true
+		}
+	}
+	return "", false
+}
+
+func (rt ReactiveTask) After(trigger string) (string, bool) {
+	for _, v := range rt.Reactions {
+		if trigger == v.If && v.After != "" {
+			return v.After, true
+		}
+	}
+	return "", false
 }
 
 // Position on Grid
@@ -160,6 +179,20 @@ func cutgrid(str string) (p *adb.Point) {
 	}
 	return
 }
+func StrToGrid(str string) (p *adb.Point) {
+	ords := strings.Split(str, ":")
+	p = &adb.Point{
+		Point: image.Point{
+			X: toInt(ords[0]),
+			Y: toInt(ords[1]),
+		},
+		Offset: 1,
+	}
+	if len(ords) > 2 {
+		p.Offset = toInt(ords[2])
+	}
+	return
+}
 
 func loadOcr() *ocrConfig {
 	res := &ocrConfig{}
@@ -195,18 +228,22 @@ func ImageDir(f string) string {
 	if e != nil {
 		panic("no tmpdir")
 	}
-
-	if !filepath.IsAbs(f) {
-		return filepath.Join(a, f)
+	return filepath.Join(a, filepath.Base(f))
+}
+func UsrDir(f string) string {
+	a, e := filepath.Abs(usrfolder)
+	if e != nil {
+		panic("no tmpdir")
 	}
 	return filepath.Join(a, filepath.Base(f))
 }
 
 func createDirStructure() error {
-	//	usr := SafeEnv("USERPROFILE")
-	//	wd := filepath.Join(usr, adbdir)
+//	usr := SafeEnv("USERPROFILE")
+//	wd := filepath.Join(usr, adbdir)
 	wd, e := os.Getwd()
 	rootd := filepath.Join(wd, localdir)
+	usr := filepath.Join(wd, localdir, usrfolder)
 	dbpath := filepath.Join(wd, localdir, dbdir)
 	imgpath := filepath.Join(wd, localdir, tmpdir)
 	cfgpath := filepath.Join(wd, localdir, cfgdir)
@@ -218,6 +255,7 @@ func createDirStructure() error {
 	e = os.MkdirAll(dbpath, os.ModeDir)
 	e = os.MkdirAll(imgpath, os.ModeDir)
 	e = os.MkdirAll(stepspath, os.ModeDir)
+	e = os.MkdirAll(usr, os.ModeDir)
 
 	if e != nil {
 		log.Errorf("%v", e)
@@ -232,13 +270,6 @@ func createDirStructure() error {
 	return e
 }
 
-func SafeEnv(name string) string {
-	if p, ok := os.LookupEnv(name); ok {
-		return p
-	}
-	log.Warnf("Env [%v] not found!", name)
-	return ""
-}
 
 func LookupPath(name string) (path string) {
 	p, err := exec.LookPath(name)
@@ -271,14 +302,11 @@ func Load(u *UserProfile) *adb.Device {
 	return devs[num]
 }
 
-func (up *UserProfile) Task(id string) *ReactiveTask {
-	var reactiveTasks []ReactiveTask
-	var Task ReactiveTask
-	Parse(up.TaskConfigs, &reactiveTasks)
-	for _, v := range reactiveTasks {
-		if v.Name == id {
-			Task = v
-		}
-	}
-	return &Task
+func LoadTask(up *UserProfile) (r []ReactiveTask) {
+    for _, t := range up.TaskConfigs{
+	reactiveTasks := make([]ReactiveTask, 0)
+	Parse(t, &reactiveTasks)
+    r = append(r,reactiveTasks...)
+    }
+	return
 }

@@ -1,6 +1,12 @@
 package afk
 
-type UserField int
+import "math"
+
+type Const interface {
+    String() string
+    Id() uint
+}
+type UserField uint
 
 type DailyQuest uint8
 
@@ -16,7 +22,12 @@ func QString(k DailyQuest) []string {
 	return result
 }
 
-func (dq DailyQuest) Indx() uint8 {
+func (dq DailyQuest) String() string {
+    idx := math.Log2(float64(dq))
+    return QuestNames[int(idx)]
+}
+
+func (dq DailyQuest) Id() uint8 {
 	return uint8(dq)
 }
 
@@ -33,72 +44,82 @@ const (
 	Dailies = Loot | FastReward | Friendship | Wrizz | Arena1x1 | Oak | QCamp | QKT
 )
 
-type Tower int
-
-var strs = [...]string{"", "name", "account_id", "vip", "chapter", "stage", "diamonds", "gold"}
+var strs = [...]string{"name", "account_id", "vip", "chapter", "stage", "diamonds", "gold"}
 
 const (
 	USERNAME UserField = iota + 1
 	ACCOUNTID
 	VIP
-	CHAPTER
-	STAGE
 	DIAMONDS
 	GOLD
 )
 
+func (uf UserField) String() string {
+	return strs[uf-1]
+}
+
+
+type Level uint
+
+var towers = [...]string{"ch", "stg", "kt", "tol", "bc", "wt", "fn", "cs", "if"}
+
 const (
-	Kings Tower = iota + 1
-	Celestial
-	Infernal
+	Chapter Level = iota + 1
+	Stage
+	Kings
 	Light
 	Mauler
 	Wilder
 	Graveborn
+	Celestial
+	Infernal
 )
 
-func (uf UserField) String() string {
-	return strs[uf]
+func (t Level) String() string {
+	return towers[t-1]
 }
 
-/*
-	Locations and correspondinf actions config names
-*/
-//General
+func LocLvl(s string) Level {
+	for i, v := range towers {
+		if v == s {
+			return Level(i)
+		}
+	}
+	return 0
+}
+
+func (t Level) Id() uint {
+	return uint(t)
+}
+
+// Popouts on locations
+type Popout uint
+func (p Popout) String() string {
+    return popouts[p-1]
+}
+func (p Popout) Id() uint {
+    return uint(p)
+}
+var popouts = [...]string{"skipf", "gichest","popextra"}
 const (
-	ENTRY       = "campain"
-	EXTRAPOPOUT = "popextra"
+    SKIPF Popout = iota +1
+    GICHEST
+	EXTRAPOPOUT
+
 )
 
+//General locations
 const (
+	ENTRY       = "campain"
 	BATTLE   = "prepare"
 	RESULT   = "result"
 	WIN      = "victory"
 	STAT     = "stat"
 	BOSSTAGE = "bossnode"
-)
 
-const (
-	CAMPBegin = "campBegin"
-)
-
-const (
 	DARKFORREST = "forrest"
-	KTower      = "kt"
-	TowerTOL    = "tol"
-	TowerBC     = "bc"
-	TowerWT     = "wt"
-	TowerFN     = "fn"
-	TowerCS     = "cs"
-	TowerIF     = "if"
-	TowerInside = "tower"
-)
-
-const (
 	RANHORNY = "ranhorn"
-)
 
-const (
 	HEROINFO = "heroinfo"
 )
 
