@@ -47,15 +47,15 @@ func main() {
 func ocrtest() {
     b := afk.New(&cfg.UserProfile{Account: "test", Game: "afk", ConnectionStr: "localhost:5555", TaskConfigs: []string{"cfg/reactions.yaml"}})
 
-    var testdata = func(lo,im  string) *struct{loc, img string} {
-        return &struct{loc, img string }{img:im , loc: lo }
+    var testdata = func(lo uint,im  string) *struct{loc afk.ArenaLocation; img string} {
+        return &struct{loc afk.ArenaLocation; img string }{loc: afk.ArenaLocation(lo), img: im}
     }
-    testlocs := make([]*struct{loc,img string}, 0)
+    testlocs := make([]*struct{loc afk.ArenaLocation; img string}, 0)
     testlocs = append(testlocs,
 //        testdata(afk.DARKFORREST, "test/forrest.png"),
 //        testdata( afk.Campain, "test/cpn1.png"),
 //        testdata( afk.Campain, "test/cpn2.png"),
-        testdata( afk.RANHORNY.String(), "test/h.png"),
+            testdata( afk.RANHORNY.Id(), "_test/h.png"),
 //        testdata( afk.BOSSTAGE, "test/cpnb.png"),
 //        testdata( afk.Kings.String(), "test/towers.png"),
 //        testdata( afk.RESULT, "test/lose.png"),
