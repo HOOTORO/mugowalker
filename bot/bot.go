@@ -3,70 +3,112 @@ package bot
 import (
 	"errors"
 	"fmt"
-	"path/filepath"
+	"math/rand"
+	"strings"
 	"time"
+    "worker/afk"
+
+    "worker/afk/repository"
 
 	"worker/adb"
 	"worker/ocr"
-	// "github.com/fatih/color"
+
+	"github.com/fatih/color"
 )
 
-// Instance of bot
-func New(d *adb.Device) *Daywalker {
+type Offset int
+
+const (
+	Center Offset = iota
+	Bottom
+	Top
+)
+
+var ErrLocationMismatch = errors.New("Wrong Location!")
+
+// var errActionFail = errors.New("smthg went wrong during Doing Action")
+
+var (
+	tempfile string = "temp"
+	step     int    = 0
+)
+
+const (
+	maxattempt uint8 = 5
+	xgrid            = 5
+	ygrid            = 18
+)
+
+// New Instance of bot
+func New(d *adb.Device, game *afk.Game) *Daywalker {
+	color.Magenta("Tap grid size : [ %vx%v ]", xgrid, ygrid)
+	rand.Seed(time.Now().Unix())
 	return &Daywalker{
-		Device: d,
-		Tasks:  make([]Task, 0, 10),
-		Status: &Status{},
+		id:      rand.Uint32(),
+		fprefix: time.Now().Format("2006_01"),
+		Device:  d,
+		Game:    game,
+		lastLoc: game.GetLocation(afk.Campain),
+		xmax:    xgrid, ymax: ygrid, cnt: 0,
 	}
 }
 
-// OCRed Text
-func (w *Daywalker) Peek() string {
+// ScanScreen OCRed Text TODO: maybe add args to peek like peek(data interface) smth like
+// this should be w.ScanScreen(Location) \n w.ScanScreen(Stage)
+func (dw *Daywalker) ScanScreen() ocr.OcrResult {
 	// TODO: Generate random filname
-	filename := "p.png"
-	w.Screencap(filename)
-	e := w.Pull(filename, ".")
+	s, e := dw.Screenshot(tempfile)
 	if e != nil {
-		fmt.Printf("\nerr:%v\nduring run:%v ", e, "Peek()")
+		log.Errorf("\nerr:%v\nduring run:%v ", e, "ScanScreen()")
 	}
-	abspath, _ := filepath.Abs(filename)
-
-	text := ocr.Text(abspath)
+	text := ocr.TextExtract(s)
+	log.Tracef("ocred: %v", text)
 	return text
 }
 
-func (d *Daywalker) AllowedAction(n string) bool {
-	_, ok := locs[n]
-	return ok
-}
-
-func (d *Daywalker) SetLocation(s string) {
-	d.loc = locs[s]
-	(d.loc).Label = s
-}
-
-func (d *Daywalker) Action(s string, props Properties) error {
-	action, ok := d.loc.Actions[s]
-	if !ok {
-		return errors.New(fmt.Sprintf("NO Action<%v> in context<%v>!", s, d.loc.Label))
+func (dw *Daywalker) MyLocation() (locname string) {
+WaitForLoc:
+	for {
+		if !dw.checkLoc(dw.ScanScreen()) {
+			time.Sleep(5 * time.Second)
+			continue WaitForLoc
+		} else {
+			break WaitForLoc
+		}
 	}
-	d.last = action
-	action.run(d)
-	return nil
+	color.HiYellow("My Location most likely -> %v", dw.lastLoc)
+	return dw.lastLoc.Key
 }
 
-func (a Action) run(d *Daywalker) {
-	d.Tap(a.X, a.Y)
-	if a.Delay > 0 {
-		delay := time.Duration(a.Delay + a.BaseDelay)
-		time.Sleep(delay * time.Second)
+func (dw *Daywalker) checkLoc(o ocr.OcrResult) (ok bool) {
+	maxh := 1
+	for k, loc := range dw.Locations {
+		hit := o.Intersect(loc.Keywords)
+		if len(hit) >= loc.Threshold && len(hit) >= maxh {
+			maxh = len(hit)
+			color.HiYellow("## Keywords hit %v -> %v ##...", loc.Key, hit)
+			dw.lastLoc = &dw.Locations[k]
+			ok = true
+			repository.RawLocData(loc.Key, strings.Join(o.Fields(), ";"))
+		}
 	}
+	return
 }
 
-func Keys[K comparable, V any](m map[K]V) []K {
-	res := make([]K, 0, len(m))
-	for k := range m {
-		res = append(res, k)
+// TapGO Grid x,y with y offset
+func (dw *Daywalker) TapGO(gx, gy, off int) {
+	o := Offset(off)
+	// Cell size
+	height := dw.Resolution.Y / int(dw.ymax)
+	width := dw.Resolution.X / int(dw.xmax)
+
+	// Center point
+	px := gx*width - width/2
+	py := gy*height - int(o)*height/2
+
+	e := dw.Tap(fmt.Sprint(px), fmt.Sprint(py))
+	color.HiGreen("Tap: Grid-> %v:%v, Point-> %vx%v px", gx, gy, px, py)
+	if e != nil {
+		log.Warnf("Have an error during tap: %v", e.Error())
 	}
-	return res
 }

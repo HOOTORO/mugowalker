@@ -1,0 +1,21 @@
+# Android emulator settings
+---
+- cmd: HD-Player
+  args:
+    - "--instance"
+    - "Rvc64_16"
+    - "--cmd"
+    - "launchApp"
+    - "--package"
+    - "com.lilithgames.hgame.gp.id"
+- cmd: taskkill
+  args:
+    - "/fi"
+    - "WINDOWTITLE eq Devitool"
+    - "/IM"
+    - "HD-Player.exe"
+    - "/F"
+- cmd: TASKLIST
+  args:
+    - "/fi"
+    - "IMAGENAME eq HD-Player.exe"
