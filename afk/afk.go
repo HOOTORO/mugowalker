@@ -63,8 +63,8 @@ func New(up *cfg.UserProfile) *Game {
 		Active:    true,
 		User:      user,
 		profile:   up,
-        tasks: tasks,
-        dailys: dailys,
+		tasks:     tasks,
+		dailys:    dailys,
 	}
 }
 
@@ -77,7 +77,7 @@ func (g *Game) GetLocation(l Location) *cfg.Location {
 	return nil
 }
 
-func (g *Game) UpdateProgress(loc Level, or ocr.OcrResult) {
+func (g *Game) UpdateProgress(loc Location, or ocr.OcrResult) {
 	u := g.User
 	towerEx := `.*[lis|del|ght|ess|um|wer|ree](?P<floor>\d{3}|d{4}) Floors`
 	stgchregex := `Stage:(?P<chapter>\d+)-(?P<stage>\d+)`
@@ -152,6 +152,7 @@ func (g *Game) Task(loc Location) *cfg.ReactiveTask {
 	}
 	return &Task
 }
+
 func (g *Game) DailyTask(dly DailyQuest) *cfg.ReactiveTask {
 	var Task cfg.ReactiveTask
 	for _, v := range g.dailys {

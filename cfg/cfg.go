@@ -12,8 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/exp/slices"
-
 	"worker/adb"
 	"worker/afk/repository"
 
@@ -32,7 +30,7 @@ const (
 	adbdir      = ".adb"
 	ocrsettings = "cfg/ocr.yaml"
 	emulator    = "cfg/emu.yaml"
-    usrfolder = "usrdata"
+	usrfolder   = "usrdata"
 )
 
 var (
@@ -91,41 +89,22 @@ func (rt ReactiveTask) React(trigger string) *adb.Point {
 	return cutgrid("1:18")
 }
 
-func (rt ReactiveTask) Before(trigger string) (string, bool) {
+func (rt ReactiveTask) Before(trigger string) string {
 	for _, v := range rt.Reactions {
 		if trigger == v.If && v.Before != "" {
-			return v.Before, true
+			return v.Before
 		}
 	}
-	return "", false
+	return ""
 }
 
-func (rt ReactiveTask) After(trigger string) (string, bool) {
+func (rt ReactiveTask) After(trigger string) string {
 	for _, v := range rt.Reactions {
 		if trigger == v.If && v.After != "" {
-			return v.After, true
+			return v.After
 		}
 	}
-	return "", false
-}
-
-// Position on Grid
-func (l *Location) Position() *adb.Point {
-	return cutgrid(l.Grid)
-}
-
-func (s *Step) Target() *adb.Point {
-	return cutgrid(s.Grid)
-}
-
-func (s *Action) ConditionalStep(locid string) Step {
-	for _, step := range s.Conditional {
-		if slices.Contains(step.Loc, locid) {
-			return step
-		}
-	}
-	log.Errorf("%v:%v", locid, ErrStepNotFound.Error())
-	panic(ErrStepNotFound)
+	return ""
 }
 
 func Parse(s string, out interface{}) {
@@ -141,14 +120,14 @@ func Parse(s string, out interface{}) {
 }
 
 func UserInput(desc, def string) string {
-	//	reader := bufio.NewReader(os.Stdin)
-	_ = bufio.NewReader(os.Stdin)
-	text := "0"
+	reader := bufio.NewReader(os.Stdin)
+	bufio.NewReader(os.Stdin)
+	//	text := "0"
 	color.HiCyan(desc)
 	color.HiRed("---------------------")
 	fmt.Printf("[default:%v]: ", color.HiGreenString(def))
-	//	text, _ := reader.ReadString('\n')
-	//	text, _ := reader.ReadString('\n')
+	text, _ := reader.ReadString('\n')
+	//		text, _ := reader.ReadString('\n')
 	// convert CRLF to LF
 	text = strings.Replace(text, "\n", "", -1)
 	if len(text) == 0 {
@@ -179,6 +158,7 @@ func cutgrid(str string) (p *adb.Point) {
 	}
 	return
 }
+
 func StrToGrid(str string) (p *adb.Point) {
 	ords := strings.Split(str, ":")
 	p = &adb.Point{
@@ -230,6 +210,7 @@ func ImageDir(f string) string {
 	}
 	return filepath.Join(a, filepath.Base(f))
 }
+
 func UsrDir(f string) string {
 	a, e := filepath.Abs(usrfolder)
 	if e != nil {
@@ -239,8 +220,8 @@ func UsrDir(f string) string {
 }
 
 func createDirStructure() error {
-//	usr := SafeEnv("USERPROFILE")
-//	wd := filepath.Join(usr, adbdir)
+	//	usr := SafeEnv("USERPROFILE")
+	//	wd := filepath.Join(usr, adbdir)
 	wd, e := os.Getwd()
 	rootd := filepath.Join(wd, localdir)
 	usr := filepath.Join(wd, localdir, usrfolder)
@@ -270,7 +251,6 @@ func createDirStructure() error {
 	return e
 }
 
-
 func LookupPath(name string) (path string) {
 	p, err := exec.LookPath(name)
 	if err == nil {
@@ -283,7 +263,7 @@ func LookupPath(name string) (path string) {
 
 func Load(u *UserProfile) *adb.Device {
 	devs, e := adb.Devices()
-	if e != nil {
+	if e == nil {
 		d, e := adb.Connect(u.ConnectionStr)
 		if e != nil {
 			panic("dev err")
@@ -303,10 +283,10 @@ func Load(u *UserProfile) *adb.Device {
 }
 
 func LoadTask(up *UserProfile) (r []ReactiveTask) {
-    for _, t := range up.TaskConfigs{
-	reactiveTasks := make([]ReactiveTask, 0)
-	Parse(t, &reactiveTasks)
-    r = append(r,reactiveTasks...)
-    }
+	for _, t := range up.TaskConfigs {
+		reactiveTasks := make([]ReactiveTask, 0)
+		Parse(t, &reactiveTasks)
+		r = append(r, reactiveTasks...)
+	}
 	return
 }

@@ -117,7 +117,7 @@ func (t Level) Id() uint {
 	return uint(t)
 }
 
-// Popouts on locations
+// Popout Popouts on locations
 type Popout uint
 
 func (p Popout) String() string {
@@ -137,13 +137,21 @@ const (
 
 //General locations
 
+type Reaction uint
+var rcts = [...]string{"push", "climb"}
+func (r Reaction) String() string {
+    return rcts[r-1]
 
+}
+func (r Reaction) Id() uint {
+    return uint(r)
+}
 // Actions
 const (
-	DOPUSHCAMP   = "push"
-	DOTOWERCLIMB = "climb"
-	DOGIBOSSES   = "wrizz"
-	DOOAK        = "oak"
+	DOPUSHCAMP  Reaction = iota+1
+	DOTOWERCLIMB
+//	DOGIBOSSES   = "wrizz"
+//	DOOAK        = "oak"
 )
 
 const (
@@ -163,3 +171,28 @@ const (
 //	chap3boss = 34
 //	chap4boss = 35
 //)
+
+type Action uint
+
+var bas = [...]string{"updProgress", "custom", "deactivate", "gshot"}
+
+const(
+    UpdProgress Action = iota+1
+    Custom
+    Deactivate
+    Gshot
+
+)
+
+func (ba Action) String() string {
+    return bas[ba]
+}
+
+func IsAction(s string) (Action, bool){
+    for i, act := range  bas {
+        if act == s {
+            return Action(i), true
+        }
+    }
+    return 0, false
+}

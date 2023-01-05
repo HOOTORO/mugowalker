@@ -19,7 +19,7 @@ type Daywalker struct {
 	id              uint32
 	xmax, ymax, cnt uint8
 	ActiveTask      string
-	reactive        bool
+	Reactive        bool
 	lastLoc         *cfg.Location
 	fprefix         string
 	lastscreenshot  string
@@ -37,11 +37,11 @@ func (dw *Daywalker) String() string {
 	return fmt.Sprintf("Bot status:\n   Game: %v\n ActiveTask: %v\n Last Location: %v", dw.Game, dw.ActiveTask, dw.lastLoc)
 }
 
-func (dw *Daywalker) CurrentLocation() string {
+func (dw *Daywalker) CurrentLocation() afk.Location {
 	if dw.lastLoc != nil {
-		return dw.lastLoc.Key
+		return afk.LocLvl(dw.lastLoc.Key)
 	}
-	return ""
+	return nil
 }
 
 func (dw *Daywalker) UpAll() {
@@ -58,23 +58,23 @@ func (dw *Daywalker) UpAll() {
 }
 
 func (dw *Daywalker) React(r *cfg.ReactiveTask) error {
-	dw.reactive = true
+	dw.Reactive = true
 	cnt := 0
-	for dw.reactive && r.Limit >= cnt {
+	for dw.Reactive && r.Limit >= cnt {
 		loc := dw.MyLocation()
 		grid := r.React(loc)
-		before, ok := r.Before(loc)
+		before, ok := afk.IsAction(r.Before(loc))
 
 		if ok {
-			dw.runBefore(r.Name, before)
+			dw.RunBefore(before)
 		}
 
 		dw.TapGO(grid.X, grid.Y, grid.Offset)
 
-		after, ok := r.After(loc)
+		after, ok := afk.IsAction(r.After(loc))
 
 		if ok {
-			dw.runAfter(loc, after)
+			dw.RunAfter(after)
 		}
 		if r.Limit > 0 && r.Criteria == loc {
 			cnt++
@@ -83,16 +83,15 @@ func (dw *Daywalker) React(r *cfg.ReactiveTask) error {
 	return nil
 }
 
-
 func (dw *Daywalker) Daily() (bool, error) {
 	color.HiRed("\n--> DAILY <-- \nUndone:   %08b", dw.ActiveDailies())
-	var ignoredDailies = []afk.DailyQuest{afk.QCamp, afk.QKT}
+	ignoredDailies := []afk.DailyQuest{afk.QCamp, afk.QKT}
 	for _, daily := range dw.ActiveDailies() {
 		color.HiRed("--> RUN # [%s]", daily)
 		if slices.Contains(ignoredDailies, daily) {
 			color.HiCyan("--> IGNORING # [%s]", daily)
 			dw.MarkDone(daily)
-            continue
+			continue
 		}
 		task := dw.DailyTask(daily)
 		e := dw.React(task)
@@ -135,36 +134,37 @@ func availiableToday(days string) bool {
 	return slices.Contains(d, weekday[:3])
 }
 
-func (b *Daywalker) runBefore(loc, b4 string) {
-	switch b4 {
-	case "updProgress":
-
-        scr := b.Gameshot(fmt.Sprintf("%v", loc))
-		t := ocr.TextExtract(scr)
-		b.UpdateProgress(afk.LocLvl(loc), t)
-	default:
-		ords := cfg.StrToGrid(b4)
-		b.TapGO(ords.X, ords.Y, ords.Offset)
-	}
-}
-func (b *Daywalker) runAfter(loc, aft string) {
-	switch aft {
-	case "aft1", "HeroInfo":
-		time.Sleep(3 * time.Second)
-        pr:=    b.User.GetProgress(afk.LocLvl(loc).Id())
-        b.Gameshot(fmt.Sprintf("%v_heroinfo", pr.Level))
-		b.TapGO(1, 18, 1)
-        time.Sleep(time.Second)
-		b.TapGO(3, 17, 1)
-	case "markDone":
-		b.reactive = false
-	}
-}
-
 func (dw *Daywalker) Gameshot(name string) string {
-    f := fmt.Sprintf("%v_%v_%v.png", dw.fprefix, dw.id, name)
-    dw.Screencap(f)
-     _ = dw.Pull(f, cfg.UsrDir(""))
-    return cfg.UsrDir(f)
+	f := fmt.Sprintf("%v_%v_%v.png", dw.fprefix, dw.id, name)
+	dw.Screencap(f)
+	_ = dw.Pull(f, cfg.UsrDir(""))
+	return cfg.UsrDir(f)
 }
 
+func (dw *Daywalker) RunBefore(action afk.Action) {
+	switch action {
+	case afk.UpdProgress:
+		loc := dw.CurrentLocation()
+		scr := dw.Gameshot(fmt.Sprintf("%v", loc))
+		t := ocr.TextExtract(scr)
+		dw.UpdateProgress(loc, t)
+		//        default:
+		//            ords := cfg.StrToGrid()
+		//            dw.TapGO(ords.X, ords.Y, ords.Offset)
+	}
+}
+
+func (dw *Daywalker) RunAfter(action afk.Action) {
+	switch action {
+	case afk.Gshot:
+		time.Sleep(3 * time.Second)
+		loc := dw.CurrentLocation()
+		pr := dw.User.GetProgress(loc.Id())
+		dw.Gameshot(fmt.Sprintf("%v_heroinfo", pr.Level))
+		dw.TapGO(1, 18, 1)
+		time.Sleep(time.Second)
+		dw.TapGO(3, 17, 1)
+	case afk.Deactivate:
+		dw.Reactive = false
+	}
+}

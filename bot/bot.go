@@ -6,12 +6,11 @@ import (
 	"math/rand"
 	"strings"
 	"time"
+    "worker/afk"
 
-
-	"worker/afk/repository"
+    "worker/afk/repository"
 
 	"worker/adb"
-	"worker/afk"
 	"worker/ocr"
 
 	"github.com/fatih/color"
@@ -95,7 +94,6 @@ func (dw *Daywalker) checkLoc(o ocr.OcrResult) (ok bool) {
 	}
 	return
 }
-
 
 // TapGO Grid x,y with y offset
 func (dw *Daywalker) TapGO(gx, gy, off int) {
