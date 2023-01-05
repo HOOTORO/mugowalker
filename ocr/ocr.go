@@ -67,11 +67,20 @@ func TextExtract(img string) OcrResult {
 	return t
 }
 
+func TextExtractAlto(img string) Alto {
+	defer timeTrack(time.Now(), "RegularOcr")
+	imgPrep := OptimizeForOCR(img)
+    f, _ := tmpFile()
+    runOcr(imgPrep, f.Name())
+    return UnmarshalAlto(f.Name())
+
+}
+
 // recognize text on a given img
 func recognize(img string) (OcrResult, error) {
 	f, _ := tmpFile()
 	e := runOcr(img, f.Name())
-	raw, e := readTmp(f.Name())
+    raw, e := readTmp(f.Name()+ ".txt")
 	r := OcrResult{
 		raw: formatStr(strings.TrimSpace(string(raw))),
 	}
@@ -85,7 +94,6 @@ func cleanText(s string) []string {
 	res := strings.Fields(s)
 	var filtered []string
 	for _, v := range res {
-
 		if len(v) > 3 || strings.ContainsAny(v, "01234356789") {
 			filtered = append(filtered, v)
 		}
@@ -108,7 +116,7 @@ func tmpFile() (*os.File, error) {
 }
 
 func readTmp(fname string) ([]byte, error) {
-	bytes, err := os.ReadFile(fname + ".txt")
+	bytes, err := os.ReadFile(fname)
 	if err != nil {
 		return nil, err
 	}

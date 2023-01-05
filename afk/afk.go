@@ -2,9 +2,8 @@ package afk
 
 import (
 	"fmt"
-    "golang.org/x/exp/slices"
 
-    "worker/afk/repository"
+	"worker/afk/repository"
 	"worker/cfg"
 	"worker/ocr"
 
@@ -13,7 +12,8 @@ import (
 
 var (
 	locations = "cfg/locations.yaml"
-	actions   = "cfg/actions.yaml"
+	reactions = "cfg/reactions.yaml"
+	daily     = "cfg/daily.yaml"
 )
 
 func Set(p, flag DailyQuest) DailyQuest {
@@ -25,21 +25,20 @@ func Clear(p, flag DailyQuest) DailyQuest {
 }
 
 func HasAll(p, flag DailyQuest) bool {
-	return p & flag == flag
+	return p&flag == flag
 }
 
 func HasOneOf(p, flag DailyQuest) bool {
-	return p & flag != 0
+	return p&flag != 0
 }
 
 type Game struct {
-	Name      string
-	User      *repository.User
-	Active    bool
-	Locations []cfg.Location
-	Actions   []cfg.Action
-	profile   *cfg.UserProfile
-	tasks     []cfg.ReactiveTask
+	Name          string
+	Active        bool
+	Locations     []cfg.Location
+	User          *repository.User
+	profile       *cfg.UserProfile
+	tasks, dailys []cfg.ReactiveTask
 }
 
 func (g *Game) String() string {
@@ -49,37 +48,30 @@ func (g *Game) String() string {
 func New(up *cfg.UserProfile) *Game {
 	color.HiMagenta("\nLaunch %v!", up)
 	locs := make([]cfg.Location, 1, 1)
-	acts := make([]cfg.Action, 1, 1)
+	tasks := make([]cfg.ReactiveTask, 1, 1)
+	dailys := make([]cfg.ReactiveTask, 1, 1)
 
 	cfg.Parse(locations, &locs)
-	cfg.Parse(actions, &acts)
+	cfg.Parse(reactions, &tasks)
+	cfg.Parse(daily, &dailys)
 
 	user := repository.GetUser(up.Account)
 
 	return &Game{
 		Name:      up.Game,
 		Locations: locs,
-		Actions:   acts,
 		Active:    true,
 		User:      user,
 		profile:   up,
-		tasks:     cfg.LoadTask(up),
+        tasks: tasks,
+        dailys: dailys,
 	}
 }
 
-func (g *Game) GetLocation(id string) *cfg.Location {
+func (g *Game) GetLocation(l Location) *cfg.Location {
 	for _, loc := range g.Locations {
-		if loc.Key == id {
+		if loc.Key == l.String() {
 			return &loc
-		}
-	}
-	return nil
-}
-
-func (g *Game) Action(name string) *cfg.Action {
-	for _, act := range g.Actions {
-		if act.Name == name {
-			return &act
 		}
 	}
 	return nil
@@ -130,28 +122,28 @@ hard to implement
 */
 
 func (g *Game) ActiveDailies() []DailyQuest {
-    var res []DailyQuest
-    userQuests := DailyQuest(g.User.DailyData().Quests)
-    for i:=0; i< len(QuestNames); i++{
-        if userQuests&(1<<uint(i)) == 0 {
-            res = append(res, DailyQuest(1<<uint(i)))
-        }
-    }
-    return res
+	var res []DailyQuest
+	userQuests := DailyQuest(g.User.DailyData().Quests)
+	for i := 0; i < len(QuestNames); i++ {
+		if userQuests&(1<<uint(i)) == 0 {
+			res = append(res, DailyQuest(1<<uint(i)))
+		}
+	}
+	return res
 }
 
 func (g *Game) MarkDone(quesst DailyQuest) {
-    userQuests := DailyQuest(g.User.DailyData().Quests)
+	userQuests := DailyQuest(g.User.DailyData().Quests)
 	if !HasOneOf(quesst, userQuests) {
 		g.User.
-            DailyData().
+			DailyData().
 			Update(
 				Set(userQuests, quesst).Id())
 		color.HiRed("--> DAILY <-- \nCurrent: [%08b] \nOverall: [%08b]", quesst, g.ActiveDailies())
 	}
 }
 
-func (g *Game) Task(loc Level) *cfg.ReactiveTask {
+func (g *Game) Task(loc Location) *cfg.ReactiveTask {
 	var Task cfg.ReactiveTask
 	for _, v := range g.tasks {
 		if v.Name == loc.String() {
@@ -162,7 +154,7 @@ func (g *Game) Task(loc Level) *cfg.ReactiveTask {
 }
 func (g *Game) DailyTask(dly DailyQuest) *cfg.ReactiveTask {
 	var Task cfg.ReactiveTask
-	for _, v := range g.tasks {
+	for _, v := range g.dailys {
 		if v.Name == dly.String() {
 			return &v
 		}
@@ -170,13 +162,6 @@ func (g *Game) DailyTask(dly DailyQuest) *cfg.ReactiveTask {
 	return &Task
 }
 
-
 func (g *Game) Tasks() []cfg.ReactiveTask {
-    var nodaily []cfg.ReactiveTask
-    for _, v := range g.tasks {
-        if !slices.Contains(QuestNames, v.Name) {
-            nodaily = append(nodaily, v)
-        }
-    }
-	return nodaily
+	return g.tasks
 }

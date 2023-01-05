@@ -118,11 +118,11 @@ func (dw *Daywalker) ZeroPosition() bool {
 		log.Errorf("Reach recursion limit, quitting....")
 		return false
 	}
-	if dw.MyLocation() == afk.RANHORNY {
+	if dw.MyLocation() == afk.RANHORNY.String() {
 		dw.cnt = 0
 		return true
 	} else {
-		dw.tapGrid(1, ygrid)
+		dw.TapGO(1, ygrid, 1)
 		dw.cnt++
 		dw.ZeroPosition()
 		return false

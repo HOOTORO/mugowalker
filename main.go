@@ -52,20 +52,20 @@ func ocrtest() {
     }
     testlocs := make([]*struct{loc,img string}, 0)
     testlocs = append(testlocs,
-        testdata(afk.DARKFORREST, "test/forrest.png"),
-        testdata( afk.ENTRY, "test/cpn1.png"),
-        testdata( afk.ENTRY, "test/cpn2.png"),
-        testdata( afk.RANHORNY, "test/h.png"),
-        testdata( afk.BOSSTAGE, "test/cpnb.png"),
-        testdata( afk.Kings.String(), "test/towers.png"),
-        testdata( afk.RESULT, "test/lose.png"),
-        testdata( afk.Loot.String(), "test/loot.png"),
-        testdata( afk.FastReward.String(),"test/fr.png"),
-        testdata( afk.BATTLE ,"test/btl_multstg.png"),
-        testdata( afk.BATTLE ,"test/btl_onestg.png"),
-        testdata( afk.STAT ,"test/stt1.png"),
-        testdata( afk.STAT ,"test/stt2.png"),
-        testdata( afk.WIN , "test/cpn_win.png"),
+//        testdata(afk.DARKFORREST, "test/forrest.png"),
+//        testdata( afk.Campain, "test/cpn1.png"),
+//        testdata( afk.Campain, "test/cpn2.png"),
+        testdata( afk.RANHORNY.String(), "test/h.png"),
+//        testdata( afk.BOSSTAGE, "test/cpnb.png"),
+//        testdata( afk.Kings.String(), "test/towers.png"),
+//        testdata( afk.RESULT, "test/lose.png"),
+//        testdata( afk.Loot.String(), "test/loot.png"),
+//        testdata( afk.FastReward.String(),"test/fr.png"),
+//        testdata( afk.BATTLE ,"test/btl_multstg.png"),
+//        testdata( afk.BATTLE ,"test/btl_onestg.png"),
+//        testdata( afk.STAT ,"test/stt1.png"),
+//        testdata( afk.STAT ,"test/stt2.png"),
+//        testdata( afk.WIN , "test/cpn_win.png"),
 //        testdata( "", ""),
 //        testdata( "", ""),
 //        testdata( "", ""),
@@ -90,11 +90,12 @@ func testloc(img string, loc *cfg.Location) (r1 bool) {
 	fail := color.New(color.FgHiRed, color.Bold).SprintfFunc()
 	pass := color.New(color.FgHiGreen, color.Bold).SprintfFunc()
 	regular := color.New(color.FgHiYellow).SprintFunc()
-	//	regular("%v - %v", img, loc)
+		regular("%v - %v", img, loc)
 
 	restr := "\nResult	-> %v\nHits	-> [%v/%v]\n\n"
 
 	mt := ocr.TextExtract(img)
+
 	fmt.Printf("Test location: [%v], source: %v\n\n", fail(loc.Key), fail(img))
 	ass := mt.Intersect(loc.Keywords)
 
@@ -105,7 +106,13 @@ func testloc(img string, loc *cfg.Location) (r1 bool) {
 	} else {
 		fmt.Print(fail(restr, r1, len(ass), loc.Threshold))
 	}
-
+    pass("xu")
+    al := ocr.TextExtractAlto(img)
+//    fmt.Printf("%v", pass("%v",))
+    tl := al.Layout.Page.PrintSpace.ComposedBlock.TextBlock.TextLine
+    for _, line := range  tl {
+        fmt.Printf("%v : %v", fail("%vx%v", line.HPOS, line.VPOS),pass("%v\n", line.String))
+    }
 	return
 }
 

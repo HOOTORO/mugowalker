@@ -2,6 +2,20 @@ package cfg
 
 import "fmt"
 
+type UserProfile struct {
+	Account       string
+	Game          string
+    TaskConfigs   []string
+	ConnectionStr string
+}
+
+func (up *UserProfile) String() string {
+    return fmt.Sprintf("\n--> Game: %v\n--> Acc: %v\n", up.Game, up.Account)
+}
+func User(accname, game, connect string, taskcfgpath []string) *UserProfile {
+	return &UserProfile{Account: accname, Game: game, TaskConfigs: taskcfgpath, ConnectionStr: connect}
+}
+
 type Action struct {
 	Name        string   `yaml:"name"`
 	Start       []string `yaml:"startloc,omitempty"`
@@ -66,18 +80,4 @@ func (emu emuConf) Command(name string) []string {
 		}
 	}
 	return []string{}
-}
-
-type UserProfile struct {
-	Account       string
-	Game          string
-    TaskConfigs   []string
-	ConnectionStr string
-}
-
-func (up *UserProfile) String() string {
-    return fmt.Sprintf("\n--> Game: %v\n--> Acc: %v\n", up.Game, up.Account)
-}
-func User(accname, game, connect string, taskcfgpath []string) *UserProfile {
-	return &UserProfile{Account: accname, Game: game, TaskConfigs: taskcfgpath, ConnectionStr: connect}
 }

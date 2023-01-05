@@ -2,11 +2,10 @@ package afk
 
 import "math"
 
-type Const interface {
-    String() string
-    Id() uint
+type Location interface {
+	String() string
+	Id() uint
 }
-type UserField uint
 
 type DailyQuest uint8
 
@@ -23,8 +22,8 @@ func QString(k DailyQuest) []string {
 }
 
 func (dq DailyQuest) String() string {
-    idx := math.Log2(float64(dq))
-    return QuestNames[int(idx)]
+	idx := math.Log2(float64(dq))
+	return QuestNames[int(idx)]
 }
 
 func (dq DailyQuest) Id() uint8 {
@@ -44,6 +43,8 @@ const (
 	Dailies = Loot | FastReward | Friendship | Wrizz | Arena1x1 | Oak | QCamp | QKT
 )
 
+type UserField uint
+
 var strs = [...]string{"name", "account_id", "vip", "chapter", "stage", "diamonds", "gold"}
 
 const (
@@ -58,7 +59,31 @@ func (uf UserField) String() string {
 	return strs[uf-1]
 }
 
+type ArenaLocation uint
 
+func (al ArenaLocation) String() string {
+    return alocs[al-1]
+}
+
+func (al ArenaLocation) Id() uint {
+    return uint(al)
+}
+
+var alocs = [...]string{"campain", "forrest", "ranhorn", "prepare", "result", "victory", "stat", "heroinfo", "bossnode"}
+
+const (
+	Campain ArenaLocation = iota + 1
+	DarkForrest
+	RANHORNY
+	BATTLE
+	RESULT
+	WIN
+	STAT
+	HEROINFO
+	BOSSTAGE
+
+
+)
 type Level uint
 
 var towers = [...]string{"ch", "stg", "kt", "tol", "bc", "wt", "fn", "cs", "if"}
@@ -94,34 +119,24 @@ func (t Level) Id() uint {
 
 // Popouts on locations
 type Popout uint
+
 func (p Popout) String() string {
-    return popouts[p-1]
+	return popouts[p-1]
 }
 func (p Popout) Id() uint {
-    return uint(p)
+	return uint(p)
 }
-var popouts = [...]string{"skipf", "gichest","popextra"}
-const (
-    SKIPF Popout = iota +1
-    GICHEST
-	EXTRAPOPOUT
 
+var popouts = [...]string{"skipf", "gichest", "popextra"}
+
+const (
+	SKIPF Popout = iota + 1
+	GICHEST
+	EXTRAPOPOUT
 )
 
 //General locations
-const (
-	ENTRY       = "campain"
-	BATTLE   = "prepare"
-	RESULT   = "result"
-	WIN      = "victory"
-	STAT     = "stat"
-	BOSSTAGE = "bossnode"
 
-	DARKFORREST = "forrest"
-	RANHORNY = "ranhorn"
-
-	HEROINFO = "heroinfo"
-)
 
 // Actions
 const (
@@ -136,15 +151,15 @@ const (
 	GO2CAMP = "zero2camp"
 )
 
-const (
-	kingone   = 700
-	kingtwo   = 950
-	facone    = 450
-	factwo    = 660
-	godone    = 350
-	stages40  = 19
-	chap1boss = 30
-	chap2boss = 32
-	chap3boss = 34
-	chap4boss = 35
-)
+//const (
+//	kingone   = 700
+//	kingtwo   = 950
+//	facone    = 450
+//	factwo    = 660
+//	godone    = 350
+//	stages40  = 19
+//	chap1boss = 30
+//	chap2boss = 32
+//	chap3boss = 34
+//	chap4boss = 35
+//)

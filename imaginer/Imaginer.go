@@ -2,8 +2,8 @@ package imaginer
 
 import (
 	"fmt"
-    "github.com/sirupsen/logrus"
-    "image"
+	"github.com/sirupsen/logrus"
+	"image"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -14,15 +14,15 @@ import (
 
 var magick string
 var log *logrus.Logger
-const (
 
+const (
 	CROP = "-crop"
 )
 
 func init() {
 	// Fallback to searching on PATH.
-    magick =cfg.LookupPath("magick")
-    log = cfg.Logger()
+	magick = cfg.LookupPath("magick")
+	log = cfg.Logger()
 
 }
 
@@ -78,12 +78,11 @@ func Magick(img string, args ...string) (string, error) {
 	out := cfg.ImageDir(img)
 	args = append([]string{img}, args...)
 	args = append(args, out)
-    log.Tracef("Imagick args -> %v", args)
+	log.Tracef("Imagick args -> %v", args)
 	cmd := exec.Command(magick, args...)
 
 	return out, cmd.Run()
 }
-
 
 func Concat(f string, topleft, bottomright image.Point) string {
 	posArg := fmt.Sprintf("%vx%v+%v+%v", bottomright.X, bottomright.Y, topleft.X, topleft.Y)
@@ -97,16 +96,14 @@ func Concat(f string, topleft, bottomright image.Point) string {
 
 func GridCrop(f string) (crpdImages []string) {
 	r, e := Magick(f, cfg.OcrConf.Split...)
-    if e != nil {
-        log.Errorf("Grid Crop fail -> %v", e)
-    }
-    origName := strings.TrimRight(filepath.Base(f), filepath.Ext(f))
+	if e != nil {
+		log.Errorf("Grid Crop fail -> %v", e)
+	}
+	origName := strings.TrimRight(filepath.Base(f), filepath.Ext(f))
 	for _, file := range cfg.GetImages() {
-        if file != r && strings.Contains(file, origName) {
-            crpdImages = append(crpdImages,file)
+		if file != r && strings.Contains(file, origName) {
+			crpdImages = append(crpdImages, file)
 		}
 	}
 	return crpdImages
 }
-
-

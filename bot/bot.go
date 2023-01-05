@@ -7,10 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"golang.org/x/exp/slices"
 
 	"worker/afk/repository"
-	"worker/cfg"
 
 	"worker/adb"
 	"worker/afk"
@@ -51,18 +49,18 @@ func New(d *adb.Device, game *afk.Game) *Daywalker {
 		fprefix: time.Now().Format("2006_01"),
 		Device:  d,
 		Game:    game,
-		lastLoc: game.GetLocation(afk.ENTRY),
+		lastLoc: game.GetLocation(afk.Campain),
 		xmax:    xgrid, ymax: ygrid, cnt: 0,
 	}
 }
 
-// Peek OCRed Text TODO: maybe add args to peek like peek(data interface) smth like
-// this should be w.Peek(Location) \n w.Peek(Stage)
-func (dw *Daywalker) Peek() ocr.OcrResult {
+// ScanScreen OCRed Text TODO: maybe add args to peek like peek(data interface) smth like
+// this should be w.ScanScreen(Location) \n w.ScanScreen(Stage)
+func (dw *Daywalker) ScanScreen() ocr.OcrResult {
 	// TODO: Generate random filname
 	s, e := dw.Screenshot(tempfile)
 	if e != nil {
-		log.Errorf("\nerr:%v\nduring run:%v ", e, "Peek()")
+		log.Errorf("\nerr:%v\nduring run:%v ", e, "ScanScreen()")
 	}
 	text := ocr.TextExtract(s)
 	log.Tracef("ocred: %v", text)
@@ -72,7 +70,7 @@ func (dw *Daywalker) Peek() ocr.OcrResult {
 func (dw *Daywalker) MyLocation() (locname string) {
 WaitForLoc:
 	for {
-		if !dw.checkLoc(dw.Peek()) {
+		if !dw.checkLoc(dw.ScanScreen()) {
 			time.Sleep(5 * time.Second)
 			continue WaitForLoc
 		} else {
@@ -81,27 +79,6 @@ WaitForLoc:
 	}
 	color.HiYellow("My Location most likely -> %v", dw.lastLoc)
 	return dw.lastLoc.Key
-}
-
-func (dw *Daywalker) Do(action string) error {
-	dw.ActiveTask = action
-	color.HiBlue("Executing action : %v", action)
-	a := dw.Action(action)
-
-	if len(a.Start) > 0 && !slices.Contains(a.Start, dw.CurrentLocation()) {
-		dw.ZeroPosition()
-	}
-
-	for i, g := range a.Steps {
-		step = i + 1
-		dw.makeStep(g)
-	}
-	color.HiGreen("Action done -> %v", action)
-	if a.Next != "" {
-		e := dw.Do(a.Next)
-		return e
-	}
-	return nil
 }
 
 func (dw *Daywalker) checkLoc(o ocr.OcrResult) (ok bool) {
@@ -119,40 +96,6 @@ func (dw *Daywalker) checkLoc(o ocr.OcrResult) (ok bool) {
 	return
 }
 
-func (dw *Daywalker) makeStep(s cfg.Step) bool {
-	var cnt uint8
-	px, py, off := s.Target().X, s.Target().Y, s.Target().Offset
-
-	dw.TapGO(px, py, off)
-
-	if s.Skiplocheck {
-		return true
-	}
-
-	if s.Wait {
-		for !(slices.Contains(s.Loc, dw.MyLocation()) || cnt > maxattempt) {
-			color.HiCyan("waiting %v location for apear...%v", s.Loc, cnt)
-			time.Sleep(2 * time.Second)
-			cnt++
-		}
-		if len(s.Loc) > 1 {
-			conditionalAction := dw.Action(dw.ActiveTask).ConditionalStep(dw.CurrentLocation())
-			dw.makeStep(conditionalAction)
-		}
-	}
-
-	if !slices.Contains(s.Loc, dw.MyLocation()) {
-		color.HiRed("%v\nWant: %v Have: %v", ErrLocationMismatch.Error(), s.Loc, dw.lastLoc)
-		return false
-	}
-	return true
-}
-
-// tapGrid screen, grid 5x1, default Yoffset = 2
-func (dw *Daywalker) tapGrid(x, y int) {
-	yo := 1
-	dw.TapGO(x, y, yo)
-}
 
 // TapGO Grid x,y with y offset
 func (dw *Daywalker) TapGO(gx, gy, off int) {
