@@ -30,6 +30,7 @@ const (
 	adbdir      = ".adb"
 	ocrsettings = "cfg/ocr.yaml"
 	emulator    = "cfg/emu.yaml"
+    appsettings = "cfg/appcfg.yaml"
 	usrfolder   = "usrdata"
 )
 
@@ -37,10 +38,15 @@ var (
 	ErrWorkDirFail  error = errors.New("working dirictories wasn't created. Exit")
 	ErrStepNotFound error = errors.New("Config error. Have conditional step, but no actions for it")
 )
-var log *logrus.Logger
+var (
+	log *logrus.Logger
+    instanceConfig *AppConfig 
+)
+
 
 var (
-	OcrConf      *ocrConfig
+    AppConf *AppConfig
+	OcrConf *OcrConfig
 	EmulatorConf *emuConf
 )
 
@@ -53,8 +59,7 @@ func init() {
 	if e != nil {
 		panic(e)
 	}
-	OcrConf = loadOcr()
-	EmulatorConf = loadEmulator()
+    loadConf()
 	repository.DbInit(func(x string) string {
 		return filepath.Join(dbdir, x)
 	})
@@ -114,10 +119,25 @@ func Parse(s string, out interface{}) {
 	}
 	err = yaml.Unmarshal(f, out)
 	if err != nil {
+		log.Fatalf("UNMARSHAL WASTED: %v", err)
+	}
+	log.Tracef("UNMARSHALLED: %v\n\n", out)
+}
+
+func Save(name string, in interface{}) {
+	f, err := os.Create(name)
+	if err != nil {
+		log.Fatal(err)
+	}
+    b, err := yaml.Marshal(in)
+	if err != nil {
 		log.Fatalf("MARSHAL WASTED: %v", err)
 	}
-	log.Tracef("MARSHALLED: %v\n\n", out)
+    f.Write(b)
+	log.Tracef("MARSHALLED: %v\n\n", f)
 }
+
+
 
 func UserInput(desc, def string) string {
 	reader := bufio.NewReader(os.Stdin)
@@ -139,7 +159,7 @@ func UserInput(desc, def string) string {
 func toInt(s string) int {
 	num, e := strconv.Atoi(s)
 	if e != nil {
-		fmt.Printf("\nerr:%v\nduring run:%v", e, "intconv")
+		log.Errorf("\nerr:%v\nduring run:%v", e, "intconv")
 	}
 	return num
 }
@@ -174,16 +194,14 @@ func StrToGrid(str string) (p *adb.Point) {
 	return
 }
 
-func loadOcr() *ocrConfig {
-	res := &ocrConfig{}
-	Parse(ocrsettings, res)
-	return res
-}
+func loadConf() {
+    AppConf = &AppConfig{}
+    OcrConf = &OcrConfig{}
+    EmulatorConf = &emuConf{}
+    Parse(appsettings, AppConf)
+	Parse(ocrsettings, OcrConf)
+	Parse(emulator, EmulatorConf)
 
-func loadEmulator() *emuConf {
-	res := &emuConf{}
-	Parse(emulator, res)
-	return res
 }
 
 func truncateDir(d string) {
@@ -246,7 +264,7 @@ func createDirStructure() error {
 
 	if e == nil {
 		pwd, _ := os.Getwd()
-		fmt.Printf("\ninit: success; pwd: %v\n\n", pwd)
+		log.Infof("\ninit: success; pwd: %v\n\n", pwd)
 	}
 	return e
 }
@@ -261,10 +279,10 @@ func LookupPath(name string) (path string) {
 	panic(fmt.Sprintf("Required programm: %v not found in path\n error: %v", name, err))
 }
 
-func Load(u *UserProfile) *adb.Device {
+func Load(a *AppConfig) *adb.Device {
 	devs, e := adb.Devices()
-	if e == nil {
-		d, e := adb.Connect(u.ConnectionStr)
+	if e != nil || len(devs) == 0 {
+		d, e := adb.Connect(a.DeviceSerial)
 		if e != nil {
 			panic("dev err")
 		}

@@ -8,8 +8,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+    "worker/cfg"
 
-	"github.com/fatih/color"
+    "github.com/fatih/color"
 
 	"worker/imaginer"
 
@@ -94,7 +95,7 @@ func cleanText(s string) []string {
 	res := strings.Fields(s)
 	var filtered []string
 	for _, v := range res {
-		if len(v) > 3 || strings.ContainsAny(v, "01234356789") {
+		if len(v) > 3 || strings.ContainsAny(v, "01234356789") || slices.Contains(cfg.OcrConf.Exceptions, v) {
 			filtered = append(filtered, v)
 		}
 	}
@@ -124,7 +125,7 @@ func readTmp(fname string) ([]byte, error) {
 }
 
 func timeTrack(start time.Time, name string) {
-	c := color.New(color.BgHiWhite, color.FgHiRed, color.Underline, color.Bold).SprintfFunc()
+	c := color.New(color.BgHiBlue, color.FgCyan, color.Underline, color.Bold).SprintfFunc()
 	elapsed := time.Since(start)
 	fmt.Printf("%v\n", c("[%s] %s", name, elapsed.Round(time.Millisecond)))
 }

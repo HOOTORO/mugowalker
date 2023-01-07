@@ -19,7 +19,6 @@ var log *logrus.Logger
 func init() {
 	// Fallback to searching on PATH.
 	tesser = cfg.LookupPath("tesseract")
-	tessAgrs = cfg.OcrConf.Tesseract
 	log = cfg.Logger()
 }
 
@@ -29,6 +28,8 @@ func OptimizeForOCR(f string) string {
 }
 
 func runOcr(in string, out string) error {
+	tessAgrs = cfg.OcrConf.Tesseract
+
 	args := append([]string{in, out}, tessAgrs...)
 	cmd := exec.Command(tesser, args...)
     log.Tracef("cmd tess : %v\n", cmd.String())

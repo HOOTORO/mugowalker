@@ -4,11 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
-    "worker/afk"
+	"worker/afk"
+	"worker/cfg"
 
-    "worker/afk/repository"
+	"worker/afk/repository"
 
 	"worker/adb"
 	"worker/ocr"
@@ -22,6 +26,32 @@ const (
 	Center Offset = iota
 	Bottom
 	Top
+)
+
+var (
+	impmagick = []string{"-colorspace",
+		"Gray",
+		"-alpha",
+		"off",
+		"-threshold",
+		"85%",
+		"-edge",
+		"1",
+		"-negate",
+		"-blur",
+		"1x1",
+		"-black-threshold",
+		"80%",
+	}
+	simpletess = []string{"--psm", "3", "-c", "tessedit_create_alto=1", "quiet"}
+	origocr    = cfg.OcrConf
+	//    origmagick = []string{"-colorspace",
+	//        "Gray",
+	//        "-alpha",
+	//        "off",
+	//        "-threshold",
+	//        "75%",
+	//    }
 )
 
 var ErrLocationMismatch = errors.New("Wrong Location!")
@@ -49,7 +79,7 @@ func New(d *adb.Device, game *afk.Game) *Daywalker {
 		Device:  d,
 		Game:    game,
 		lastLoc: game.GetLocation(afk.Campain),
-		xmax:    xgrid, ymax: ygrid, cnt: 0,
+		xmax:    xgrid, ymax: ygrid, cnt: 0, maxocrtry: 5,
 	}
 }
 
@@ -67,13 +97,30 @@ func (dw *Daywalker) ScanScreen() ocr.OcrResult {
 }
 
 func (dw *Daywalker) MyLocation() (locname string) {
+
 WaitForLoc:
 	for {
 		if !dw.checkLoc(dw.ScanScreen()) {
-			time.Sleep(5 * time.Second)
+			time.Sleep(8 * time.Second)
+			if step >= dw.maxocrtry {
+				color.HiRed("Using improved ocr settings")
+				cfg.OcrConf.Imagick = impmagick
+				cfg.OcrConf.Tesseract = simpletess
+			}
+			if step >= dw.maxocrtry+2 {
+				dw.Back()
+			}
+            step++
 			continue WaitForLoc
 		} else {
+			if step >= dw.maxocrtry {
+				color.HiCyan("Returnin ocr params")
+				cfg.OcrConf = origocr
+
+			}
+            step = 0
 			break WaitForLoc
+
 		}
 	}
 	color.HiYellow("My Location most likely -> %v", dw.lastLoc)
@@ -105,10 +152,26 @@ func (dw *Daywalker) TapGO(gx, gy, off int) {
 	// Center point
 	px := gx*width - width/2
 	py := gy*height - int(o)*height/2
-
+	if cfg.AppConf.DrawStep {
+		drawTap(px, py, dw)
+	}
 	e := dw.Tap(fmt.Sprint(px), fmt.Sprint(py))
 	color.HiGreen("Tap: Grid-> %v:%v, Point-> %vx%v px", gx, gy, px, py)
 	if e != nil {
 		log.Warnf("Have an error during tap: %v", e.Error())
 	}
+}
+
+func drawTap(tx, ty int, bot *Daywalker) {
+	step++
+	s, e := bot.Screenshot(fmt.Sprintf("%v", step))
+	circle := fmt.Sprintf("circle %v,%v %v,%v", tx, ty, tx+20, ty+20)
+	no := fmt.Sprintf("+%v+%v", tx-20, ty+20)
+	cmd := exec.Command("magick", s, "-fill", "red", "-draw", circle, "-fill", "black", "-pointsize", "60", "-annotate", no, fmt.Sprintf("%v", step), filepath.Join("steps", filepath.Base(bot.lastscreenshot)))
+	e = cmd.Run()
+
+	if e != nil {
+		log.Errorf("s:%v", e.Error())
+	}
+	os.Remove(s)
 }

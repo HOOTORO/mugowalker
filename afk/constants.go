@@ -68,8 +68,22 @@ func (al ArenaLocation) String() string {
 func (al ArenaLocation) Id() uint {
     return uint(al)
 }
-
-var alocs = [...]string{"campain", "forrest", "ranhorn", "prepare", "result", "victory", "stat", "heroinfo", "bossnode"}
+func ArenaLoc(s string) ArenaLocation{
+    for i, v := range alocs {
+        if v == s {
+            return ArenaLocation(i+1)
+        }
+    }
+    return 0
+}
+var alocs = [...]string{"campain",
+    "forrest", "ranhorn", "prepare", "result", "victory",
+    "stat", "heroinfo", "bossnode", "lBanOpen", "rBanOpen",
+    "friends", "mail", "popextra", "fastrewards", "loot",
+    "arena", "soloarena", "opponent", "king",
+    "kt", "fn", "wt", "tol", "bc", "cs", "if",
+    "guildgrounds", "gichest", "wrizz", "skipf", "shop", "oak", "quests",
+}
 
 const (
 	Campain ArenaLocation = iota + 1
@@ -81,7 +95,31 @@ const (
 	STAT
 	HEROINFO
 	BOSSTAGE
-
+    LBAN
+    RBAN
+    FRIENDS
+    MAIL
+    EDEAL
+    FASTR
+    AFKCHEST
+    ARENA
+    SOLO
+    OPPO
+    KING
+    KT
+    FN
+    WT
+    TOL
+    BC
+    CS
+    IF
+    GGROUNDS
+    GUILDCHEST
+    WRIZZ
+    SkipF
+    SHOP
+    OAK
+    QUESTS
 
 )
 type Level uint
@@ -107,7 +145,7 @@ func (t Level) String() string {
 func LocLvl(s string) Level {
 	for i, v := range towers {
 		if v == s {
-			return Level(i)
+			return Level(i+1)
 		}
 	}
 	return 0
@@ -124,7 +162,7 @@ func (p Popout) String() string {
 	return popouts[p-1]
 }
 func (p Popout) Id() uint {
-	return uint(p)
+	return uint(p+1)
 }
 
 var popouts = [...]string{"skipf", "gichest", "popextra"}
@@ -174,7 +212,7 @@ const (
 
 type Action uint
 
-var bas = [...]string{"updProgress", "custom", "deactivate", "gshot"}
+var bas = [...]string{"updProgress", "custom", "deactivate", "gshot", "repeatx"}
 
 const(
     UpdProgress Action = iota+1
@@ -182,16 +220,18 @@ const(
     Deactivate
     Gshot
 
+    RepeatX
+
 )
 
 func (ba Action) String() string {
-    return bas[ba]
+    return bas[ba-1]
 }
 
 func IsAction(s string) (Action, bool){
     for i, act := range  bas {
         if act == s {
-            return Action(i), true
+            return Action(i+1), true
         }
     }
     return 0, false
