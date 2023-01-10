@@ -11,26 +11,23 @@ import (
     "worker/cfg"
 
     "github.com/fatih/color"
-
-	"worker/imaginer"
-
 	"golang.org/x/exp/slices"
 )
 
-type OcrResult struct {
+type Result struct {
 	raw    string
 	fields []string
 }
 
-func (or OcrResult) String() string {
+func (or Result) String() string {
 	return or.raw//strings.Join(or.fields, " | ")
 }
 
-func (or OcrResult) Fields() []string {
+func (or Result) Fields() []string {
 	return or.fields
 }
 
-func (or OcrResult) Regex(r string) (res []uint) {
+func (or Result) Regex(r string) (res []uint) {
 	re := regexp.MustCompile(r)
 	for _, v := range re.FindStringSubmatch(or.raw) {
 		i, err := strconv.ParseUint(v, 10, 32)
@@ -41,7 +38,7 @@ func (or OcrResult) Regex(r string) (res []uint) {
 	return
 }
 
-func (or OcrResult) Intersect(k []string) (r []string) {
+func (or Result) Intersect(k []string) (r []string) {
 	for _, v := range k {
 		if slices.Contains(or.fields, v) {
 			r = append(r, v)
@@ -50,9 +47,9 @@ func (or OcrResult) Intersect(k []string) (r []string) {
 	return r
 }
 
-func RegionText(img string, topleft, size image.Point) OcrResult {
+func RegionText(img string, topleft, size image.Point) Result {
 	defer timeTrack(time.Now(), "\nRegionText")
-	cropedregion := imaginer.Concat(img, topleft, size)
+	cropedregion := Concat(img, topleft, size)
 	prep := OptimizeForOCR(cropedregion)
 	r, e := recognize(prep)
 	if e != nil {
@@ -61,7 +58,7 @@ func RegionText(img string, topleft, size image.Point) OcrResult {
 	return r
 }
 
-func TextExtract(img string) OcrResult {
+func TextExtract(img string) Result {
 	defer timeTrack(time.Now(), "RegularOcr")
 	imgPrep := OptimizeForOCR(img)
 	t, _ := recognize(imgPrep)
@@ -78,11 +75,11 @@ func TextExtractAlto(img string) Alto {
 }
 
 // recognize text on a given img
-func recognize(img string) (OcrResult, error) {
+func recognize(img string) (Result, error) {
 	f, _ := tmpFile()
 	e := runOcr(img, f.Name())
     raw, e := readTmp(f.Name()+ ".txt")
-	r := OcrResult{
+	r := Result{
 		raw: formatStr(strings.TrimSpace(string(raw))),
 	}
 	log.Tracef("Raw OCR: %s", raw)

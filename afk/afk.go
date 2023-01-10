@@ -77,7 +77,7 @@ func (g *Game) GetLocation(l Location) *cfg.Location {
 	return nil
 }
 
-func (g *Game) UpdateProgress(loc Location, or ocr.OcrResult) {
+func (g *Game) UpdateProgress(loc Location, or ocr.Result) {
 	u := g.User
 	towerEx := `.*[lis|del|ght|ess|um|wer|ree](?P<floor>\d{3}|d{4}) Floors`
 	stgchregex := `Stage:(?P<chapter>\d+)-(?P<stage>\d+)`

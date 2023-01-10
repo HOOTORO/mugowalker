@@ -5,10 +5,10 @@ import (
 	"image"
 	"os"
 	"strings"
+	"time"
 	"worker/ui"
 
 	"worker/afk"
-//	"worker/bot"
 	"worker/cfg"
 	"worker/ocr"
 
@@ -18,122 +18,87 @@ import (
 )
 
 func main() {
-	// r := cfg.List()
-	//	r := cfg.SimpleMenu()
-	//	fmt.Printf("VAL BIII --> %v", r.Myval())
-	//	return
 	if len(os.Args) > 1 && os.Args[1] == "-t" {
-
 		color.HiRed("%v", "TEST RUN")
-		ocrtest()
+        user := cfg.UserProfile{Account: "ss", Game:"aa"}
+        ui.UserFillSctructInput(user, "")
+		//		ocrtest()
 		return
 	}
 
-	app := &cfg.AppConfig{
-		DeviceSerial: "192.168.1.7:5555",
-		UserProfile: &cfg.UserProfile{
-			Account:     "E6osh!ro",
-			Game:        "AFK Arena",
-            TaskConfigs: []string{"cfg/reactions.yaml", "cfg/daily.yaml"},
-		},
-		Imagick: cfg.OcrConf.Imagick,
-		AltImagick: []string{"-colorspace", "Gray", "-alpha", "off", "-threshold", "75%", "-edge", "2", "-negate", "-black-threshold",
-			//			"-white-threshold",
-			//			"60%",
-			"90%",
-		},
-		Tesseract:    cfg.OcrConf.Tesseract,
-		AltTesseract: []string{"--psm", "3", "hoot", "quiet"},
-		Bluestacks:   []string{"--instance", "Rvc64_16", "--cmd", "launchApp", "--package", "com.lilithgames.hgame.gp.id"},
-		Exceptions:   cfg.OcrConf.Exceptions,
-		Loglevel:     "INFO",
-		DrawStep:     false,
-		Folders: struct {
-			Logfile     string `yaml:"logfile"`
-			RootDir     string `yaml:"rootDir"`
-			TempImgDir  string `yaml:"tempImgDir"`
-			SqDBDir     string `yaml:"sqDBDir"`
-			UserDir     string `yaml:"userDir"`
-			GameConfDir string `yaml:"gameConfDir"`
-			TestDataDir string `yaml:"testDataDir"`
-		}{
-			Logfile:     "app.log",
-            RootDir:     ".afk_data",
-            TempImgDir:  "work_images",
-            SqDBDir:     "db",
-            UserDir:     "usrdata",
-            GameConfDir: "cfg",
-			TestDataDir: "_test",
-		},
+	//    model := ui.MainMenu()
+	//
+	//    fmt.Print("Chosen one! %v", model)
+
+	//        menu9 := []string{"Current setup",strings.Join(cfg.Env.Imagick,""),"Change threshold?"}
+
+	//	rTaskConf := []string{"cfg/reactions.yaml", "cfg/daily.yaml"}
+	//	user := cfg.User("", game, connect, rTaskConf)
+	//	device := cfg.Load(user)
+	//	device, _ := adb.Devices()
+	//	gm := afk.New(cfg.Env.UserProfile)
+	//	bt := bot.New(device[0], gm)
+
+	if cfg.Env.UserProfile != nil {
+		fmt.Print(cfg.Env.UserProfile)
+	} else {
+		ui.UserFillSctructInput(cfg.Env.UserProfile, "")
 	}
+MainMenu:
 
+	choice := ui.UserListInput(mainmenu, "AFK Bot\n What bot should do?", "Exit")
+	switch choice {
 
-	cfg.Save("runset.yaml", app)
-return
-	model := ui.SimpleMenu()
-
-	fmt.Print("Chosen one! %v", model.Myval())
-	//    e := ui.MainMenu()
-	return
-
-	//    if e!=nil {
-	//        return
-	//	}
-
-//	rTaskConf := []string{"cfg/reactions.yaml", "cfg/daily.yaml"}
-//	user := cfg.User(player, game, connect, rTaskConf)
-
-//	device := cfg.Load(user)
-//	gm := afk.New(user)
-//	bt := bot.New(device, gm)
-	cfg.TermClear()
-UserMenu:
-	choice := cfg.UserInput("What bot should do?\n0. Run all (Default)\n1. Run daily?\n2. Push campain?\n3-7. Push towers (KT,L,M,W,G)\n9. OCR Settings", "0")
-
-	if choice == "9" {
-		cfg.TermClear()
-
-		choice = cfg.UserInput(fmt.Sprintf("Current setup:\n %v\n Change threshold?\n", cfg.OcrConf), "75%")
-		if choice != "0" {
-			color.HiRed("Definetly do something...")
-			for i, s := range cfg.OcrConf.Imagick {
-				if s == "75%" {
-					cfg.OcrConf.Imagick[i] = fmt.Sprintf("%v%", choice)
-					cfg.TermClear()
-
-					color.HiGreen("New ocr settings --> %v", cfg.OcrConf.Imagick)
-					goto UserMenu
-				}
-			}
+	case 4:
+	Towers:
+		choice = ui.UserListInput(tower, "Which one?", "Back")
+		switch {
+		case choice > 0:
+			color.HiYellow("Climbing... %v", tower[choice-1])
+		case choice == 0:
+			goto MainMenu
+		default:
+			color.HiRed("DATS WRONG TOWAH MAFAKA!")
 		}
-	}
+		time.Sleep(3 * time.Second)
+		goto Towers
 
-//	switch choice {
-//	case "0":
-//		bt.UpAll()
-//	case "1":
-//		bt.Daily()
-//	case "2":
-//		push := bt.Task(afk.DOPUSHCAMP)
-//		bt.React(push)
-//	case "3":
-//		kt := bt.Task(afk.Kings)
-//		bt.React(kt)
-//	case "4":
-//		kt := bt.Task(afk.Light)
-//		bt.React(kt)
-//	case "5":
-//		kt := bt.Task(afk.Mauler)
-//		bt.React(kt)
-//	case "6":
-//		kt := bt.Task(afk.Wilder)
-//		bt.React(kt)
-//	case "7":
-//		kt := bt.Task(afk.Graveborn)
-//		bt.React(kt)
-//	default:
-//		color.HiRed("DATS WRONG NUMBA MAFAKA!")
-//	}
+		//		push := bt.Task(afk.DOPUSHCAMP)
+		//		bt.React(push)
+		//	case 4:
+		//		kt := bt.Task(afk.Kings)
+		//		bt.React(kt)
+		//	case 5:
+		//		kt := bt.Task(afk.Light)
+		//		bt.React(kt)
+		//	case 6:
+		//		kt := bt.Task(afk.Mauler)
+		//		bt.React(kt)
+		//	case 7:
+		//		kt := bt.Task(afk.Wilder)
+		//		bt.React(kt)
+		//	case 8:
+		//		kt := bt.Task(afk.Graveborn)
+		//		bt.React(kt)
+	case 5:
+	Nine:
+		choice = ui.UserListInput(cfg.Env.Imagick, "Current setup", "Back")
+		switch {
+		case choice > 0:
+			cfg.Env.Imagick[choice-1] = ui.ChangeVal(cfg.Env.Imagick[choice-1])
+			color.HiBlue("dosomething")
+			time.Sleep(2 * time.Second)
+			goto Nine
+		default:
+			goto MainMenu
+		}
+	case 0:
+		os.Exit(0)
+	default:
+		color.HiRed("DATS WRONG NUMBA MAFAKA!")
+		time.Sleep(2 * time.Second)
+		goto MainMenu
+	}
 }
 
 func ocrtest() {
@@ -255,14 +220,7 @@ func testloc(img string, loc *cfg.Location) (r1 bool) {
 		str := fail("	> ")
 		for _, v := range line.String {
 			if len(v.CONTENT) > 3 || slices.Contains(cfg.OcrConf.Exceptions, v.CONTENT) {
-				//                toadd := v.CONTENT
-				//                if len(toadd)<width{
-				//                    toadd += "  "+ strings.Repeat("-", width - len(toadd))
-				//				} else {
-				//                    toadd = toadd[:width-3]+"..."
-				//				}
-				//
-				//                str += fmt.Sprintf("%v->	%v |", pass("%v", toadd), fail("%vx%v", v.HPOS, v.VPOS))
+
 				str += fmt.Sprintf("%s	->	%s | ", pass("%-12s", cutlong(v.CONTENT, 10)), fail("%sx%-4s", v.HPOS, v.VPOS))
 			}
 		}

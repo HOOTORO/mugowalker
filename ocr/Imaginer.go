@@ -1,8 +1,8 @@
-package imaginer
+package ocr
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
+
 	"image"
 	"os/exec"
 	"path/filepath"
@@ -13,7 +13,6 @@ import (
 )
 
 var magick string
-var log *logrus.Logger
 
 const (
 	CROP = "-crop"

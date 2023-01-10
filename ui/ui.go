@@ -4,13 +4,17 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"worker/adb"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
-const listHeight = 14
+const (
+	listHeight = 14
+    defaultWidth = 20
+)
 
 var (
 	titleStyle        = lipgloss.NewStyle().MarginLeft(2)
@@ -23,7 +27,7 @@ var (
 
 type menuItem string
 
-func (i menuItem) FilterValue() string { return "" }
+func (i menuItem) FilterValue() string { return string(i) }
 
 type itemDelegate struct{}
 
@@ -50,6 +54,7 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 
 type mainModel struct {
 	list     list.Model
+    dev		string
 	choice   string
 	quitting bool
 	Val      string
@@ -76,8 +81,12 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if ok {
 				m.choice = string(i)
 				m.Val = string(i)
-			}
+                if i.FilterValue() == "Devices"{
+                    m.list = list.New(getDevices(), itemDelegate{}, defaultWidth, listHeight)
+				} else {
 			return m, tea.Quit
+				}
+			}
 		}
 	}
 
@@ -86,10 +95,23 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m mainModel) View() string {
-	if m.choice != "" {
-		return quitTextStyle.Render(fmt.Sprintf("%s? Sounds good to me.", m.choice))
+func getDevices() []list.Item {
+	var devs []list.Item
+    d, e := adb.Devices()
+    if e != nil{
+        devs = append(devs, menuItem("No devices found, try to connect"))
+        return devs
 	}
+    for _, v := range d {
+        devs = append(devs, menuItem(v.Serial))
+    }
+    return devs
+}
+
+func (m mainModel) View() string {
+//	if m.choice != "" {
+//		return quitTextStyle.Render(fmt.Sprintf("%s? Sounds good to me.", m.choice))
+//	}
 	if m.quitting {
 		return quitTextStyle.Render("Not hungry? That’s cool.")
 	}
@@ -117,7 +139,7 @@ func SimpleMenu() mainModel {
 //		menuItem("Just Wine"),
 	}
 
-	const defaultWidth = 20
+
 
 	l := list.New(items, itemDelegate{}, defaultWidth, listHeight)
 	l.Title = "AFK Worker Settings"

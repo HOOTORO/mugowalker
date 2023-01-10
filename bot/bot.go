@@ -85,7 +85,7 @@ func New(d *adb.Device, game *afk.Game) *Daywalker {
 
 // ScanScreen OCRed Text TODO: maybe add args to peek like peek(data interface) smth like
 // this should be w.ScanScreen(Location) \n w.ScanScreen(Stage)
-func (dw *Daywalker) ScanScreen() ocr.OcrResult {
+func (dw *Daywalker) ScanScreen() ocr.Result {
 	// TODO: Generate random filname
 	s, e := dw.Screenshot(tempfile)
 	if e != nil {
@@ -127,7 +127,7 @@ WaitForLoc:
 	return dw.lastLoc.Key
 }
 
-func (dw *Daywalker) checkLoc(o ocr.OcrResult) (ok bool) {
+func (dw *Daywalker) checkLoc(o ocr.Result) (ok bool) {
 	maxh := 1
 	for k, loc := range dw.Locations {
 		hit := o.Intersect(loc.Keywords)
@@ -152,7 +152,7 @@ func (dw *Daywalker) TapGO(gx, gy, off int) {
 	// Center point
 	px := gx*width - width/2
 	py := gy*height - int(o)*height/2
-	if cfg.AppConf.DrawStep {
+	if cfg.Env.DrawStep {
 		drawTap(px, py, dw)
 	}
 	e := dw.Tap(fmt.Sprint(px), fmt.Sprint(py))

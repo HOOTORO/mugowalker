@@ -4,7 +4,6 @@ import (
 	"os/exec"
 
 	"worker/cfg"
-	"worker/imaginer"
 
 	"github.com/sirupsen/logrus"
 )
@@ -23,7 +22,7 @@ func init() {
 }
 
 func OptimizeForOCR(f string) string {
-	res, _ := imaginer.Magick(f, cfg.OcrConf.Imagick...)
+	res, _ := Magick(f, cfg.Env.Imagick...)
 	return res
 }
 

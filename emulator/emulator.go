@@ -10,7 +10,7 @@ import (
 
 var (
 	psarg    = []string{"/fi", "IMAGENAME eq HD-Player.exe"}
-	vmargs   = []string{"--instance", "Rvc64_16", "--cmd", "launchApp", "--package", "com.lilithgames.hgame.gp.id"}
+	vmargs   = []string{"--instance", "Rvc64", "--cmd", "launchApp", "--package", "com.lilithgames.hgame.gp.id"}
 	killargs = []string{"/fi", "/IM", "HD-Player.exe", "/F"}
 )
 
