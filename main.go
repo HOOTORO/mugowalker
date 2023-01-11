@@ -5,7 +5,6 @@ import (
 	"image"
 	"os"
 	"strings"
-	//	"time"
 	"worker/ui"
 
 	"worker/afk"
@@ -26,89 +25,13 @@ func main() {
 		return
 	}
 
-	//
-	//	if cfg.Env.UserProfile == nil {
-	//
-	//	} else {
-	//    h := []string{cfg.Env.DeviceSerial, cfg.Env.UserProfile.Game, cfg.Env.UserProfile.Account }
-	//		ui.UserFillSctructInput(cfg.Env.UserProfile, "")
-	//	}
+
 	conf := cfg.Env
 //	fmt.Printf("%s", conf)
 		ui.Run(conf)
-	//		l := []string{"Devices", "OCR Settings", "Some stuff"}
-	//		choice := ui.SelectList(l)
-	//	    fmt.Print("Chosen one! %#v\n", model.Data())
-	//		fmt.Printf("Model: %s", choice)
-	//	for i, v := range model.Data() {
-	//            fmt.Printf("VALUE of %v elem ->  %v\n",i,v.Value())
-	//		}
-	return
 
-	//        menu9 := []string{"Current setup",strings.Join(cfg.Env.Imagick,""),"Change threshold?"}
 
-	//	rTaskConf := []string{"cfg/reactions.yaml", "cfg/daily.yaml"}
-	//	user := cfg.User("", game, connect, rTaskConf)
-	//	device := cfg.Load(user)
-	//	device, _ := adb.Devices()
-	//	gm := afk.New(cfg.Env.UserProfile)
-	//	bt := bot.New(device[0], gm)
 
-	//MainMenu:
-	//
-	//	choice := ui.UserListInputmainmenu, "AFK Bot\n What bot should do?", "Exit")
-	//	switch choice {
-	//
-	//	case 4:
-	//	Towers:
-	//		choice = ui.UserListInput(tower, "Which one?", "Back")
-	//		switch {
-	//		case choice > 0:
-	//			color.HiYellow("Climbing... %v", tower[choice-1])
-	//		case choice == 0:
-	//			goto MainMenu
-	//		default:
-	//			color.HiRed("DATS WRONG TOWAH MAFAKA!")
-	//		}
-	//		time.Sleep(3 * time.Second)
-	//		goto Towers
-	//
-	//		//		push := bt.Task(afk.DOPUSHCAMP)
-	//		//		bt.React(push)
-	//		//	case 4:
-	//		//		kt := bt.Task(afk.Kings)
-	//		//		bt.React(kt)
-	//		//	case 5:
-	//		//		kt := bt.Task(afk.Light)
-	//		//		bt.React(kt)
-	//		//	case 6:
-	//		//		kt := bt.Task(afk.Mauler)
-	//		//		bt.React(kt)
-	//		//	case 7:
-	//		//		kt := bt.Task(afk.Wilder)
-	//		//		bt.React(kt)
-	//		//	case 8:
-	//		//		kt := bt.Task(afk.Graveborn)
-	//		//		bt.React(kt)
-	//	case 5:
-	//	Nine:
-	//		choice = ui.UserListInput(cfg.Env.Imagick, "Current setup", "Back")
-	//		switch {
-	//		case choice > 0:
-	//			cfg.Env.Imagick[choice-1] = ui.ChangeVal(cfg.Env.Imagick[choice-1])
-	//			color.HiBlue("dosomething")
-	//			time.Sleep(2 * time.Second)
-	//			goto Nine
-	//		default:
-	//			goto MainMenu
-	//		}
-	//	case 0:
-	//		os.Exit(0)
-	//	default:
-	//		color.HiRed("DATS WRONG NUMBA MAFAKA!")
-	//		time.Sleep(2 * time.Second)
-	//		goto MainMenu
-	//	}
 }
 
 func ocrtest() {

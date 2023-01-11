@@ -22,7 +22,7 @@ const (
 	profileEnv  = "USERPROFILE"
 	programData = "ProgramData"
 	temp        = "TEMP"
-	cfg         = "runset.yaml"
+	cfg         = "default.yaml"
 
 )
 
