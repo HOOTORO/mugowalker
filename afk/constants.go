@@ -62,14 +62,31 @@ func (uf UserField) String() string {
 type ArenaLocation uint
 
 func (al ArenaLocation) String() string {
-    return alocs[al-1]
+	return alocs[al-1]
 }
 
 func (al ArenaLocation) Id() uint {
-    return uint(al)
+	return uint(al)
 }
 
-var alocs = [...]string{"campain", "forrest", "ranhorn", "prepare", "result", "victory", "stat", "heroinfo", "bossnode"}
+func ArenaLoc(s string) ArenaLocation {
+	for i, v := range alocs {
+		if v == s {
+			return ArenaLocation(i + 1)
+		}
+	}
+	return 0
+}
+
+var alocs = [...]string{
+	"campain",
+	"forrest", "ranhorn", "prepare", "result", "victory",
+	"stat", "heroinfo", "bossnode", "lBanOpen", "rBanOpen",
+	"friends", "mail", "popextra", "fastrewards", "loot",
+	"arena", "soloarena", "opponent", "king",
+	"kt", "fn", "wt", "tol", "bc", "cs", "if",
+	"guildgrounds", "gichest", "wrizz", "skipf", "shop", "oak", "quests",
+}
 
 const (
 	Campain ArenaLocation = iota + 1
@@ -81,9 +98,33 @@ const (
 	STAT
 	HEROINFO
 	BOSSTAGE
-
-
+	LBAN
+	RBAN
+	FRIENDS
+	MAIL
+	EDEAL
+	FASTR
+	AFKCHEST
+	ARENA
+	SOLO
+	OPPO
+	KING
+	KT
+	FN
+	WT
+	TOL
+	BC
+	CS
+	IF
+	GGROUNDS
+	GUILDCHEST
+	WRIZZ
+	SkipF
+	SHOP
+	OAK
+	QUESTS
 )
+
 type Level uint
 
 var towers = [...]string{"ch", "stg", "kt", "tol", "bc", "wt", "fn", "cs", "if"}
@@ -107,7 +148,7 @@ func (t Level) String() string {
 func LocLvl(s string) Level {
 	for i, v := range towers {
 		if v == s {
-			return Level(i)
+			return Level(i + 1)
 		}
 	}
 	return 0
@@ -123,8 +164,9 @@ type Popout uint
 func (p Popout) String() string {
 	return popouts[p-1]
 }
+
 func (p Popout) Id() uint {
-	return uint(p)
+	return uint(p + 1)
 }
 
 var popouts = [...]string{"skipf", "gichest", "popextra"}
@@ -135,23 +177,26 @@ const (
 	EXTRAPOPOUT
 )
 
-//General locations
-
+// General locations
 type Reaction uint
-var rcts = [...]string{"push", "climb"}
-func (r Reaction) String() string {
-    return rcts[r-1]
 
+var rcts = [...]string{"push", "climb"}
+
+func (r Reaction) String() string {
+	return rcts[r-1]
 }
+
 func (r Reaction) Id() uint {
-    return uint(r)
+	return uint(r)
 }
+
 // Actions
 const (
-	DOPUSHCAMP  Reaction = iota+1
+	DOPUSHCAMP Reaction = iota + 1
 	DOTOWERCLIMB
-//	DOGIBOSSES   = "wrizz"
-//	DOOAK        = "oak"
+
+// DOGIBOSSES   = "wrizz"
+// DOOAK        = "oak"
 )
 
 const (
@@ -174,25 +219,26 @@ const (
 
 type Action uint
 
-var bas = [...]string{"updProgress", "custom", "deactivate", "gshot"}
+var bas = [...]string{"updProgress", "custom", "deactivate", "gshot", "repeatx"}
 
-const(
-    UpdProgress Action = iota+1
-    Custom
-    Deactivate
-    Gshot
+const (
+	UpdProgress Action = iota + 1
+	Custom
+	Deactivate
+	Gshot
 
+	RepeatX
 )
 
 func (ba Action) String() string {
-    return bas[ba]
+	return bas[ba-1]
 }
 
-func IsAction(s string) (Action, bool){
-    for i, act := range  bas {
-        if act == s {
-            return Action(i), true
-        }
-    }
-    return 0, false
+func IsAction(s string) (Action, bool) {
+	for i, act := range bas {
+		if act == s {
+			return Action(i + 1), true
+		}
+	}
+	return 0, false
 }

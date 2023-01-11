@@ -2,113 +2,20 @@ package main
 
 import (
 	"fmt"
-	"image"
-	"os"
 
 	"github.com/fatih/color"
-
-	"worker/afk"
-	"worker/bot"
-	"worker/cfg"
-	"worker/ocr"
 
 	"golang.org/x/exp/slices"
 )
 
 func main() {
-
-	if len(os.Args) > 1 && os.Args[1] == "-t" {
-		color.HiRed("%v", "TEST RUN")
-		ocrtest()
-		return
-	}
-
-	// USER INPUT DATA
 	const (
-		player  = "Devitool"
-		game    = "afkarena"
-		connect = "localhost:5555"
+		name = "Bluestacks"
+		host = "127.0.0.1"
+		port = "5615"
 	)
-	var rTaskConf = []string{"cfg/reactions.yaml", "cfg/daily.yaml"}
-	user := cfg.User(player, game, connect, rTaskConf)
-
-	device := cfg.Load(user)
-	gm := afk.New(user)
-	bt := bot.New(device, gm)
-
-	choice := cfg.UserInput("What bot should do?\n0. Run all (Default)\n1. Run daily?\n2. Push campain?\n3-7. Push towers (KT,L,M,W,G)", "0")
-
-	switch choice {
-	case "0":
-		bt.UpAll()
-	case "1":
-		bt.Daily()
-	case "2":
-		push := bt.Task(afk.DOPUSHCAMP)
-		bt.React(push)
-	case "3":
-		kt := bt.Task(afk.Kings)
-		bt.React(kt)
-	case "4":
-		kt := bt.Task(afk.Light)
-		bt.React(kt)
-	case "5":
-		kt := bt.Task(afk.Mauler)
-		bt.React(kt)
-	case "6":
-		kt := bt.Task(afk.Wilder)
-		bt.React(kt)
-	case "7":
-		kt := bt.Task(afk.Graveborn)
-		bt.React(kt)
-    default:
-        color.HiRed("DATS WRONG NUMBA MAFAKA!")
-	}
-}
-
-func ocrtest() {
-	b := afk.New(&cfg.UserProfile{Account: "test", Game: "afk", ConnectionStr: "localhost:5555", TaskConfigs: []string{"cfg/reactions.yaml"}})
-
-	var testdata = func(lo uint, im string) *struct {
-		loc afk.ArenaLocation
-		img string
-	} {
-		return &struct {
-			loc afk.ArenaLocation
-			img string
-		}{loc: afk.ArenaLocation(lo), img: im}
-	}
-	testlocs := make([]*struct {
-		loc afk.ArenaLocation
-		img string
-	}, 0)
-	testlocs = append(testlocs,
-		//        testdata(afk.DARKFORREST, "test/forrest.png"),
-		//        testdata( afk.Campain, "test/cpn1.png"),
-		//        testdata( afk.Campain, "test/cpn2.png"),
-		testdata(afk.RANHORNY.Id(), "_test/h.png"),
-		//        testdata( afk.BOSSTAGE, "test/cpnb.png"),
-		//        testdata( afk.Kings.String(), "test/towers.png"),
-		//        testdata( afk.RESULT, "test/lose.png"),
-		//        testdata( afk.Loot.String(), "test/loot.png"),
-		//        testdata( afk.FastReward.String(),"test/fr.png"),
-		//        testdata( afk.BATTLE ,"test/btl_multstg.png"),
-		//        testdata( afk.BATTLE ,"test/btl_onestg.png"),
-		//        testdata( afk.STAT ,"test/stt1.png"),
-		//        testdata( afk.STAT ,"test/stt2.png"),
-		//        testdata( afk.WIN , "test/cpn_win.png"),
-		//        testdata( "", ""),
-		//        testdata( "", ""),
-		//        testdata( "", ""),
-		//        testdata( "", ""),
-	)
-
-	var overall = 0
-	for _, v := range testlocs {
-		res := testloc(v.img, b.GetLocation(v.loc))
-		if res {
-			overall++
-		}
+	// TODO: scaling  adb shell wm size returns resolution
+	log.SetLevel(log.InfoLevel)
 
 	}
 	//    testRegion("test/btl_onestg_1.png")
