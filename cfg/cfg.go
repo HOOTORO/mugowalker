@@ -11,11 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"worker/adb"
-	"worker/afk/repository"
-
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
+	"worker/adb"
+	"worker/afk/repository"
 )
 
 const (
@@ -23,7 +22,7 @@ const (
 	profileEnv  = "USERPROFILE"
 	programData = "ProgramData"
 	temp        = "TEMP"
-	cfg         = "default.yaml"
+	cfg         = "assets/default.yaml"
 )
 
 const (

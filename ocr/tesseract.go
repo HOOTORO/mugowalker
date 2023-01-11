@@ -11,13 +11,9 @@ import (
 var (
 	tesser   string
 	tessAgrs []string
-var (
-	tesser   string
-	tessAgrs []string
-)
 
-var log *logrus.Logger
-var log *logrus.Logger
+	log *logrus.Logger
+)
 
 func init() {
 	// Fallback to searching on PATH.
@@ -35,12 +31,11 @@ func runOcr(in string, out string) error {
 
 	args := append([]string{in, out}, tessAgrs...)
 	cmd := exec.Command(tesser, args...)
-    log.Tracef("cmd tess : %v\n", cmd.String())
+	log.Tracef("cmd tess : %v\n", cmd.String())
 	// uncomment for ocr log
 	// cmd.Stdout = os.Stdout
 	// cmd.Stderr = os.Stderr
 	return cmd.Run()
 }
 
-
-//func tessAlto
+// func tessAlto
