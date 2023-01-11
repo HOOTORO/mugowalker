@@ -26,6 +26,12 @@ const (
 
 )
 
+const (
+    game = "AFK Arena"
+
+
+)
+
 var roamdata, userfolder, appdata, tempdir string
 
 var (
@@ -86,9 +92,7 @@ func Logger() *logrus.Logger {
 	}
 }
 
-func (l *Location) String() string {
-	return fmt.Sprintf("Location key: %v", l.Key)
-}
+
 
 func (rt ReactiveTask) React(trigger string) *adb.Point {
 	for _, v := range rt.Reactions {
@@ -117,7 +121,7 @@ func (rt ReactiveTask) After(trigger string) string {
 	return ""
 }
 
-func Parse(s string, out interface{}) {
+func Parse(s string, out interface{}) error {
 	f, err := os.ReadFile(s)
 	if err != nil {
 		log.Fatal(err)
@@ -127,6 +131,7 @@ func Parse(s string, out interface{}) {
 		log.Fatalf("UNMARSHAL WASTED: %v", err)
 	}
 	log.Tracef("UNMARSHALLED: %v\n\n", out)
+    return err
 }
 
 func Save(name string, in interface{}) {
@@ -223,11 +228,25 @@ func safeEnv(n string) string {
 
 func loadConf() *AppConfig {
 	conf := &AppConfig{}
-	Parse(cfg, conf)
+	e := Parse(cfg, conf)
+    if e!= nil {
+        log.Warnf("Configuration file not found, invalid or maybe this  is first run!.\nInitialize creating configuration\n")
+        conf = inputminsettings()
+	} else {
+        conf.Thiscfg = UsrDir(cfg)
+	}
 
 	return conf
 }
 
+func inputminsettings() *AppConfig{
+	settings := defaultAppConfig
+    cfgpath := UsrDir(cfg)
+    settings.Thiscfg = cfgpath
+    Save(cfg, settings)
+
+    return settings
+}
 func toInt(s string) int {
 	num, e := strconv.Atoi(s)
 	if e != nil {
@@ -280,10 +299,10 @@ func makeEnvDir(env, dir string) string {
 	}
 	return patyh
 }
-func (e *AppConfig) validateDependencies() error {
-	for i, s := range e.RequiredInstalledSoftware {
+func (ac *AppConfig) validateDependencies() error {
+	for i, s := range ac.RequiredInstalledSoftware {
         if pt := LookupPath(s); pt != ""{
-            e.RequiredInstalledSoftware[i] = pt
+            ac.RequiredInstalledSoftware[i] = pt
         }else {
             return ErrRequiredProgram404
 		}

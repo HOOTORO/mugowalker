@@ -1,68 +1,76 @@
 package ui
 
 import (
-    "fmt"
-    "os"
+	"fmt"
+	"os"
 
-    "github.com/charmbracelet/bubbles/list"
-    tea "github.com/charmbracelet/bubbletea"
-    "github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/bubbles/list"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
-var docStyle = lipgloss.NewStyle().Margin(1, 2)
+var (
+	docStyle            = lipgloss.NewStyle().Margin(6,10)
+	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	cursorStyle         = focusedStyle.Copy()
+	noStyle             = lipgloss.NewStyle()
+	helpStyle           = blurredStyle.Copy()
+	cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
 
-type item struct {
-    title, desc string
-}
+	focusedButton = focusedStyle.Copy().Render("[ Submit ]")
+	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
+)
 
-func (i item) Title() string       { return i.title }
-func (i item) Description() string { return i.desc }
-func (i item) FilterValue() string { return i.title }
+func Run(tops interface{}) error {
 
-type model struct {
-    list list.Model
-}
+    status := fmt.Sprintf("AFK Worker v0.1_alpha\n####### Active setup ###########\n%s", tops)
 
-func (m model) Init() tea.Cmd {
-    return nil
-}
+	m := fancymodel{list: list.New(truemainmenu, list.NewDefaultDelegate(), 0, 0)}
+    m.header = status
+	m.list.Title = "Choose..."
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-    switch msg := msg.(type) {
-    case tea.KeyMsg:
-        if msg.String() == "ctrl+c" {
-            return m, tea.Quit
-        }
-        case tea.WindowSizeMsg:
-            h, v := docStyle.GetFrameSize()
-            m.list.SetSize(msg.Width-h, msg.Height-v)
-    }
+	p := tea.NewProgram(m, tea.WithAltScreen())
 
-    var cmd tea.Cmd
-    m.list, cmd = m.list.Update(msg)
-    return m, cmd
-}
-
-func (m model) View() string {
-    return docStyle.Render(m.list.View())
-}
-
-func MainMenu() error {
-    items := []list.Item{
-        item{title: "Device", desc: "Device/emulator to run bot"},
-        item{title: "Tasks", desc: "Push, Dailies and many more"},
-        item{title: "Settings", desc: "OCR, Game Locations, Debug etc..."},
-        }
-
-        m := model{list: list.New(items, list.NewDefaultDelegate(), 0, 0)}
-        m.list.Title = "AFK Worker v0.1_alpha setup"
-
-        p := tea.NewProgram(m, tea.WithAltScreen())
-
-        if _, err := p.Run(); err != nil {
-            fmt.Println("Error running program:", err)
-            os.Exit(1)
-            return err
-        }
+	if _, err := p.Run(); err != nil {
+		fmt.Println("Error running program:", err)
+		os.Exit(1)
+		return err
+	}
 	return nil
+}
+
+func SelectList(l []string) (choice string) {
+	p := tea.NewProgram(selectModel{choices: l})
+
+	// Run returns the selectModel as a tea.Model.
+	m, err := p.Run()
+	if err != nil {
+		fmt.Println("Oh no:", err)
+		os.Exit(1)
+	}
+
+	// Assert the final tea.Model to our local selectModel and print the choice.
+	if m, ok := m.(selectModel); ok && m.choice != "" {
+		//        fmt.Printf("\n---\nYou chose %s!\n", m.choice)
+		return m.choice
+	}
+	return ""
+}
+
+func TxtIn() tea.Model {
+	um, err := tea.NewProgram(initialUserInfoModel()).Run()
+	if err != nil {
+		fmt.Printf("could not start program: %s\n", err)
+		os.Exit(1)
+	}
+
+	return um
+}
+
+func main() {
+	p := tea.NewProgram(initialModel())
+	if _, err := p.Run(); err != nil {
+		log.Fatal(err)
+	}
 }

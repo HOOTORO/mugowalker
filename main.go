@@ -5,7 +5,7 @@ import (
 	"image"
 	"os"
 	"strings"
-	"time"
+	//	"time"
 	"worker/ui"
 
 	"worker/afk"
@@ -20,15 +20,30 @@ import (
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "-t" {
 		color.HiRed("%v", "TEST RUN")
-        user := cfg.UserProfile{Account: "ss", Game:"aa"}
-        ui.UserFillSctructInput(user, "")
+		user := cfg.UserProfile{Account: "ss", Game: "aa"}
+		ui.UserFillSctructInput(user, "")
 		//		ocrtest()
 		return
 	}
 
-	//    model := ui.MainMenu()
 	//
-	//    fmt.Print("Chosen one! %v", model)
+	//	if cfg.Env.UserProfile == nil {
+	//
+	//	} else {
+	//    h := []string{cfg.Env.DeviceSerial, cfg.Env.UserProfile.Game, cfg.Env.UserProfile.Account }
+	//		ui.UserFillSctructInput(cfg.Env.UserProfile, "")
+	//	}
+	conf := cfg.Env
+//	fmt.Printf("%s", conf)
+		ui.Run(conf)
+	//		l := []string{"Devices", "OCR Settings", "Some stuff"}
+	//		choice := ui.SelectList(l)
+	//	    fmt.Print("Chosen one! %#v\n", model.Data())
+	//		fmt.Printf("Model: %s", choice)
+	//	for i, v := range model.Data() {
+	//            fmt.Printf("VALUE of %v elem ->  %v\n",i,v.Value())
+	//		}
+	return
 
 	//        menu9 := []string{"Current setup",strings.Join(cfg.Env.Imagick,""),"Change threshold?"}
 
@@ -39,103 +54,94 @@ func main() {
 	//	gm := afk.New(cfg.Env.UserProfile)
 	//	bt := bot.New(device[0], gm)
 
-	if cfg.Env.UserProfile != nil {
-		fmt.Print(cfg.Env.UserProfile)
-	} else {
-		ui.UserFillSctructInput(cfg.Env.UserProfile, "")
-	}
-MainMenu:
-
-	choice := ui.UserListInput(mainmenu, "AFK Bot\n What bot should do?", "Exit")
-	switch choice {
-
-	case 4:
-	Towers:
-		choice = ui.UserListInput(tower, "Which one?", "Back")
-		switch {
-		case choice > 0:
-			color.HiYellow("Climbing... %v", tower[choice-1])
-		case choice == 0:
-			goto MainMenu
-		default:
-			color.HiRed("DATS WRONG TOWAH MAFAKA!")
-		}
-		time.Sleep(3 * time.Second)
-		goto Towers
-
-		//		push := bt.Task(afk.DOPUSHCAMP)
-		//		bt.React(push)
-		//	case 4:
-		//		kt := bt.Task(afk.Kings)
-		//		bt.React(kt)
-		//	case 5:
-		//		kt := bt.Task(afk.Light)
-		//		bt.React(kt)
-		//	case 6:
-		//		kt := bt.Task(afk.Mauler)
-		//		bt.React(kt)
-		//	case 7:
-		//		kt := bt.Task(afk.Wilder)
-		//		bt.React(kt)
-		//	case 8:
-		//		kt := bt.Task(afk.Graveborn)
-		//		bt.React(kt)
-	case 5:
-	Nine:
-		choice = ui.UserListInput(cfg.Env.Imagick, "Current setup", "Back")
-		switch {
-		case choice > 0:
-			cfg.Env.Imagick[choice-1] = ui.ChangeVal(cfg.Env.Imagick[choice-1])
-			color.HiBlue("dosomething")
-			time.Sleep(2 * time.Second)
-			goto Nine
-		default:
-			goto MainMenu
-		}
-	case 0:
-		os.Exit(0)
-	default:
-		color.HiRed("DATS WRONG NUMBA MAFAKA!")
-		time.Sleep(2 * time.Second)
-		goto MainMenu
-	}
+	//MainMenu:
+	//
+	//	choice := ui.UserListInputmainmenu, "AFK Bot\n What bot should do?", "Exit")
+	//	switch choice {
+	//
+	//	case 4:
+	//	Towers:
+	//		choice = ui.UserListInput(tower, "Which one?", "Back")
+	//		switch {
+	//		case choice > 0:
+	//			color.HiYellow("Climbing... %v", tower[choice-1])
+	//		case choice == 0:
+	//			goto MainMenu
+	//		default:
+	//			color.HiRed("DATS WRONG TOWAH MAFAKA!")
+	//		}
+	//		time.Sleep(3 * time.Second)
+	//		goto Towers
+	//
+	//		//		push := bt.Task(afk.DOPUSHCAMP)
+	//		//		bt.React(push)
+	//		//	case 4:
+	//		//		kt := bt.Task(afk.Kings)
+	//		//		bt.React(kt)
+	//		//	case 5:
+	//		//		kt := bt.Task(afk.Light)
+	//		//		bt.React(kt)
+	//		//	case 6:
+	//		//		kt := bt.Task(afk.Mauler)
+	//		//		bt.React(kt)
+	//		//	case 7:
+	//		//		kt := bt.Task(afk.Wilder)
+	//		//		bt.React(kt)
+	//		//	case 8:
+	//		//		kt := bt.Task(afk.Graveborn)
+	//		//		bt.React(kt)
+	//	case 5:
+	//	Nine:
+	//		choice = ui.UserListInput(cfg.Env.Imagick, "Current setup", "Back")
+	//		switch {
+	//		case choice > 0:
+	//			cfg.Env.Imagick[choice-1] = ui.ChangeVal(cfg.Env.Imagick[choice-1])
+	//			color.HiBlue("dosomething")
+	//			time.Sleep(2 * time.Second)
+	//			goto Nine
+	//		default:
+	//			goto MainMenu
+	//		}
+	//	case 0:
+	//		os.Exit(0)
+	//	default:
+	//		color.HiRed("DATS WRONG NUMBA MAFAKA!")
+	//		time.Sleep(2 * time.Second)
+	//		goto MainMenu
+	//	}
 }
 
 func ocrtest() {
 	b := afk.New(&cfg.UserProfile{Account: "test", Game: "afk", TaskConfigs: []string{"cfg/reactions.yaml"}})
 
-	ocrparams := &cfg.OcrConfig{
-		Split: nil,
-		Imagick: []string{
-			"-colorspace", "Gray", "-alpha", "off",
-			"-threshold",
-			"75%",
-			"-edge",
-			"2",
-			"-negate",
-			//            "-canny",
-			//            "0x1+10%+30%",
-			//            "-unsharp",
-			//            "1x1",
-			//            "-blur",
-			//            "0x1",
+    cfg.Env.Imagick = []string{
+		"-colorspace", "Gray", "-alpha", "off",
+		"-threshold",
+		"75%",
+		"-edge",
+		"2",
+		"-negate",
+		//            "-canny",
+		//            "0x1+10%+30%",
+		//            "-unsharp",
+		//            "1x1",
+		//            "-blur",
+		//            "0x1",
 
-			"-black-threshold",
-			//			"-white-threshold",
-			//			"60%",
-			"90%",
-			//			"-bordercolor", "black", "-border", "3x3",
-			//            "-negate",
-		},
-		Tesseract: []string{
-			//            "--tessdata-dir",
-			//			"C:\\Program Files\\Tesseract-OCR\\tessdata\\frmgit\\tessdata_fast",
-			"--psm", "3",
-			"hoot", "quiet",
-		},
-		Exceptions: cfg.OcrConf.Exceptions,
+		"-black-threshold",
+		//			"-white-threshold",
+		//			"60%",
+		"90%",
+		//			"-bordercolor", "black", "-border", "3x3",
+		//            "-negate",
 	}
-	cfg.OcrConf = ocrparams
+
+	cfg.Env.Tesseract = []string{
+		//            "--tessdata-dir",
+		//			"C:\\Program Files\\Tesseract-OCR\\tessdata\\frmgit\\tessdata_fast",
+		"--psm", "3",
+		"hoot", "quiet",
+	}
 
 	testdata := func(lo uint, im string) *struct {
 		loc afk.ArenaLocation

@@ -1,6 +1,9 @@
 package cfg
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type AppConfig struct {
 	DeviceSerial string `yaml:"connection_str"`
@@ -24,20 +27,52 @@ type AppConfig struct {
 	DrawStep bool   `yaml:"draw_step"`
 
 	Dirs struct {
-		Root     string `yaml:"root"`
-		TempImg  string `yaml:"tempImg"`
-		SqDB     string `yaml:"sqDB"`
-//		User     string `yaml:"user"`
+		Root    string `yaml:"root"`
+		TempImg string `yaml:"tempImg"`
+		SqDB    string `yaml:"sqDB"`
+		//		User     string `yaml:"user"`
 		GameConf string `yaml:"gameConf"`
 		TestData string `yaml:"testData"`
 	}
 	RequiredInstalledSoftware []string `yaml:"required_installed_software"`
+    Thiscfg string `yaml:"thiscfg"`
 }
 
 func (ac *AppConfig) String() string {
-    return fmt.Sprintf("DeviceId: %v\nConfolder: %v", ac.DeviceSerial, ac.Dirs.GameConf )
+    reqsoft := " -> Required software..."
+    for _, v :=range ac.RequiredInstalledSoftware{
+		if strings.Contains(v,adbp){
+            reqsoft += "\n	ADB: "+v
+		}
+			if strings.Contains(v,magic){
+            reqsoft += "\n	IMAGICK: "+v
+		}
+			if strings.Contains(v,tesseract){
+            reqsoft += "\n	TESSERACT: "+v
+		}
+			if strings.Contains(v,bluestacks){
+            reqsoft += "\n	BLUESTACKS: "+v
+		}
+	}
+    return fmt.Sprintf(
+        " -> Device: %v	" +
+            "%s\n" +
+            " -> Args: \n" +
+            "	Bluestacks: %v\n" +
+            "	Magick: %v\n" +
+            "	Tesseract: %v\n" +
+            "%v\n" +
+            " -> Config: %v",
+            ac.DeviceSerial,
+            ac.UserProfile,
+            ac.Bluestacks,
+            ac.Imagick,
+            ac.Tesseract,
+			reqsoft,
+            ac.Thiscfg)
 
 }
+
 type UserProfile struct {
 	Account     string
 	Game        string
@@ -45,8 +80,8 @@ type UserProfile struct {
 }
 
 func (up *UserProfile) String() string {
-	return fmt.Sprintf("\n --> Account: %v\n" +
-        "     Game: %v\n", up.Account, up.Game)
+    return fmt.Sprintf("\n --> Game: %v\n"+
+        "     Account: %v\n", up.Game, up.Account)
 }
 func User(accname, game string, taskcfgpath []string) *UserProfile {
 	return &UserProfile{Account: accname, Game: game, TaskConfigs: taskcfgpath}
@@ -55,7 +90,7 @@ func User(accname, game string, taskcfgpath []string) *UserProfile {
 type ReactiveTask struct {
 	Name      string     `yaml:"name"`
 	Limit     int        `yaml:"limit"`
-	Criteria  string     `yaml:"criteria`
+	Criteria  string     `yaml:"criteria"`
 	Avail     string     `yaml:"avail"`
 	Reactions []Reaction `yaml:"reactions"`
 }
@@ -79,8 +114,52 @@ type Location struct {
 	Threshold int      `yaml:"hits"`
 	Keywords  []string `yaml:"keywords"`
 }
-
-type emuConf []struct {
-	Cmd  string   `yaml:"cmd"`
-	Args []string `yaml:"args"`
+func (l *Location) String() string {
+    return fmt.Sprintf("Location key: %v", l.Key)
 }
+
+
+var defaultAppConfig = &AppConfig{
+	DeviceSerial: "",
+	UserProfile: &UserProfile{
+		Account:     "",
+		Game:        "AFK Arena",
+		TaskConfigs: []string{"cfg/reactions.yaml", "cfg/daily.yaml"},
+	},
+    Imagick: []string{"-colorspace", "Gray", "-alpha", "off", "-threshold, ", "75%"},
+	AltImagick: []string{
+        "-colorspace", "Gray",
+        "-alpha", "off",
+        "-threshold", "75%",
+        "-edge", "2",
+        "-negate",
+        "-black-threshold", "90%",
+	},
+    Tesseract:    []string{"--psm", "6",
+        "-c", "tessedit_char_blacklist=[“€”\"’^#@™°&!~'‘|<$>«»,¢\\_;§®‘*~.°├⌐ÇöÑ{}",
+        "-c", "tessedit_create_alto=1",
+        "-c", "tessedit_create_txt=1",
+        "quiet"},
+	AltTesseract: []string{"--psm", "3", "hoot", "quiet"},
+	Bluestacks:   []string{"--instance", "Rvc64", "--cmd", "launchApp", "--package", "com.lilithgames.hgame.gp.id"},
+	Exceptions:   []string{"Go", "Up ", "In", "Tap"},
+	Logfile:      "app.conf",
+	Loglevel:     "FATAL",
+	DrawStep:     false,
+	Dirs: struct {
+		Root     string `yaml:"root"`
+		TempImg  string `yaml:"tempImg"`
+		SqDB     string `yaml:"sqDB"`
+		GameConf string `yaml:"gameConf"`
+		TestData string `yaml:"testData"`
+	}{
+		Root:     ".afk_data",
+		TempImg:  "work_images",
+		SqDB:     "db",
+		GameConf: "cfg",
+		TestData: "_test",
+	},
+	RequiredInstalledSoftware: []string{magic, adbp, tesseract, bluestacks},
+}
+
+

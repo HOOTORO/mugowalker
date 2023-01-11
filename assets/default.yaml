@@ -1,7 +1,7 @@
-connection_str: 192.168.1.7:5555
+connection_str:
 userprofile:
-    account: E6osh!ro
-    game: AFK Arena
+    account:
+    game:
     taskconfigs:
         - cfg/reactions.yaml
         - cfg/daily.yaml
@@ -36,11 +36,7 @@ alt_tesseract:
     - quiet
 bluestacks:
     - --instance
-    - Rvc64_16
-    - --cmd
-    - launchApp
-    - --package
-    - com.lilithgames.hgame.gp.id
+    - Rvc64
 dict_shrt_except:
     - Go
     - Up
@@ -50,7 +46,7 @@ logfile: app.log
 loglevel: ERROR
 draw_step: false
 dirs:
-    root: .afk_data
+    root: .afkworker
     sqDB: db
     testData: _test
     gameConf: cfg
@@ -60,3 +56,4 @@ required_installed_software:
     - adb
     - magick
     - tesseract
+    - HD-Player

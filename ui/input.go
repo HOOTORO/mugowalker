@@ -11,13 +11,15 @@ import (
 	"strconv"
 	"strings"
 	"worker/cfg"
+
 )
 
 var (
-	log                           *logrus.Logger
+	log *logrus.Logger
 	red, green, cyan, yellow, mag func(...interface{}) string
-	oneIdent                      = "\t"
 )
+
+
 
 func init() {
 	log = cfg.Logger()
@@ -27,6 +29,7 @@ func init() {
 	yellow = color.New(color.FgHiYellow).SprintFunc()
 	mag = color.New(color.FgHiMagenta, color.BgHiWhite).SprintFunc()
 }
+
 
 func UserListInput(l []string, title, defvalDesc string) int {
 	termClear()
@@ -38,29 +41,28 @@ func UserListInput(l []string, title, defvalDesc string) int {
 func UserFillSctructInput(in any, defvalDesc string) {
 	//    termClear()
 	//    ty := reflect.ValueOf(in).Type()
-    type T struct{
-        Hui string
-        Pizda string
+	type T struct {
+		Hui   string
+		Pizda string
 	}
-    t:= T{"hui", "pizda"}
+	t := T{"hui", "pizda"}
 	ty := reflect.TypeOf(&in)
 	tyc := reflect.TypeOf(&t)
-    fmt.Printf("	!!!HUI : %v , %v\n", ty, tyc)
-//	s := reflect.ValueOf(&in).Elem()
-    fmt.Printf("	!!!CanSet : %v\n", reflect.ValueOf(&t).Elem().CanSet())
+	fmt.Printf("	!!!HUI : %v , %v\n", ty, tyc)
+	//	s := reflect.ValueOf(&in).Elem()
+	fmt.Printf("	!!!CanSet : %v\n", reflect.ValueOf(&t).Elem().CanSet())
 	fmt.Printf("	!!!CanSet : %v\n", reflect.ValueOf(&in).Elem().CanSet())
 
 	fmt.Printf("	!!!BEFIOORE : %v\n", reflect.ValueOf(&t).Elem())
-    fmt.Printf("	!!!BEFIOORE : %v\n", reflect.ValueOf(&in).Elem())
+	fmt.Printf("	!!!BEFIOORE : %v\n", reflect.ValueOf(&in).Elem())
 
-    reflect.ValueOf(&t).Elem().Field(1).SetString("AFK Arena")
+	reflect.ValueOf(&t).Elem().Field(1).SetString("AFK Arena")
 	fmt.Printf("	!!!AFTERSET : %v\n", reflect.ValueOf(&t).Elem())
-    reflect.ValueOf(&in).Elem().Field(1).SetString("hui")
-//    reflect.ValueOf(&in).Elem().Elem().Field(1).SetString("AFK Arena")
+	reflect.ValueOf(&in).Elem().Field(1).SetString("hui")
+	//    reflect.ValueOf(&in).Elem().Elem().Field(1).SetString("AFK Arena")
 	fmt.Printf("	!!!AFTER SOSI : %v\n", reflect.ValueOf(&in).Elem())
 
-//fmt.Printf("	!!!ELEM : %v\n", reflect.ValueOf(s))
-
+	//fmt.Printf("	!!!ELEM : %v\n", reflect.ValueOf(s))
 
 	//    sv := s.Elem()
 	//
@@ -124,7 +126,3 @@ func termClear() {
 		log.Errorf("termclr error: %v", err)
 	}
 }
-
-//if len(text) == 0 {
-//    text = def
-//}
