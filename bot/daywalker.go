@@ -23,7 +23,7 @@ type Daywalker struct {
 	lastLoc         *cfg.Location
 	fprefix         string
 	lastscreenshot  string
-    maxocrtry int
+	maxocrtry       int
 	*adb.Device
 	*afk.Game
 }
@@ -152,14 +152,14 @@ func (dw *Daywalker) RunBefore(action afk.Action) {
 		//        default:
 		//            ords := cfg.StrToGrid()
 		//            dw.TapGO(ords.X, ords.Y, ords.Offset)
-    case afk.RepeatX:
-        task := dw.Task(dw.CurrentLocation())
-        point := task.React(dw.CurrentLocation().String())
-        for i := 0; i < 5; i++ {
-            dw.TapGO(point.X, point.Y, point.Offset)
-            time.Sleep(time.Second)
-            dw.TapGO(1, 18, point.Offset)
-        }
+	case afk.RepeatX:
+		task := dw.Task(dw.CurrentLocation())
+		point := task.React(dw.CurrentLocation().String())
+		for i := 0; i < 5; i++ {
+			dw.TapGO(point.X, point.Y, point.Offset)
+			time.Sleep(time.Second)
+			dw.TapGO(1, 18, point.Offset)
+		}
 
 	}
 }

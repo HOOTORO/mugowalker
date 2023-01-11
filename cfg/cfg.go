@@ -11,10 +11,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
 	"worker/adb"
 	"worker/afk/repository"
+
+	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -23,13 +24,10 @@ const (
 	programData = "ProgramData"
 	temp        = "TEMP"
 	cfg         = "default.yaml"
-
 )
 
 const (
-    game = "AFK Arena"
-
-
+	game = "AFK Arena"
 )
 
 var roamdata, userfolder, appdata, tempdir string
@@ -38,14 +36,13 @@ var (
 	ErrWorkDirFail        = errors.New("working dirictories wasn't created. Exit")
 	ErrRequiredProgram404 = errors.New("missing some of required soft")
 )
+
 var (
 	log *logrus.Logger
 	Env *AppConfig
 )
 
-var (
-	OcrConf *OcrConfig
-)
+var OcrConf *OcrConfig
 
 func init() {
 	log = Logger()
@@ -55,9 +52,9 @@ func init() {
 
 	e := createDirStructure()
 
-    e = Env.validateDependencies()
+	e = Env.validateDependencies()
 
-    f, _ := os.OpenFile(absJoin(appdata, Env.Logfile), os.O_APPEND|os.O_CREATE, 0o644)
+	f, _ := os.OpenFile(absJoin(appdata, Env.Logfile), os.O_APPEND|os.O_CREATE, 0o644)
 
 	loglvl, e := logrus.ParseLevel(Env.Loglevel)
 	if e != nil {
@@ -91,8 +88,6 @@ func Logger() *logrus.Logger {
 		Level: logrus.FatalLevel,
 	}
 }
-
-
 
 func (rt ReactiveTask) React(trigger string) *adb.Point {
 	for _, v := range rt.Reactions {
@@ -131,7 +126,7 @@ func Parse(s string, out interface{}) error {
 		log.Fatalf("UNMARSHAL WASTED: %v", err)
 	}
 	log.Tracef("UNMARSHALLED: %v\n\n", out)
-    return err
+	return err
 }
 
 func Save(name string, in interface{}) {
@@ -143,7 +138,7 @@ func Save(name string, in interface{}) {
 	if err != nil {
 		log.Fatalf("MARSHAL WASTED: %v", err)
 	}
-	_ , err = f.Write(b)
+	_, err = f.Write(b)
 	if err != nil {
 		log.Errorf("write yaml (e): %v", err)
 	}
@@ -180,7 +175,6 @@ func LoadTask(up *UserProfile) (r []ReactiveTask) {
 	return
 }
 
-
 func GetImages() []string {
 	d, e := os.ReadDir(tempdir)
 	if e != nil {
@@ -194,7 +188,7 @@ func GetImages() []string {
 }
 
 func ImageDir(f string) string {
-	return absJoin(tempdir,f)
+	return absJoin(tempdir, f)
 }
 
 func UsrDir(f string) string {
@@ -215,7 +209,6 @@ func LookupPath(name string) (path string) {
 	Helper func
 */
 
-
 func safeEnv(n string) string {
 	str, ok := os.LookupEnv(n)
 	if ok {
@@ -225,28 +218,28 @@ func safeEnv(n string) string {
 	return ""
 }
 
-
 func loadConf() *AppConfig {
 	conf := &AppConfig{}
 	e := Parse(cfg, conf)
-    if e!= nil {
-        log.Warnf("Configuration file not found, invalid or maybe this  is first run!.\nInitialize creating configuration\n")
-        conf = inputminsettings()
+	if e != nil {
+		log.Warnf("Configuration file not found, invalid or maybe this  is first run!.\nInitialize creating configuration\n")
+		conf = inputminsettings()
 	} else {
-        conf.Thiscfg = UsrDir(cfg)
+		conf.Thiscfg = UsrDir(cfg)
 	}
 
 	return conf
 }
 
-func inputminsettings() *AppConfig{
+func inputminsettings() *AppConfig {
 	settings := defaultAppConfig
-    cfgpath := UsrDir(cfg)
-    settings.Thiscfg = cfgpath
-    Save(cfg, settings)
+	cfgpath := UsrDir(cfg)
+	settings.Thiscfg = cfgpath
+	Save(cfg, settings)
 
-    return settings
+	return settings
 }
+
 func toInt(s string) int {
 	num, e := strconv.Atoi(s)
 	if e != nil {
@@ -254,6 +247,7 @@ func toInt(s string) int {
 	}
 	return num
 }
+
 func cutgrid(str string) (p *adb.Point) {
 	ords := strings.Split(str, ":")
 	p = &adb.Point{
@@ -269,7 +263,6 @@ func cutgrid(str string) (p *adb.Point) {
 	return
 }
 
-
 func createDirStructure() error {
 	roamdata = makeEnvDir(appdataEnv, Env.Dirs.SqDB)
 	userfolder = makeEnvDir(profileEnv, Env.Dirs.GameConf)
@@ -279,10 +272,9 @@ func createDirStructure() error {
 	// Saturday cleaning
 	if time.Now().Weekday().String() == "Saturday" {
 		truncateDir(tempdir)
-
 	}
 
-    if roamdata == safeEnv(appdataEnv) || userfolder == safeEnv(profileEnv) || tempdir == safeEnv(temp) || appdata == safeEnv(programData) {
+	if roamdata == safeEnv(appdataEnv) || userfolder == safeEnv(profileEnv) || tempdir == safeEnv(temp) || appdata == safeEnv(programData) {
 		return ErrWorkDirFail
 	}
 
@@ -299,28 +291,30 @@ func makeEnvDir(env, dir string) string {
 	}
 	return patyh
 }
+
 func (ac *AppConfig) validateDependencies() error {
 	for i, s := range ac.RequiredInstalledSoftware {
-        if pt := LookupPath(s); pt != ""{
-            ac.RequiredInstalledSoftware[i] = pt
-        }else {
-            return ErrRequiredProgram404
+		if pt := LookupPath(s); pt != "" {
+			ac.RequiredInstalledSoftware[i] = pt
+		} else {
+			return ErrRequiredProgram404
 		}
-
 	}
-    return nil
+	return nil
 }
+
 func truncateDir(d string) {
 	a, _ := filepath.Abs(d)
 	//    _ = os.RemoveAll(a)
 	fmt.Printf("DELETED %v", a)
 }
-func absJoin(d,f string) string {
-    if filepath.IsAbs(d) {
-        return filepath.Join(d,f)
-    }
-    wd, _ := os.Getwd()
-    return filepath.Join(wd, f)
+
+func absJoin(d, f string) string {
+	if filepath.IsAbs(d) {
+		return filepath.Join(d, f)
+	}
+	wd, _ := os.Getwd()
+	return filepath.Join(wd, f)
 }
 
 //app := &cfg.AppConfig{

@@ -11,8 +11,12 @@ import (
 var (
 	tesser   string
 	tessAgrs []string
+var (
+	tesser   string
+	tessAgrs []string
 )
 
+var log *logrus.Logger
 var log *logrus.Logger
 
 func init() {
