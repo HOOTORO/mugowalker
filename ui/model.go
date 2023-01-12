@@ -31,19 +31,23 @@ func (i item) Title() string       { return i.title }
 func (i item) Description() string { return i.desc }
 func (i item) FilterValue() string { return i.title }
 
-type fancymodel struct {
+type menuModel struct {
+	mode   Mode
 	header string
 	list   list.Model
+	choice string
+	items []string
 }
 
-func (m fancymodel) Init() tea.Cmd {
+func (m menuModel) Init() tea.Cmd {
 	return nil
 }
 
-func (m fancymodel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.String() == "ctrl+c" {
+		switch msg.String() {
+		case "ctrl+c", "q", "esc":
 			return m, tea.Quit
 		}
 	case tea.WindowSizeMsg:
@@ -56,30 +60,81 @@ func (m fancymodel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m fancymodel) View() string {
+func (m menuModel) View() string {
 	return docStyle.Render(m.header+m.list.View())
 }
 
-type MenuModel struct {
-	mode   Mode
-	list   list.Model
-	header string
-	items  []string
-	choice string
-	promt  string
-	footer string
+func (m menuModel) Menu() string {
+	MainMenu:
+		m.header = "AFK Bot\n What bot should do?"
+		m.list = list.New(tasks, list.NewDefaultDelegate(),10, 0)
+		choice := UserListInput(m.items, m.header, "Exit")
+
+		switch choice {
+
+		case 4:
+			Towers:
+				choice = UserListInput(tower, "Which one?", "Back")
+				switch {
+				case choice > 0:
+					return yellow("Climbing... %v", tower[choice-1])
+					case choice == 0:
+						goto MainMenu
+						default:
+							goto Towers
+							//			return red("DATS WRONG TOWAH MAFAKA!")
+				}
+				//		time.Sleep(3 * time.Second)
+				case 5:
+					Nine:
+						choice = UserListInput(cfg.Env.Imagick, "Current setup", "Back")
+						switch {
+						case choice > 0:
+							cfg.Env.Imagick[choice-1] = (cfg.Env.Imagick[choice-1])
+							green("dosomething")
+							time.Sleep(2 * time.Second)
+							goto Nine
+							default:
+								goto MainMenu
+						}
+						case 0:
+							os.Exit(0)
+							default:
+								red("DATS WRONG NUMBA MAFAKA!")
+								time.Sleep(2 * time.Second)
+								goto MainMenu
+		}
+		return ""
 }
 
-func (m *MenuModel) Init() tea.Cmd {
-	return nil
-}
+//switch msg := msg.(type) {
+//case tea.KeyMsg:
+//	switch msg.String() {
+//	case "ctrl+c", "q", "esc":
+//		return m, tea.Quit
+//
+//		case "enter":
+//			// Send the choice on the channel and exit.
+//			m.choice = m.choices[m.cursor]
+//			return m, tea.Quit
+//
+//			case "down", "j":
+//				m.cursor++
+//				if m.cursor >= len(m.choices) {
+//					m.cursor = 0
+//				}
+//
+//				case "up", "k":
+//					m.cursor--
+//					if m.cursor < 0 {
+//						m.cursor = len(m.choices) - 1
+//					}
+//	}
+//}
+//
+//return m, nil
 
-type selectModel struct {
-	title   string
-	choices []string
-	cursor  int
-	choice  string
-}
+
 
 type inputModel struct {
 	textInput textinput.Model
@@ -279,25 +334,6 @@ func (m multiInputModel) View() string {
 
 	return b.String()
 }
-func Init() *MenuModel {
-	return nil
-}
-
-func (m *MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		if msg.String() == "ctrl+c" {
-			return m, tea.Quit
-		}
-	case tea.WindowSizeMsg:
-		h, v := docStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h, msg.Height-v)
-	}
-
-	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
-	return m, cmd
-}
 
 //func (m *MenuModel) Update(ud UserData) *MenuModel {
 //	switch ud := ud.(type) {
@@ -321,108 +357,6 @@ func (m *MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 //	return m
 //}
 
-func (m selectModel) Init() tea.Cmd {
-	return nil
-}
-
-func (m selectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q", "esc":
-			return m, tea.Quit
-
-		case "enter":
-			// Send the choice on the channel and exit.
-			m.choice = m.choices[m.cursor]
-			return m, tea.Quit
-
-		case "down", "j":
-			m.cursor++
-			if m.cursor >= len(m.choices) {
-				m.cursor = 0
-			}
-
-		case "up", "k":
-			m.cursor--
-			if m.cursor < 0 {
-				m.cursor = len(m.choices) - 1
-			}
-		}
-	}
-
-	return m, nil
-}
 
 
-func (m selectModel) View() string {
-	s := strings.Builder{}
 
-	//	s.WriteString(m.title+"\n\n")
-	s.WriteString(headerStyle.Render(m.title))
-	//s.WriteString(m.title.text)
-	s.WriteString("\n")
-
-	for i := 0; i < len(m.choices); i++ {
-		if m.cursor == i {
-			s.WriteString("(•) ")
-			s.WriteString(hotStyle.Width(20).Render(m.choices[i]))
-		} else {
-			s.WriteString("( ) ")
-			s.WriteString(commonStyle.Width(20).Render(m.choices[i]))
-		}
-		s.WriteString("\n")
-	}
-	s.WriteString("\n(press q to quit)\n")
-
-	return dS.Render(s.String())
-}
-
-func (m *MenuModel) View() string {
-	res := ListDesc(m.items, m.header, "Default[%v] --> ", "0")
-	res += fmt.Sprintf("\n\n\n%v", m.footer)
-	return res
-}
-
-func (m *MenuModel) Menu() string {
-MainMenu:
-	m.header = "AFK Bot\n What bot should do?"
-	m.items = mainmenu
-	choice := UserListInput(m.items, m.header, "Exit")
-
-	switch choice {
-
-	case 4:
-	Towers:
-		choice = UserListInput(tower, "Which one?", "Back")
-		switch {
-		case choice > 0:
-			return yellow("Climbing... %v", tower[choice-1])
-		case choice == 0:
-			goto MainMenu
-		default:
-			goto Towers
-			//			return red("DATS WRONG TOWAH MAFAKA!")
-		}
-		//		time.Sleep(3 * time.Second)
-	case 5:
-	Nine:
-		choice = UserListInput(cfg.Env.Imagick, "Current setup", "Back")
-		switch {
-		case choice > 0:
-			cfg.Env.Imagick[choice-1] = (cfg.Env.Imagick[choice-1])
-			green("dosomething")
-			time.Sleep(2 * time.Second)
-			goto Nine
-		default:
-			goto MainMenu
-		}
-	case 0:
-		os.Exit(0)
-	default:
-		red("DATS WRONG NUMBA MAFAKA!")
-		time.Sleep(2 * time.Second)
-		goto MainMenu
-	}
-	return ""
-}

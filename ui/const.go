@@ -14,18 +14,23 @@ const (
 )
 
 var (
-	truemainmenu = []list.Item{
+	toplevelmenu = []list.Item{
 		item{title: "Device", desc: "Device/emulator to run bot"},
 		item{title: "Tasks", desc: "Push, Dailies and many more"},
 		item{title: "Settings", desc: "OCR, Game Locations, Debug etc..."},
 	}
 
-	mainmenu = []string{
-		"Run all",
-		"Do daily?",
-		"Push Campain?",
-		"Climb Towers?",
-		"OCR Settings",
+	tasks = []list.Item{
+		item{title: "SelectWithTopinfo all", desc: "Do everything by a little"},
+		item{title: "Do daily?", desc: "Only dailies till 100 pt"},
+		item{title: "Push Campain?", desc: "Strike through CAMPAIN"},
+		item{title: "Climb Towers?", desc: "Like high places, click here "},
+
+	}
+	settings = []list.Item{
+		item{title: "Imagick args", desc: "see https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html#image-processing \n https://imagemagick.org/Usage/transform/#vision"},
+		item{title: "Tesseract args", desc: "run 'tesseract --help-extra' or '--print-parameters'"},
+		item{title: "Bluestacks", desc: ""},
 	}
 	tower = []string{
 		"Kings Tower",

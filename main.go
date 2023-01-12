@@ -1,10 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"image"
 	"os"
+	"os/signal"
 	"strings"
+
+	"golang.org/x/sys/windows"
 
 	"worker/ui"
 
@@ -16,7 +20,83 @@ import (
 
 	"golang.org/x/exp/slices"
 	//	"github.com/erikgeiser/promptkit/selection"
+	"github.com/erikgeiser/coninput"
 )
+
+func run() (err error) {
+	con, err := windows.GetStdHandle(windows.STD_INPUT_HANDLE)
+	if err != nil {
+		return fmt.Errorf("get stdin handle: %w", err)
+	}
+
+	var originalConsoleMode uint32
+
+	err = windows.GetConsoleMode(con, &originalConsoleMode)
+	if err != nil {
+		return fmt.Errorf("get console mode: %w", err)
+	}
+
+	fmt.Println(
+		"Input mode:",
+		coninput.DescribeInputMode(originalConsoleMode),
+	)
+
+	newConsoleMode := coninput.AddInputModes(
+		windows.ENABLE_MOUSE_INPUT,
+		windows.ENABLE_WINDOW_INPUT,
+		windows.ENABLE_PROCESSED_INPUT,
+		windows.ENABLE_EXTENDED_FLAGS,
+	)
+
+	fmt.Println(
+		"Setting mode to:",
+		coninput.DescribeInputMode(newConsoleMode),
+	)
+
+	err = windows.SetConsoleMode(con, newConsoleMode)
+	if err != nil {
+		return fmt.Errorf("set console mode: %w", err)
+	}
+
+	defer func() {
+		fmt.Println("Resetting input mode to:", coninput.DescribeInputMode(originalConsoleMode))
+
+		resetErr := windows.SetConsoleMode(con, originalConsoleMode)
+		if err == nil && resetErr != nil {
+			err = fmt.Errorf("reset console mode: %w", resetErr)
+		}
+	}()
+
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
+	for {
+		if ctx.Err() != nil {
+			break
+		}
+
+		events, err := coninput.ReadNConsoleInputs(con, 16)
+		if err != nil {
+			return fmt.Errorf("read input events: %w", err)
+		}
+
+		fmt.Printf("Read %d events:\n", len(events))
+		for _, event := range events {
+			fmt.Println("  ", event)
+		}
+	}
+
+	return nil
+}
+
+func testWinEvents() {
+	err := run()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v", err)
+
+		os.Exit(1)
+	}
+}
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "-t" {
@@ -27,18 +107,19 @@ func main() {
 		return
 	}
 	testselect()
+	// testWinEvents()
 }
 
 func testselect() {
 	ui.TermClear()
-	// conf := cfg.Env
-	// list := []string{"Edit user profile", "Run bluestacks", "Game tasks"}
+	conf := cfg.Env
+	// list := []string{"Edit user profile", "SelectWithTopinfo bluestacks", "Game tasks"}
 
 	// Simpleone
 	//	header := fmt.Sprintf("Current configuration:\n%s",cfg.Env)
 	//	chs := []*selection.Choice{
 	//		selection.NewChoice("Edit user profile"),
-	//		selection.NewChoice("Run bluestacks"),
+	//		selection.NewChoice("SelectWithTopinfo bluestacks"),
 	//		selection.NewChoice("Game tasks"),}
 	//	sp := selection.New(header, chs)
 	//	sp.PageSize = 3
@@ -57,7 +138,7 @@ func testselect() {
 	//	ui.SelectList(header,list)
 	//	fmt.Printf("%s", conf)
 	// Winner
-	//	ui.Run(conf)
+	ui.SelectWithTopinfo(conf)
 
 	//	ui.SoloStrInput()
 }
@@ -66,6 +147,11 @@ func ocrtest() {
 	b := afk.New(&cfg.UserProfile{Account: "test", Game: "afk", TaskConfigs: []string{"cfg/reactions.yaml"}})
 
 	cfg.Env.Imagick = []string{
+		//		to try convert test.tif -fill black -fuzz 30% +opaque "#FFFFFF" result.tif
+		//		convert test.tif -brightness-contrast -40x10 -units pixelsperinch -density 300 -negate -noise 10 -threshold 70% result.tif
+		//		convert test.tif -fill black -fuzz 30% +opaque "#FFFFFF" result.tif
+		// convert test.tif -negate -threshold 100 -negate result.tif
+		// textcleaner -g -e normalize -f 30 -o 12 -s 2 http://i.stack.imgur.com/ficx7.jpg out.png
 		"-colorspace", "Gray", "-alpha", "off",
 		"-threshold",
 		"75%",

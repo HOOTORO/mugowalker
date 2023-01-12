@@ -19,10 +19,6 @@ import (
 func New(d *adb.Device, game *afk.Game) *Daywalker {
 	color.Magenta("Tap grid size : [ %vx%v ]", xgrid, ygrid)
 	rand.Seed(time.Now().Unix())
-// New Instance of bot
-func New(d *adb.Device, game *afk.Game) *Daywalker {
-	color.Magenta("Tap grid size : [ %vx%v ]", xgrid, ygrid)
-	rand.Seed(time.Now().Unix())
 	return &Daywalker{
 		id:      rand.Uint32(),
 		fprefix: time.Now().Format("2006_01"),
