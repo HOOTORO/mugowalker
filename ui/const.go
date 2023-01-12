@@ -7,12 +7,18 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
-type Level int
+const (
+	hotPink  = lipgloss.Color("#FF06B7")
+	darkGray = lipgloss.Color("#767676")
+	sep      = "> "
+)
+
+type Mode int
 
 const (
-	Top Level = iota + 1
-	First
-	Second
+	SelectList Mode = iota + 1
+	InputMessage
+	RunExec
 )
 
 var (
@@ -24,13 +30,14 @@ var (
 	}
 
 	devsmenu = []list.Item{
-		item{title: "Connect to discovered"},
-		item{title: "Set IP directly"},
+		item{title: "Connect to discovered", children: getDevices()},
+		item{title: "Set IP directly", children: initTextModel("host:port")},
+		item{title: "Run Bluestacks VM", children: initTextModel("host:port")},
 	}
 
 	gamemenu = []list.Item{
-		item{title: "Set Game", children: strInputModel("Name")},
-		item{title: "Set Account", children: strInputModel("Username")},
+		item{title: "Set Game", children: initTextModel("Name")},
+		item{title: "Set Account", children: initTextModel("Username")},
 	}
 
 	tasks = []list.Item{
@@ -55,13 +62,11 @@ var (
 
 var (
 	// Output Style selectlist
-	docStyle = lipgloss.NewStyle().Margin(3, 3).Height(6).MaxHeight(40) //.AlignHorizontal(lipgloss.Center)
 	// MultiText Input
 	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	cursorStyle         = focusedStyle.Copy()
 	noStyle             = lipgloss.NewStyle()
-	brHelpStyle         = blurredStyle.Copy()
 	cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
 
 	focusedButton = focusedStyle.Copy().Render("[ Submit ]")
@@ -69,19 +74,24 @@ var (
 )
 
 var (
-	titleStyle = lipgloss.NewStyle().Padding(0).PaddingLeft(3).Width(40).Height(10).MarginBottom(5).Foreground(lipgloss.Color("99"))
+	// titleStyle = lipgloss.NewStyle().Padding(0).PaddingLeft(3).Width(40).Height(10).MarginBottom(5).Foreground(lipgloss.Color("99"))
 	//	titleBarStyle     = lipgloss.NewStyle().Padding(0).MarginBottom(3).Width(40).Height(10).Background(lipgloss.Color("#AEAEAE"))
+	///// Ui.go
 	itemStyle         = lipgloss.NewStyle().PaddingLeft(5)
 	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(5).Foreground(lipgloss.Color("170"))
-	statusStyle       = list.DefaultStyles().StatusBar.PaddingLeft(10)
-	paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
-	helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).Height(20) // PaddingBottom(30).MarginBottom(30).AlignVertical(lipgloss.Top)
-	quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
+	helpStyle         = docStyle.Copy().MarginBottom(3)
 )
 
 var (
+	docStyle    = lipgloss.NewStyle().Margin(1, 5)
+	headerStyle = lipgloss.NewStyle().MaxWidth(200).Width(73).
+			AlignVertical(lipgloss.Center)
+
 	hotStyle    = lipgloss.NewStyle().Foreground(hotPink)
-	commonStyle = lipgloss.NewStyle().Foreground(darkGray)
-	dS          = lipgloss.NewStyle().Margin(4, 10).Height(4)
-	headerStyle = lipgloss.NewStyle().MaxWidth(200).Width(73).AlignVertical(lipgloss.Center) //.Border(lipgloss.ThickBorder()).BorderBackground(lipgloss.Color("99"))
+	tophedStyle = lipgloss.NewStyle().
+			Border(lipgloss.ThickBorder()).
+			BorderBackground(lipgloss.Color("99")).
+			Bold(true)
+	// commonStyle = lipgloss.NewStyle().Foreground(darkGray)
+	// dS          = lipgloss.NewStyle().Margin(4, 10).Height(4)
 )

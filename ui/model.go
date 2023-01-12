@@ -2,20 +2,80 @@ package ui
 
 import (
 	"fmt"
-	"os"
 	"strings"
-	"time"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/reflow/indent"
 )
 
-const (
-	hotPink  = lipgloss.Color("#FF06B7")
-	darkGray = lipgloss.Color("#767676")
-	sep      = ", "
+type menuModel struct {
+	mode   Mode
+	header string
+
+	menulist list.Model
+	parents  []list.Model
+	choice   string
+
+	textInput textinput.Model
+
+	focusIndex int
+	manyInputs []textinput.Model
+	cursorMode textinput.CursorMode
+
+	quitting bool
+	err      error
+	cursor   int
+}
+
+func InitialMenuModel() menuModel {
+	m := menuModel{
+		mode:       SelectList,
+		header:     "Worker Setup",
+		menulist:   list.New(toplevelmenu, list.NewDefaultDelegate(), 19, 0),
+		parents:    nil,
+		choice:     "",
+		textInput:  initTextModel("..."),
+		focusIndex: 0,
+		manyInputs: make([]textinput.Model, 0),
+		cursorMode: textinput.CursorBlink,
+		quitting:   false,
+		err:        nil,
+		cursor:     0,
+	}
+
+	// 	manyInputs: make([]textinput.Model, 3),
+	// }
+
+	// var t textinput.Model
+	// for i := range m.manyInputs {
+	// 	t = textinput.New()
+	// 	t.CursorStyle = cursorStyle
+	// 	t.CharLimit = 32
+
+	// 	switch i {
+	// 	case 0:
+	// 		t.Placeholder = "Game"
+	// 		t.Focus()
+	// 		t.PromptStyle = focusedStyle
+	// 		t.TextStyle = focusedStyle
+	// 	case 1:
+	// 		t.Placeholder = "Account"
+	// 		t.CharLimit = 64
+	// 	case 2:
+	// 		t.Placeholder = "Connection str"
+	// 		//                    t.EchoMode = textinput.EchoPassword
+	// 		t.EchoCharacter = '•'
+	// 	}
+
+	// 	m.manyInputs[i] = t
+
+	return m
+}
+
+type (
+	errMsg error
 )
 
 type item struct {
@@ -23,33 +83,24 @@ type item struct {
 	children interface{}
 }
 
-func (i item) String() string {
-	switch children := i.children.(type) {
-	case []list.Item:
-		elems := ""
-		for _, v := range children {
-			elems += v.FilterValue() + sep
-		}
-		return elems
-	}
-	return fmt.Sprintf("%s", i.children)
-}
-
-type (
-	errMsg error
-)
-
 func (i item) Title() string       { return i.title }
 func (i item) Description() string { return i.String() }
 func (i item) FilterValue() string { return i.title }
 
-//	func (i item) NextLevel() list.Model {
-//		chld, ok := i.children.([]list.Item)
-//		if ok {
-//			return list.New(chld, list.NewDefaultDelegate(), 15, 0)
-//		}
-//		return list.Model{}
-//	}
+func (i item) String() string {
+	elems := ""
+	switch children := i.children.(type) {
+	case []list.Item:
+		for _, v := range children {
+			elems += "<" + v.FilterValue() + sep
+		}
+		return elems
+	case textinput.Model:
+		return children.Placeholder
+	}
+	return fmt.Sprintf("%s", i.children)
+}
+
 func (i item) NextLevel() []list.Item {
 	chld, ok := i.children.([]list.Item)
 	if ok {
@@ -58,165 +109,113 @@ func (i item) NextLevel() []list.Item {
 	return nil
 }
 
-type menuModel struct {
-	mode    Level
-	header  string
-	list    list.Model
-	parents []list.Model
-	cursor  int
-	choice  string
-	items   []string
-}
-
+// //////////////////////////
+// /////// General //////////
+// init / update / view ///
+// ////////////////////////
 func (m menuModel) Init() tea.Cmd {
-	return nil
-}
-
-func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
-			return m, tea.Quit
-		case "enter":
-			// Send the choice on the channel and exit.
-			m.choice = m.list.SelectedItem().FilterValue()
-			itm, ok := m.list.SelectedItem().(item)
-			if ok {
-				m.parents = append(m.parents, m.list)
-				m.list.SetItems(itm.NextLevel())
-			} else {
-				return m, tea.Quit
-			}
-		case "backspace":
-			if len(m.parents) > 0 {
-				m.list.SetItems(m.parents[len(m.parents)-1].Items())
-				m.parents = m.parents[:len(m.parents)-1]
-			}
-
-		}
-
-	case tea.WindowSizeMsg:
-		h, v := docStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h, msg.Height-v)
-	}
-
-	var cmd tea.Cmd
-	m.list, cmd = m.list.Update(msg)
-	return m, cmd
-}
-
-func (m menuModel) View() string {
-	return docStyle.Render(m.header + m.list.View())
-}
-
-func (m menuModel) Menu() string {
-MainMenu:
-	m.header = "AFK Bot\n What bot should do?"
-	m.list = list.New(tasks, list.NewDefaultDelegate(), 1, 0)
-	choice := UserListInput(m.list.Items(), m.header, "Exit")
-
-	switch choice {
-
-	case 4:
-	Towers:
-		choice = UserListInput(towers, "Which one?", "Back")
-		switch {
-		case choice > 0:
-			return yellow("Climbing... %v", towers[choice-1])
-		case choice == 0:
-			goto MainMenu
-		default:
-			goto Towers
-			//			return red("DATS WRONG TOWAH MAFAKA!")
-		}
-	//		time.Sleep(3 * time.Second)
-	case 5:
-	// Nine:
-	// 	choice = UserListInput(cfg.Env.Imagick, "Current setup", "Back")
-	// 	switch {
-	// 	case choice > 0:
-	// 		cfg.Env.Imagick[choice-1] = (cfg.Env.Imagick[choice-1])
-	// 		green("dosomething")
-	// 		time.Sleep(2 * time.Second)
-	// 		goto Nine
-	// 	default:
-	// 		goto MainMenu
-	// 	}
-	case 0:
-		os.Exit(0)
-	default:
-		red("DATS WRONG NUMBA MAFAKA!")
-		time.Sleep(2 * time.Second)
-		goto MainMenu
-	}
-	return ""
-}
-
-//switch msg := msg.(type) {
-//case tea.KeyMsg:
-//	switch msg.String() {
-//	case "ctrl+c", "q", "esc":
-//		return m, tea.Quit
-//
-//		case "enter":
-//			// Send the choice on the channel and exit.
-//			m.choice = m.choices[m.cursor]
-//			return m, tea.Quit
-//
-//			case "down", "j":
-//				m.cursor++
-//				if m.cursor >= len(m.choices) {
-//					m.cursor = 0
-//				}
-//
-//				case "up", "k":
-//					m.cursor--
-//					if m.cursor < 0 {
-//						m.cursor = len(m.choices) - 1
-//					}
-//	}
-//}
-//
-//return m, nil
-
-type inputModel struct {
-	textInput textinput.Model
-	err       error
-}
-
-type multiInputModel struct {
-	header     string
-	focusIndex int
-	inputs     []textinput.Model
-	cursorMode textinput.CursorMode
-}
-
-func strInputModel(placeholder string) inputModel {
-	ti := textinput.New()
-	ti.Placeholder = placeholder
-	ti.Focus()
-	ti.CharLimit = 156
-	ti.Width = 20
-
-	return inputModel{
-		textInput: ti,
-		err:       nil,
-	}
-}
-
-func (m inputModel) Init() tea.Cmd {
 	return textinput.Blink
 }
 
-func (m inputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+// ////////////////////////
+func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// always exit keys
+	if msg, ok := msg.(tea.KeyMsg); ok {
+		k := msg.String()
+		if k == "q" || k == "esc" || k == "ctrl+c" {
+			m.quitting = true
+			return m, tea.Quit
+		}
+	}
+
+	switch m.mode {
+	case SelectList:
+		return updateList(msg, m)
+	case InputMessage:
+		return updateInput(msg, m)
+	}
+	return m, tea.Quit
+}
+
+///////////////////////////////////
+
+func (m menuModel) View() string {
+	var s string
+	if m.quitting {
+		return "\n  See you later, Space Cowboy!\n\n"
+	}
+	switch m.mode {
+	case SelectList:
+		s = listView(m)
+	case InputMessage:
+		s = inputView(m)
+	}
+	return indent.String("\n"+s+"\n\n", 2)
+}
+
+//////////////////////////////////
+
+/////////////////////////////
+//// UPD. SelectList ///////
+///////////////////////////
+
+func updateList(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "enter", "spacebar":
+			// Send the choice on the channel and exit.
+			m.choice = m.menulist.SelectedItem().FilterValue()
+
+			if itm, ok := m.menulist.SelectedItem().(item); ok {
+				switch chld := itm.children.(type) {
+				case textinput.Model:
+					m.textInput = chld
+					m.mode = InputMessage
+					m.textInput, cmd = m.textInput.Update(msg)
+					return m, cmd
+				case []list.Item:
+					// go deeper in menu
+					m.parents = append(m.parents, m.menulist)
+					m.menulist.SetItems(itm.NextLevel())
+				}
+			}
+
+		case "backspace":
+			// go up to top using chain parents
+			if len(m.parents) > 0 {
+				m.menulist.SetItems(m.parents[len(m.parents)-1].Items())
+				m.parents = m.parents[:len(m.parents)-1]
+			}
+		}
+		// May be... some day
+		// case tea.WindowSizeMsg:
+		// 	h, v := docStyle.GetFrameSize()
+		// 	m.menulist.SetSize(msg.Width-h, msg.Height-v)
+	}
+	m.menulist, cmd = m.menulist.Update(msg)
+	return m, cmd
+}
+
+//	else {
+//		// itm, ok = m.list.SelectedItem()
+//		return m, tea.Quit
+//
+// //////////////////////////
+
+// ///////////////////////////
+// ///// UPD. Input /////////
+// /////////////////////////
+func updateInput(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
 		case tea.KeyEnter, tea.KeyCtrlC, tea.KeyEsc:
-			return m, tea.Quit
+			m.mode = SelectList
+			return m, cmd
 		}
 
 	// We handle errors just like any other message
@@ -229,55 +228,8 @@ func (m inputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m inputModel) View() string {
-	return fmt.Sprintf(
-		"What’s your favorite Pokémon?\n\n%s\n\n%s",
-		m.textInput.View(),
-		"(esc to quit)",
-	) + "\n"
-}
-
-func initialUserInfoModel() multiInputModel {
-	m := multiInputModel{
-		inputs: make([]textinput.Model, 3),
-	}
-
-	var t textinput.Model
-	for i := range m.inputs {
-		t = textinput.New()
-		t.CursorStyle = cursorStyle
-		t.CharLimit = 32
-
-		switch i {
-		case 0:
-			t.Placeholder = "Game"
-			t.Focus()
-			t.PromptStyle = focusedStyle
-			t.TextStyle = focusedStyle
-		case 1:
-			t.Placeholder = "Account"
-			t.CharLimit = 64
-		case 2:
-			t.Placeholder = "Connection str"
-			//                    t.EchoMode = textinput.EchoPassword
-			t.EchoCharacter = '•'
-		}
-
-		m.inputs[i] = t
-	}
-
-	return m
-}
-
-func (m multiInputModel) Init() tea.Cmd {
-	return textinput.Blink
-}
-
-func (m multiInputModel) Data() []textinput.Model {
-	return m.inputs
-}
-
-func (m multiInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+// ///////// UPD Multiline input /////////
+func updateFormInput(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -290,9 +242,9 @@ func (m multiInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cursorMode > textinput.CursorHide {
 				m.cursorMode = textinput.CursorBlink
 			}
-			cmds := make([]tea.Cmd, len(m.inputs))
-			for i := range m.inputs {
-				cmds[i] = m.inputs[i].SetCursorMode(m.cursorMode)
+			cmds := make([]tea.Cmd, len(m.manyInputs))
+			for i := range m.manyInputs {
+				cmds[i] = m.manyInputs[i].SetCursorMode(m.cursorMode)
 			}
 			return m, tea.Batch(cmds...)
 
@@ -302,7 +254,7 @@ func (m multiInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			// Did the user press enter while the submit button was focused?
 			// If so, exit.
-			if s == "enter" && m.focusIndex == len(m.inputs) {
+			if s == "enter" && m.focusIndex == len(m.manyInputs) {
 				return m, tea.Quit
 			}
 
@@ -313,25 +265,25 @@ func (m multiInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.focusIndex++
 			}
 
-			if m.focusIndex > len(m.inputs) {
+			if m.focusIndex > len(m.manyInputs) {
 				m.focusIndex = 0
 			} else if m.focusIndex < 0 {
-				m.focusIndex = len(m.inputs)
+				m.focusIndex = len(m.manyInputs)
 			}
 
-			cmds := make([]tea.Cmd, len(m.inputs))
-			for i := 0; i <= len(m.inputs)-1; i++ {
+			cmds := make([]tea.Cmd, len(m.manyInputs))
+			for i := 0; i <= len(m.manyInputs)-1; i++ {
 				if i == m.focusIndex {
 					// Set focused state
-					cmds[i] = m.inputs[i].Focus()
-					m.inputs[i].PromptStyle = focusedStyle
-					m.inputs[i].TextStyle = focusedStyle
+					cmds[i] = m.manyInputs[i].Focus()
+					m.manyInputs[i].PromptStyle = focusedStyle
+					m.manyInputs[i].TextStyle = focusedStyle
 					continue
 				}
 				// Remove focused state
-				m.inputs[i].Blur()
-				m.inputs[i].PromptStyle = noStyle
-				m.inputs[i].TextStyle = noStyle
+				m.manyInputs[i].Blur()
+				m.manyInputs[i].PromptStyle = noStyle
+				m.manyInputs[i].TextStyle = noStyle
 			}
 
 			return m, tea.Batch(cmds...)
@@ -339,36 +291,60 @@ func (m multiInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	// Handle character input and blinking
-	cmd := m.updateInputs(msg)
+	cmd := m.updatemanyInputs(msg)
 
 	return m, cmd
 }
 
-// *
-func (m multiInputModel) updateInputs(msg tea.Msg) tea.Cmd {
-	cmds := make([]tea.Cmd, len(m.inputs))
+// func (m multiInputModel) Data() []textinput.Model {
+// 	return m.manyInputs
+// }
 
-	// Only text inputs with Focus() set will respond, so it's safe to simply
+// *
+func (m menuModel) updatemanyInputs(msg tea.Msg) tea.Cmd {
+	cmds := make([]tea.Cmd, len(m.manyInputs))
+
+	// Only text manyInputs with Focus() set will respond, so it's safe to simply
 	// update all of them here without any further logic.
-	for i := range m.inputs {
-		m.inputs[i], cmds[i] = m.inputs[i].Update(msg)
+	for i := range m.manyInputs {
+		m.manyInputs[i], cmds[i] = m.manyInputs[i].Update(msg)
 	}
 
 	return tea.Batch(cmds...)
 }
 
-func (m multiInputModel) View() string {
+// /////////////////////////////////
+// /////// VIEW Input /////////////
+// ///////////////////////////////
+
+// /////////////////////////
+// func (m menuModel) View() string {
+// //////////////////////////
+func listView(m menuModel) string {
+	return docStyle.Render(m.header + m.menulist.View())
+}
+
+func inputView(m menuModel) string {
+	return fmt.Sprintf(
+		"Please, enter %v\n\n%s\n\n%s",
+		m.textInput.Placeholder,
+		m.textInput.View(),
+		"(esc to quit)",
+	) + "\n"
+}
+
+func inputFormView(m menuModel) string {
 	var b strings.Builder
 
-	for i := range m.inputs {
-		b.WriteString(m.inputs[i].View())
-		if i < len(m.inputs)-1 {
+	for i := range m.manyInputs {
+		b.WriteString(m.manyInputs[i].View())
+		if i < len(m.manyInputs)-1 {
 			b.WriteRune('\n')
 		}
 	}
 
 	button := &blurredButton
-	if m.focusIndex == len(m.inputs) {
+	if m.focusIndex == len(m.manyInputs) {
 		button = &focusedButton
 	}
 	_, err := fmt.Fprintf(&b, "\n\n%s\n\n", *button)
@@ -404,3 +380,17 @@ func (m multiInputModel) View() string {
 //	}
 //	return m
 //}
+
+///////////////////////
+//// helper func  ////
+/////////////////////
+
+func initTextModel(placeholder string) textinput.Model {
+	ti := textinput.New()
+	ti.Placeholder = placeholder
+	ti.Focus()
+	ti.CharLimit = 156
+	ti.Width = 20
+
+	return ti
+}

@@ -4,18 +4,23 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 func SelectWithTopinfo(tops interface{}) error {
-	status := fmt.Sprintf("AFK Worker v0.1_alpha\n####### Active setup ###########\n%s", tops)
+	toph1 := tophedStyle.Render("AFK Worker v0.1_alpha\n####### Active setup ###########\n")
+	status := fmt.Sprintf("%v\n%s", toph1, tops)
 
-	m := menuModel{list: list.New(toplevelmenu, list.NewDefaultDelegate(), 15, 0)}
+	m := InitialMenuModel() // menuModel{menulist: list.New(toplevelmenu, list.NewDefaultDelegate(), 15, 0)}
 	m.header = headerStyle.Render(status) + "\n\n"
-	m.list.Title = "Choose..."
-	m.list.SetShowHelp(true)
-	m.list.SetShowPagination(true)
+	m.menulist.Title = "Choose..."
+	m.menulist.SetSize(100, 20)
+	m.menulist.SetShowHelp(true)
+	m.menulist.SetShowPagination(true)
+	m.menulist.SetShowTitle(false)
+	m.menulist.Styles.TitleBar.Height(0).Border(lipgloss.ThickBorder()).BorderForeground(hotPink)
+	// m.menulist.Styles.HelpStyle.Inline(true).Height(10)
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
@@ -32,19 +37,19 @@ func SelectWithTopinfo(tops interface{}) error {
 	return nil
 }
 
-func MultiStrInput() tea.Model {
-	um, err := tea.NewProgram(initialUserInfoModel()).Run()
-	if err != nil {
-		fmt.Printf("could not start program: %s\n", err)
-		os.Exit(1)
-	}
+// func MultiStrInput() tea.Model {
+// 	um, err := tea.NewProgram(initialUserInfoModel()).Run()
+// 	if err != nil {
+// 		fmt.Printf("could not start program: %s\n", err)
+// 		os.Exit(1)
+// 	}
 
-	return um
-}
+// 	return um
+// }
 
-func SoloStrInput(pl string) {
-	p := tea.NewProgram(strInputModel(pl))
-	if _, err := p.Run(); err != nil {
-		log.Fatal(err)
-	}
-}
+// func SoloStrInput(pl string) {
+// 	p := tea.NewProgram(strInputModel(pl))
+// 	if _, err := p.Run(); err != nil {
+// 		log.Fatal(err)
+// 	}
+// }

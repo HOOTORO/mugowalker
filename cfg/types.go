@@ -62,14 +62,17 @@ func (ac *AppConfig) String() string {
 			" Magick: %v\n"+
 			" Tesseract: %v\n"+
 			"%v\n"+
-			"-> Config: %v\n",
+			"-> Config: %v\n"+
+			"-> Logfile: %v\n",
 		isStr(ac.DeviceSerial)(" -> Device: "),
 		ac.UserProfile,
 		ac.Bluestacks,
 		ac.Imagick,
 		ac.Tesseract,
 		reqsoft,
-		ac.Thiscfg)
+		ac.Thiscfg,
+		ac.Logfile,
+	)
 }
 
 func isStr(str string) func(...interface{}) string {

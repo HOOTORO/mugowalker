@@ -42,8 +42,8 @@ dict_shrt_except:
     - Up
     - In
     - Tap
-logfile: app.log
-loglevel: ERROR
+logfile: appp.log
+loglevel: TRACE
 draw_step: false
 dirs:
     root: .afkworker

@@ -101,8 +101,7 @@ func testWinEvents() {
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "-t" {
 		color.HiRed("%v", "TEST RUN")
-		user := cfg.UserProfile{Account: "ss", Game: "aa"}
-		ui.UserFillSctructInput(user, "")
+		// user := cfg.UserProfile{Account: "ss", Game: "aa"}
 		//		ocrtest()
 		return
 	}
@@ -111,7 +110,6 @@ func main() {
 }
 
 func testselect() {
-	ui.TermClear()
 	conf := cfg.Env
 	// list := []string{"Edit user profile", "SelectWithTopinfo bluestacks", "Game tasks"}
 

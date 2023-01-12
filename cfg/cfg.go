@@ -3,7 +3,6 @@ package cfg
 import (
 	"errors"
 	"fmt"
-	"github.com/fatih/color"
 	"image"
 	"os"
 	"os/exec"
@@ -12,10 +11,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
+	"github.com/fatih/color"
+
 	"worker/adb"
 	"worker/afk/repository"
+
+	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -38,9 +40,9 @@ var (
 )
 
 var (
-	log *logrus.Logger
-	Env *AppConfig
-	red,green func(...interface{}) string
+	log        *logrus.Logger
+	Env        *AppConfig
+	red, green func(...interface{}) string
 )
 
 var OcrConf *OcrConfig
@@ -58,7 +60,10 @@ func init() {
 
 	e = Env.validateDependencies()
 
-	f, _ := os.OpenFile(absJoin(appdata, Env.Logfile), os.O_APPEND|os.O_CREATE, 0o644)
+	f, e := os.OpenFile(Env.Logfile, os.O_APPEND|os.O_CREATE, 0o644)
+	if e == nil {
+		Env.Logfile = f.Name()
+	}
 
 	loglvl, e := logrus.ParseLevel(Env.Loglevel)
 	if e != nil {
@@ -314,11 +319,12 @@ func truncateDir(d string) {
 }
 
 func absJoin(d, f string) string {
+	fb := filepath.Base(f)
 	if filepath.IsAbs(d) {
-		return filepath.Join(d, f)
+		return filepath.Join(d, fb)
 	}
 	wd, _ := os.Getwd()
-	return filepath.Join(wd, f)
+	return filepath.Join(wd, fb)
 }
 
 //app := &cfg.AppConfig{
