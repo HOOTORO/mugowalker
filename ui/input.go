@@ -32,14 +32,14 @@ func init() {
 
 
 func UserListInput(l []string, title, defvalDesc string) int {
-	termClear()
+	TermClear()
 	desc := ListDesc(l, title, defvalDesc, "0")
 	fmt.Print(desc)
 	return intInput(len(l))
 }
 
 func UserFillSctructInput(in any, defvalDesc string) {
-	//    termClear()
+	//    TermClear()
 	//    ty := reflect.ValueOf(in).Type()
 	type T struct {
 		Hui   string
@@ -118,7 +118,7 @@ func strInput() string {
 	return strings.Trim(text, "\r")
 }
 
-func termClear() {
+func TermClear() {
 	cmd := exec.Command("cmd", "/c", "cls") //Windows example, its tested
 	cmd.Stdout = os.Stdout
 	err := cmd.Run()

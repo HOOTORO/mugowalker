@@ -39,31 +39,31 @@ type AppConfig struct {
 }
 
 func (ac *AppConfig) String() string {
-	reqsoft := " -> Required software..."
+	reqsoft := "-> Required software..."
 	for _, v := range ac.RequiredInstalledSoftware {
 		if strings.Contains(v, adbp) {
-			reqsoft += "\n	ADB: " + v
+			reqsoft += isStr(v)(" \n ADB: "+v)
 		}
 		if strings.Contains(v, magic) {
-			reqsoft += "\n	IMAGICK: " + v
+			reqsoft += isStr(v)(" \n IMAGICK: " + v)
 		}
 		if strings.Contains(v, tesseract) {
-			reqsoft += "\n	TESSERACT: " + v
+			reqsoft += isStr(v)(" \n TESSERACT: " + v)
 		}
 		if strings.Contains(v, bluestacks) {
-			reqsoft += "\n	BLUESTACKS: " + v
+			reqsoft += isStr(v)(" \n BLUESTACKS: " + v)
 		}
 	}
 	return fmt.Sprintf(
-		" -> Device: %v	"+
+		"%v"+
 			"%s\n"+
-			" -> Args: \n"+
-			"	Bluestacks: %v\n"+
-			"	Magick: %v\n"+
-			"	Tesseract: %v\n"+
+			"-> Args: \n"+
+			" Bluestacks: %v\n"+
+			" Magick: %v\n"+
+			" Tesseract: %v\n"+
 			"%v\n"+
-			" -> Config: %v",
-		ac.DeviceSerial,
+			"-> Config: %v\n",
+			isStr(ac.DeviceSerial)(" -> Device: "),
 		ac.UserProfile,
 		ac.Bluestacks,
 		ac.Imagick,
@@ -72,6 +72,13 @@ func (ac *AppConfig) String() string {
 		ac.Thiscfg)
 }
 
+func isStr(str string) func(...interface{}) string {
+	if str == "" {
+		return red
+	} else {
+		return green
+	}
+}
 type UserProfile struct {
 	Account     string
 	Game        string
@@ -79,8 +86,8 @@ type UserProfile struct {
 }
 
 func (up *UserProfile) String() string {
-	return fmt.Sprintf("\n --> Game: %v\n"+
-		"     Account: %v\n", up.Game, up.Account)
+	return fmt.Sprint(isStr(up.Game)("\n --> Game: "+up.Game+"\n ")+
+		isStr(up.Account)("     Account: "+ up.Account+"\n "))
 }
 
 func User(accname, game string, taskcfgpath []string) *UserProfile {

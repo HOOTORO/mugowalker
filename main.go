@@ -15,6 +15,7 @@ import (
 	"github.com/fatih/color"
 
 	"golang.org/x/exp/slices"
+	//	"github.com/erikgeiser/promptkit/selection"
 )
 
 func main() {
@@ -25,10 +26,40 @@ func main() {
 		//		ocrtest()
 		return
 	}
+	testselect()
+}
 
-	conf := cfg.Env
+func testselect() {
+	ui.TermClear()
+	// conf := cfg.Env
+	// list := []string{"Edit user profile", "Run bluestacks", "Game tasks"}
+
+	// Simpleone
+	//	header := fmt.Sprintf("Current configuration:\n%s",cfg.Env)
+	//	chs := []*selection.Choice{
+	//		selection.NewChoice("Edit user profile"),
+	//		selection.NewChoice("Run bluestacks"),
+	//		selection.NewChoice("Game tasks"),}
+	//	sp := selection.New(header, chs)
+	//	sp.PageSize = 3
+	//
+	//	choice, err := sp.RunPrompt()
+	//	if err != nil {
+	//		fmt.Printf("Error: %v\n", err)
+	//
+	//		os.Exit(1)
+	//	}
+	//	_ = choice
+
+	// don't work
+	// ui.SimpleMenu(conf, list)
+	//  Simpliest
+	//	ui.SelectList(header,list)
 	//	fmt.Printf("%s", conf)
-	ui.Run(conf)
+	// Winner
+	//	ui.Run(conf)
+
+	//	ui.SoloStrInput()
 }
 
 func ocrtest() {

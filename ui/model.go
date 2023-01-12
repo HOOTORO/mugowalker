@@ -11,6 +11,12 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+)
+
+const (
+	hotPink  = lipgloss.Color("#FF06B7")
+	darkGray = lipgloss.Color("#767676")
 )
 
 type item struct {
@@ -51,7 +57,7 @@ func (m fancymodel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m fancymodel) View() string {
-	return m.header+docStyle.Render(m.list.View())
+	return docStyle.Render(m.header+m.list.View())
 }
 
 type MenuModel struct {
@@ -68,26 +74,23 @@ func (m *MenuModel) Init() tea.Cmd {
 	return nil
 }
 
-type multiInputModel struct {
-	header     string
-	focusIndex int
-	inputs     []textinput.Model
-	cursorMode textinput.CursorMode
-}
-
 type selectModel struct {
+	title   string
 	choices []string
 	cursor  int
 	choice  string
 }
 
-type altSelectModel struct {
-	list list.Model
-}
-
 type inputModel struct {
 	textInput textinput.Model
 	err       error
+}
+
+type multiInputModel struct {
+	header     string
+	focusIndex int
+	inputs     []textinput.Model
+	cursorMode textinput.CursorMode
 }
 
 func initialModel() inputModel {
@@ -133,8 +136,6 @@ func (m inputModel) View() string {
 		"(esc to quit)",
 	) + "\n"
 }
-
-type UserData interface{}
 
 func initialUserInfoModel() multiInputModel {
 	m := multiInputModel{
@@ -278,10 +279,6 @@ func (m multiInputModel) View() string {
 
 	return b.String()
 }
-func (m selectModel) Init() tea.Cmd {
-	return nil
-}
-
 func Init() *MenuModel {
 	return nil
 }
@@ -324,6 +321,10 @@ func (m *MenuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 //	return m
 //}
 
+func (m selectModel) Init() tea.Cmd {
+	return nil
+}
+
 func (m selectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -353,27 +354,34 @@ func (m selectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *MenuModel) View() string {
-	res := ListDesc(m.items, m.header, "Default[%v] --> ", "0")
-	res += fmt.Sprintf("\n\n\n%v", m.footer)
-	return res
-}
+
 func (m selectModel) View() string {
 	s := strings.Builder{}
-	s.WriteString("What kind of Bubble Tea would you like to order?\n\n")
+
+	//	s.WriteString(m.title+"\n\n")
+	s.WriteString(headerStyle.Render(m.title))
+	//s.WriteString(m.title.text)
+	s.WriteString("\n")
 
 	for i := 0; i < len(m.choices); i++ {
 		if m.cursor == i {
 			s.WriteString("(•) ")
+			s.WriteString(hotStyle.Width(20).Render(m.choices[i]))
 		} else {
 			s.WriteString("( ) ")
+			s.WriteString(commonStyle.Width(20).Render(m.choices[i]))
 		}
-		s.WriteString(m.choices[i])
 		s.WriteString("\n")
 	}
 	s.WriteString("\n(press q to quit)\n")
 
-	return s.String()
+	return dS.Render(s.String())
+}
+
+func (m *MenuModel) View() string {
+	res := ListDesc(m.items, m.header, "Default[%v] --> ", "0")
+	res += fmt.Sprintf("\n\n\n%v", m.footer)
+	return res
 }
 
 func (m *MenuModel) Menu() string {
@@ -394,9 +402,9 @@ MainMenu:
 			goto MainMenu
 		default:
 			goto Towers
-//			return red("DATS WRONG TOWAH MAFAKA!")
+			//			return red("DATS WRONG TOWAH MAFAKA!")
 		}
-//		time.Sleep(3 * time.Second)
+		//		time.Sleep(3 * time.Second)
 	case 5:
 	Nine:
 		choice = UserListInput(cfg.Env.Imagick, "Current setup", "Back")

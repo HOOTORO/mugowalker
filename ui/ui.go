@@ -8,22 +8,14 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
 const (
-	listHeight = 14
-    defaultWidth = 20
+	listHeight = 20
+    defaultWidth = 200
 )
 
-var (
-	titleStyle        = lipgloss.NewStyle().MarginLeft(2)
-	itemStyle         = lipgloss.NewStyle().PaddingLeft(4)
-	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).Foreground(lipgloss.Color("170"))
-	paginationStyle   = list.DefaultStyles().PaginationStyle.PaddingLeft(4)
-//	helpStyle         = list.DefaultStyles().HelpStyle.PaddingLeft(4).PaddingBottom(1)
-	quitTextStyle     = lipgloss.NewStyle().Margin(1, 0, 2, 4)
-)
+
 
 type menuItem string
 
@@ -57,7 +49,6 @@ type mainModel struct {
     dev		string
 	choice   string
 	quitting bool
-	Val      string
 }
 
 func (m mainModel) Init() tea.Cmd {
@@ -80,7 +71,6 @@ func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			i, ok := m.list.SelectedItem().(menuItem)
 			if ok {
 				m.choice = string(i)
-				m.Val = string(i)
                 if i.FilterValue() == "Devices"{
                     m.list = list.New(getDevices(), itemDelegate{}, defaultWidth, listHeight)
 				} else {
@@ -109,54 +99,43 @@ func getDevices() []list.Item {
 }
 
 func (m mainModel) View() string {
-//	if m.choice != "" {
-//		return quitTextStyle.Render(fmt.Sprintf("%s? Sounds good to me.", m.choice))
-//	}
+	if m.choice != "" {
+		return quitTextStyle.Render(fmt.Sprintf("%s? Sounds good to me.", m.choice))
+	}
 	if m.quitting {
 		return quitTextStyle.Render("Not hungry? That’s cool.")
 	}
 	return "\n" + m.list.View()
 }
 
-func (m mainModel) Myval() string {
-	if m.Val != "" {
-		return m.Val
+func SimpleMenu(title interface{}, li []string)  {
+	var items []list.Item
+	for _, v := range li{
+		items = append(items, menuItem(v))
 	}
-	return ""
-}
+//		menuItem("Devices"),
+//		menuItem("OCR Setup"),
+//		menuItem("Tasks"),
+//		menuItem("Game Locations"),
 
-func SimpleMenu() mainModel {
-	items := []list.Item{
-		menuItem("Devices"),
-		menuItem("OCR Setup"),
-		menuItem("Tasks"),
-		menuItem("Game Locations"),
-//		menuItem("Currywurst"),
-//		menuItem("Okonomiyaki"),
-//		menuItem("Pasta"),
-//		menuItem("Fillet Mignon"),
-//		menuItem("Caviar"),
-//		menuItem("Just Wine"),
-	}
+
 
 
 
 	l := list.New(items, itemDelegate{}, defaultWidth, listHeight)
-	l.Title = "AFK Worker Settings"
+	l.Title = fmt.Sprintf("Active setup: \n%s",title)
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
+//	l.Styles.TitleBar = titleBarStyle
 	l.Styles.Title = titleStyle
 	l.Styles.PaginationStyle = paginationStyle
 	l.Styles.HelpStyle = helpStyle
-
+	l.Styles.StatusBar = statusStyle
 	m := mainModel{list: l}
 	if t, err := tea.NewProgram(m).Run(); err != nil {
-		fmt.Println("Error running program:", err)
+		fmt.Println("Error running program:", err, "model", t)
 		os.Exit(1)
-	} else {
-		return t.(mainModel)
-
 	}
 
-	return mainModel{}
+
 }

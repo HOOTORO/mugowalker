@@ -3,6 +3,7 @@ package cfg
 import (
 	"errors"
 	"fmt"
+	"github.com/fatih/color"
 	"image"
 	"os"
 	"os/exec"
@@ -39,11 +40,15 @@ var (
 var (
 	log *logrus.Logger
 	Env *AppConfig
+	red,green func(...interface{}) string
 )
 
 var OcrConf *OcrConfig
 
 func init() {
+	red = color.New(color.FgHiRed).SprintFunc()
+	green = color.New(color.FgHiGreen).SprintFunc()
+
 	log = Logger()
 	if Env == nil {
 		Env = loadConf()
