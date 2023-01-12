@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	docStyle            = lipgloss.NewStyle().Margin(6,10)
+	docStyle            = lipgloss.NewStyle().Margin(3,3)
 	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	cursorStyle         = focusedStyle.Copy()
