@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"worker/cfg"
-
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -17,10 +15,24 @@ import (
 const (
 	hotPink  = lipgloss.Color("#FF06B7")
 	darkGray = lipgloss.Color("#767676")
+	sep      = ", "
 )
 
 type item struct {
-	title, desc string
+	title    string //, desc
+	children interface{}
+}
+
+func (i item) String() string {
+	switch children := i.children.(type) {
+	case []list.Item:
+		elems := ""
+		for _, v := range children {
+			elems += v.FilterValue() + sep
+		}
+		return elems
+	}
+	return fmt.Sprintf("%s", i.children)
 }
 
 type (
@@ -28,15 +40,32 @@ type (
 )
 
 func (i item) Title() string       { return i.title }
-func (i item) Description() string { return i.desc }
+func (i item) Description() string { return i.String() }
 func (i item) FilterValue() string { return i.title }
 
+//	func (i item) NextLevel() list.Model {
+//		chld, ok := i.children.([]list.Item)
+//		if ok {
+//			return list.New(chld, list.NewDefaultDelegate(), 15, 0)
+//		}
+//		return list.Model{}
+//	}
+func (i item) NextLevel() []list.Item {
+	chld, ok := i.children.([]list.Item)
+	if ok {
+		return chld
+	}
+	return nil
+}
+
 type menuModel struct {
-	mode   Mode
-	header string
-	list   list.Model
-	choice string
-	items []string
+	mode    Level
+	header  string
+	list    list.Model
+	parents []list.Model
+	cursor  int
+	choice  string
+	items   []string
 }
 
 func (m menuModel) Init() tea.Cmd {
@@ -47,9 +76,26 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "q", "esc":
+		case "ctrl+c", "q":
 			return m, tea.Quit
+		case "enter":
+			// Send the choice on the channel and exit.
+			m.choice = m.list.SelectedItem().FilterValue()
+			itm, ok := m.list.SelectedItem().(item)
+			if ok {
+				m.parents = append(m.parents, m.list)
+				m.list.SetItems(itm.NextLevel())
+			} else {
+				return m, tea.Quit
+			}
+		case "backspace":
+			if len(m.parents) > 0 {
+				m.list.SetItems(m.parents[len(m.parents)-1].Items())
+				m.parents = m.parents[:len(m.parents)-1]
+			}
+
 		}
+
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
@@ -61,50 +107,50 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m menuModel) View() string {
-	return docStyle.Render(m.header+m.list.View())
+	return docStyle.Render(m.header + m.list.View())
 }
 
 func (m menuModel) Menu() string {
-	MainMenu:
-		m.header = "AFK Bot\n What bot should do?"
-		m.list = list.New(tasks, list.NewDefaultDelegate(),10, 0)
-		choice := UserListInput(m.items, m.header, "Exit")
+MainMenu:
+	m.header = "AFK Bot\n What bot should do?"
+	m.list = list.New(tasks, list.NewDefaultDelegate(), 1, 0)
+	choice := UserListInput(m.list.Items(), m.header, "Exit")
 
-		switch choice {
+	switch choice {
 
-		case 4:
-			Towers:
-				choice = UserListInput(tower, "Which one?", "Back")
-				switch {
-				case choice > 0:
-					return yellow("Climbing... %v", tower[choice-1])
-					case choice == 0:
-						goto MainMenu
-						default:
-							goto Towers
-							//			return red("DATS WRONG TOWAH MAFAKA!")
-				}
-				//		time.Sleep(3 * time.Second)
-				case 5:
-					Nine:
-						choice = UserListInput(cfg.Env.Imagick, "Current setup", "Back")
-						switch {
-						case choice > 0:
-							cfg.Env.Imagick[choice-1] = (cfg.Env.Imagick[choice-1])
-							green("dosomething")
-							time.Sleep(2 * time.Second)
-							goto Nine
-							default:
-								goto MainMenu
-						}
-						case 0:
-							os.Exit(0)
-							default:
-								red("DATS WRONG NUMBA MAFAKA!")
-								time.Sleep(2 * time.Second)
-								goto MainMenu
+	case 4:
+	Towers:
+		choice = UserListInput(towers, "Which one?", "Back")
+		switch {
+		case choice > 0:
+			return yellow("Climbing... %v", towers[choice-1])
+		case choice == 0:
+			goto MainMenu
+		default:
+			goto Towers
+			//			return red("DATS WRONG TOWAH MAFAKA!")
 		}
-		return ""
+	//		time.Sleep(3 * time.Second)
+	case 5:
+	// Nine:
+	// 	choice = UserListInput(cfg.Env.Imagick, "Current setup", "Back")
+	// 	switch {
+	// 	case choice > 0:
+	// 		cfg.Env.Imagick[choice-1] = (cfg.Env.Imagick[choice-1])
+	// 		green("dosomething")
+	// 		time.Sleep(2 * time.Second)
+	// 		goto Nine
+	// 	default:
+	// 		goto MainMenu
+	// 	}
+	case 0:
+		os.Exit(0)
+	default:
+		red("DATS WRONG NUMBA MAFAKA!")
+		time.Sleep(2 * time.Second)
+		goto MainMenu
+	}
+	return ""
 }
 
 //switch msg := msg.(type) {
@@ -134,8 +180,6 @@ func (m menuModel) Menu() string {
 //
 //return m, nil
 
-
-
 type inputModel struct {
 	textInput textinput.Model
 	err       error
@@ -148,9 +192,9 @@ type multiInputModel struct {
 	cursorMode textinput.CursorMode
 }
 
-func initialModel() inputModel {
+func strInputModel(placeholder string) inputModel {
 	ti := textinput.New()
-	ti.Placeholder = "Pikachu"
+	ti.Placeholder = placeholder
 	ti.Focus()
 	ti.CharLimit = 156
 	ti.Width = 20
@@ -160,6 +204,7 @@ func initialModel() inputModel {
 		err:       nil,
 	}
 }
+
 func (m inputModel) Init() tea.Cmd {
 	return textinput.Blink
 }
@@ -223,12 +268,15 @@ func initialUserInfoModel() multiInputModel {
 
 	return m
 }
+
 func (m multiInputModel) Init() tea.Cmd {
 	return textinput.Blink
 }
+
 func (m multiInputModel) Data() []textinput.Model {
 	return m.inputs
 }
+
 func (m multiInputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -356,7 +404,3 @@ func (m multiInputModel) View() string {
 //	}
 //	return m
 //}
-
-
-
-

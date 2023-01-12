@@ -42,7 +42,7 @@ func (ac *AppConfig) String() string {
 	reqsoft := "-> Required software..."
 	for _, v := range ac.RequiredInstalledSoftware {
 		if strings.Contains(v, adbp) {
-			reqsoft += isStr(v)(" \n ADB: "+v)
+			reqsoft += isStr(v)(" \n ADB: " + v)
 		}
 		if strings.Contains(v, magic) {
 			reqsoft += isStr(v)(" \n IMAGICK: " + v)
@@ -63,7 +63,7 @@ func (ac *AppConfig) String() string {
 			" Tesseract: %v\n"+
 			"%v\n"+
 			"-> Config: %v\n",
-			isStr(ac.DeviceSerial)(" -> Device: "),
+		isStr(ac.DeviceSerial)(" -> Device: "),
 		ac.UserProfile,
 		ac.Bluestacks,
 		ac.Imagick,
@@ -79,6 +79,7 @@ func isStr(str string) func(...interface{}) string {
 		return green
 	}
 }
+
 type UserProfile struct {
 	Account     string
 	Game        string
@@ -86,8 +87,8 @@ type UserProfile struct {
 }
 
 func (up *UserProfile) String() string {
-	return fmt.Sprint(isStr(up.Game)("\n --> Game: "+up.Game+"\n ")+
-		isStr(up.Account)("     Account: "+ up.Account+"\n "))
+	return fmt.Sprint(isStr(up.Game)("\n -> Game: "+up.Game+"\n ") +
+		isStr(up.Account)("     Account: "+up.Account+"\n "))
 }
 
 func User(accname, game string, taskcfgpath []string) *UserProfile {

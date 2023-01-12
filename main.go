@@ -138,7 +138,10 @@ func testselect() {
 	//	ui.SelectList(header,list)
 	//	fmt.Printf("%s", conf)
 	// Winner
-	ui.SelectWithTopinfo(conf)
+	err := ui.SelectWithTopinfo(conf)
+	if err != nil {
+		fmt.Printf("ERROROR: %v", err)
+	}
 
 	//	ui.SoloStrInput()
 }

@@ -3,8 +3,6 @@ package ui
 import (
 	"bufio"
 	"fmt"
-	"github.com/fatih/color"
-	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"reflect"
@@ -12,6 +10,9 @@ import (
 	"strings"
 	"worker/cfg"
 
+	"github.com/charmbracelet/bubbles/list"
+	"github.com/fatih/color"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -31,7 +32,7 @@ func init() {
 }
 
 
-func UserListInput(l []string, title, defvalDesc string) int {
+func UserListInput(l []list.Item, title, defvalDesc string) int {
 	TermClear()
 	desc := ListDesc(l, title, defvalDesc, "0")
 	fmt.Print(desc)
@@ -84,7 +85,7 @@ func ChangeVal(val string) string {
 	return strInput()
 }
 
-func ListDesc(l []string, title, defDesc, defVal string) string {
+func ListDesc(l []list.Item, title, defDesc, defVal string) string {
 	var res string
 
 	divider := red("-----------------------------------")

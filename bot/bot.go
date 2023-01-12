@@ -10,9 +10,65 @@ import (
 	"strings"
 	"time"
 
+	"worker/afk"
+	"worker/cfg"
+
+	"worker/afk/repository"
+
 	"worker/adb"
 	"worker/ocr"
-	// "github.com/fatih/color"
+
+	"github.com/fatih/color"
+)
+
+type Offset int
+
+const (
+	Center Offset = iota
+	Bottom
+	Top
+)
+
+var (
+	impmagick = []string{
+		"-colorspace",
+		"Gray",
+		"-alpha",
+		"off",
+		"-threshold",
+		"85%",
+		"-edge",
+		"1",
+		"-negate",
+		"-blur",
+		"1x1",
+		"-black-threshold",
+		"80%",
+	}
+	simpletess = []string{"--psm", "3", "-c", "tessedit_create_alto=1", "quiet"}
+	origocr    = cfg.OcrConf
+	//    origmagick = []string{"-colorspace",
+	//        "Gray",
+	//        "-alpha",
+	//        "off",
+	//        "-threshold",
+	//        "75%",
+	//    }
+)
+
+var ErrLocationMismatch = errors.New("Wrong Location!")
+
+// var errActionFail = errors.New("smthg went wrong during Doing Action")
+
+var (
+	tempfile string = "temp"
+	step     int    = 0
+)
+
+const (
+	maxattempt uint8 = 5
+	xgrid            = 5
+	ygrid            = 18
 )
 
 // New Instance of bot
@@ -34,32 +90,55 @@ func New(d *adb.Device, game *afk.Game) *Daywalker {
 func (dw *Daywalker) ScanScreen() ocr.Result {
 	// TODO: Generate random filname
 	s, e := dw.Screenshot(tempfile)
-	s, e := dw.Screenshot(tempfile)
 	if e != nil {
 		log.Errorf("\nerr:%v\nduring run:%v ", e, "ScanScreen()")
-		log.Errorf("\nerr:%v\nduring run:%v ", e, "ScanScreen()")
 	}
-	text := ocr.TextExtract(s)
-	log.Tracef("ocred: %v", text)
 	text := ocr.TextExtract(s)
 	log.Tracef("ocred: %v", text)
 	return text
 }
 
-func (d *Daywalker) AllowedAction(n string) bool {
-	_, ok := locs[n]
-	return ok
+func (dw *Daywalker) MyLocation() (locname string) {
+WaitForLoc:
+	for {
+		if !dw.checkLoc(dw.ScanScreen()) {
+			time.Sleep(8 * time.Second)
+			if step >= dw.maxocrtry {
+				color.HiRed("Using improved ocr settings")
+				cfg.OcrConf.Imagick = impmagick
+				cfg.OcrConf.Tesseract = simpletess
+			}
+			if step >= dw.maxocrtry+2 {
+				dw.Back()
+			}
+			step++
+			continue WaitForLoc
+		} else {
+			if step >= dw.maxocrtry {
+				color.HiCyan("Returnin ocr params")
+				cfg.OcrConf = origocr
+
+			}
+			step = 0
+			break WaitForLoc
+
+		}
+	}
+	color.HiYellow("My Location most likely -> %v", dw.lastLoc)
+	return dw.lastLoc.Key
 }
 
-func (d *Daywalker) SetLocation(s string) {
-	d.loc = locs[s]
-	(d.loc).Label = s
-}
-
-func (d *Daywalker) Action(s string, props Properties) error {
-	action, ok := d.loc.Actions[s]
-	if !ok {
-		return errors.New(fmt.Sprintf("NO Action<%v> in context<%v>!", s, d.loc.Label))
+func (dw *Daywalker) checkLoc(o ocr.Result) (ok bool) {
+	maxh := 1
+	for k, loc := range dw.Locations {
+		hit := o.Intersect(loc.Keywords)
+		if len(hit) >= loc.Threshold && len(hit) >= maxh {
+			maxh = len(hit)
+			color.HiYellow("## Keywords hit %v -> %v ##...", loc.Key, hit)
+			dw.lastLoc = &dw.Locations[k]
+			ok = true
+			repository.RawLocData(loc.Key, strings.Join(o.Fields(), ";"))
+		}
 	}
 	return
 }
