@@ -18,9 +18,8 @@ import (
 
 	"github.com/fatih/color"
 
-	"golang.org/x/exp/slices"
-	//	"github.com/erikgeiser/promptkit/selection"
 	"github.com/erikgeiser/coninput"
+	"golang.org/x/exp/slices"
 )
 
 func run() (err error) {
@@ -110,33 +109,9 @@ func main() {
 }
 
 func testselect() {
-	conf := cfg.Env
-	// list := []string{"Edit user profile", "SelectWithTopinfo bluestacks", "Game tasks"}
+	conf := ui.CfgDto(cfg.Env)
 
-	// Simpleone
-	//	header := fmt.Sprintf("Current configuration:\n%s",cfg.Env)
-	//	chs := []*selection.Choice{
-	//		selection.NewChoice("Edit user profile"),
-	//		selection.NewChoice("SelectWithTopinfo bluestacks"),
-	//		selection.NewChoice("Game tasks"),}
-	//	sp := selection.New(header, chs)
-	//	sp.PageSize = 3
-	//
-	//	choice, err := sp.RunPrompt()
-	//	if err != nil {
-	//		fmt.Printf("Error: %v\n", err)
-	//
-	//		os.Exit(1)
-	//	}
-	//	_ = choice
-
-	// don't work
-	// ui.SimpleMenu(conf, list)
-	//  Simpliest
-	//	ui.SelectList(header,list)
-	//	fmt.Printf("%s", conf)
-	// Winner
-	err := ui.SelectWithTopinfo(conf)
+	err := ui.RunMainMenu(conf)
 	if err != nil {
 		fmt.Printf("ERROROR: %v", err)
 	}

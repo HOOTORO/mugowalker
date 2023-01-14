@@ -3,24 +3,22 @@ package ui
 import (
 	"fmt"
 	"os"
+	"regexp"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 )
 
-func SelectWithTopinfo(tops interface{}) error {
-	toph1 := tophedStyle.Render("AFK Worker v0.1_alpha\n####### Active setup ###########\n")
-	status := fmt.Sprintf("%v\n%s", toph1, tops)
-
-	m := InitialMenuModel() // menuModel{menulist: list.New(toplevelmenu, list.NewDefaultDelegate(), 15, 0)}
-	m.header = headerStyle.Render(status) + "\n\n"
+func RunMainMenu(options map[string]string) error {
+	m := InitialMenuModel(options)
+	m.header = headerStyle.Render(header)
 	m.menulist.Title = "Choose..."
-	m.menulist.SetSize(100, 20)
+	m.menulist.SetSize(110, 23)
 	m.menulist.SetShowHelp(true)
 	m.menulist.SetShowPagination(true)
-	m.menulist.SetShowTitle(false)
-	m.menulist.Styles.TitleBar.Height(0).Border(lipgloss.ThickBorder()).BorderForeground(hotPink)
-	// m.menulist.Styles.HelpStyle.Inline(true).Height(10)
+	m.menulist.SetShowTitle(true)
+	m.menulist.SetShowStatusBar(true)
+	m.menulist.Styles.Title = hotStyle
+	m.menulist.Styles.TitleBar = tbStyle
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
@@ -29,27 +27,18 @@ func SelectWithTopinfo(tops interface{}) error {
 		os.Exit(1)
 		return err
 	} else {
-		if m, ok := m.(menuModel); ok && m.choice != "" {
-			fmt.Printf("\n---\nHas been chosen! %s!\n", m.choice)
-			//		return m.choice
+		if m, ok := m.(menuModel); ok {
+			a := fmt.Sprintf("\nmodel state\n---\n%+v\n", m)
+			// strings.Trim()
+
+			re := regexp.MustCompile("[(\\w*:\\w*)]")
+			// res := re.ReplaceAllString(a, "\n")
+			_ = re.ReplaceAllString(a, "\n")
+
+			// r := strings.NewReplacer(":{", "\n\t") //, "}", "\n")
+			fmt.Print(a)
+			// fmt.Print(r.Replace(res))
 		}
 	}
 	return nil
 }
-
-// func MultiStrInput() tea.Model {
-// 	um, err := tea.NewProgram(initialUserInfoModel()).Run()
-// 	if err != nil {
-// 		fmt.Printf("could not start program: %s\n", err)
-// 		os.Exit(1)
-// 	}
-
-// 	return um
-// }
-
-// func SoloStrInput(pl string) {
-// 	p := tea.NewProgram(strInputModel(pl))
-// 	if _, err := p.Run(); err != nil {
-// 		log.Fatal(err)
-// 	}
-// }

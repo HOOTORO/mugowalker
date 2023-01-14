@@ -6,7 +6,7 @@ import (
 )
 
 type AppConfig struct {
-	DeviceSerial string `yaml:"connection_str"`
+	DeviceSerial string `yaml:"connection"`
 
 	UserProfile *UserProfile
 	//  Recognition settings (cmd args for 'Imagick' and 'Tesseract')

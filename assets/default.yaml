@@ -1,4 +1,4 @@
-connection_str:
+connection:
 userprofile:
     account:
     game:
@@ -37,6 +37,10 @@ alt_tesseract:
 bluestacks:
     - --instance
     - Rvc64
+    - --cmd
+    - launchApp 
+    - --package 
+    - "com.lilithgames.hgame.gp.id"
 dict_shrt_except:
     - Go
     - Up

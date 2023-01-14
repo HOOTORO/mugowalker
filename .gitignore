@@ -2,6 +2,7 @@ vendor
 _*
 .*
 *.exe
+*.log
 *.db
 .github
 *.png

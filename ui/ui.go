@@ -4,11 +4,27 @@ import (
 	"fmt"
 	"io"
 
-	"worker/adb"
+	"worker/cfg"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/fatih/color"
+	"github.com/sirupsen/logrus"
 )
+
+var (
+	log                           *logrus.Logger
+	red, green, cyan, yellow, mag func(...interface{}) string
+)
+
+func init() {
+	log = cfg.Logger()
+	red = color.New(color.FgHiRed).SprintFunc()
+	green = color.New(color.FgHiGreen).SprintFunc()
+	cyan = color.New(color.FgHiCyan).SprintFunc()
+	yellow = color.New(color.FgHiYellow).SprintFunc()
+	mag = color.New(color.FgHiMagenta, color.BgHiWhite).SprintFunc()
+}
 
 const (
 	listHeight   = 20
@@ -41,121 +57,3 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 
 	fmt.Fprint(w, fn(str))
 }
-
-// type mainModel struct {
-// 	list     list.Model
-// 	dev      string
-// 	choice   string
-// 	quitting bool
-// }
-
-// func (m mainModel) Init() tea.Cmd {
-// 	return nil
-// }
-
-// func (m mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-// 	switch msg := msg.(type) {
-// 	case tea.WindowSizeMsg:
-// 		m.list.SetWidth(msg.Width)
-// 		return m, nil
-
-// 	case tea.KeyMsg:
-// 		switch keypress := msg.String(); keypress {
-// 		case "ctrl+c":
-// 			m.quitting = true
-// 			return m, tea.Quit
-
-// 		case "enter":
-// 			i, ok := m.list.SelectedItem().(menuItem)
-// 			if ok {
-// 				m.choice = string(i)
-// 				if i.FilterValue() == "Devices" {
-// 					m.list = list.New(getDevices(), itemDelegate{}, defaultWidth, listHeight)
-// 				} else {
-// 					return m, tea.Quit
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	var cmd tea.Cmd
-// 	m.list, cmd = m.list.Update(msg)
-// 	return m, cmd
-// }
-
-func getDevices() []list.Item {
-	var devs []list.Item
-	d, e := adb.Devices()
-	if e != nil {
-		devs = append(devs, menuItem("No devices found, try to connect"))
-		return devs
-	}
-	for _, v := range d {
-		devs = append(devs, menuItem(v.Serial))
-	}
-	return devs
-}
-
-// func (m mainModel) View() string {
-// 	if m.choice != "" {
-// 		return quitTextStyle.Render(fmt.Sprintf("%s? Sounds good to me.", m.choice))
-// 	}
-// 	if m.quitting {
-// 		return quitTextStyle.Render("Not hungry? That’s cool.")
-// 	}
-// 	return "\n" + m.list.View()
-// }
-
-// func SimpleMenu(title interface{}, li []string)  {
-// 	var items []list.Item
-// 	for _, v := range li{
-// 		items = append(items, menuItem(v))
-// 	}
-// //		menuItem("Devices"),
-// //		menuItem("OCR Setup"),
-// //		menuItem("Tasks"),
-// //		menuItem("Game Locations"),
-
-// 	l := list.New(items, itemDelegate{}, defaultWidth, listHeight)
-// 	l.Title = fmt.Sprintf("Active setup: \n%s",title)
-// 	l.SetShowStatusBar(false)
-// 	l.SetFilteringEnabled(false)
-// //	l.Styles.TitleBar = titleBarStyle
-// 	l.Styles.Title = titleStyle
-// 	l.Styles.PaginationStyle = paginationStyle
-// 	l.Styles.HelpStyle = helpStyle
-// 	l.Styles.StatusBar = statusStyle
-// 	m := mainModel{list: l}
-// 	if t, err := tea.NewProgram(m).Run(); err != nil {
-// 		fmt.Println("Error running program:", err, "model", t)
-// 		os.Exit(1)
-// 	}
-
-// }
-
-//switch msg := msg.(type) {
-//case tea.KeyMsg:
-//	switch msg.String() {
-//	case "ctrl+c", "q", "esc":
-//		return m, tea.Quit
-//
-//		case "enter":
-//			// Send the choice on the channel and exit.
-//			m.choice = m.choices[m.cursor]
-//			return m, tea.Quit
-//
-//			case "down", "j":
-//				m.cursor++
-//				if m.cursor >= len(m.choices) {
-//					m.cursor = 0
-//				}
-//
-//				case "up", "k":
-//					m.cursor--
-//					if m.cursor < 0 {
-//						m.cursor = len(m.choices) - 1
-//					}
-//	}
-//}
-//
-//return m, nil

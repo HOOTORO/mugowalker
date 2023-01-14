@@ -315,7 +315,7 @@ func (ac *AppConfig) validateDependencies() error {
 func truncateDir(d string) {
 	a, _ := filepath.Abs(d)
 	//    _ = os.RemoveAll(a)
-	fmt.Printf("DELETED %v", a)
+	fmt.Printf("DELETED %v\n", a)
 }
 
 func absJoin(d, f string) string {
@@ -325,6 +325,16 @@ func absJoin(d, f string) string {
 	}
 	wd, _ := os.Getwd()
 	return filepath.Join(wd, fb)
+}
+
+func RunBlue() error {
+	args := Env.Bluestacks
+	cmd := exec.Command(bluestacks, args...)
+	log.Tracef("cmd bs : %v\n", cmd.String())
+	// uncomment for ocr log
+	// cmd.Stdout = os.Stdout
+	// cmd.Stderr = os.Stderr
+	return cmd.Start()
 }
 
 //app := &cfg.AppConfig{
