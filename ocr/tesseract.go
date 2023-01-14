@@ -27,8 +27,7 @@ func OptimizeForOCR(f string) string {
 }
 
 func runOcr(in string, out string) error {
-	tessAgrs = cfg.OcrConf.Tesseract
-
+	tessAgrs = cfg.Env.Tesseract
 	args := append([]string{in, out}, tessAgrs...)
 	cmd := exec.Command(tesser, args...)
 	log.Tracef("cmd tess : %v\n", cmd.String())

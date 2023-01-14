@@ -4,16 +4,20 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/muesli/reflow/indent"
+
+	"github.com/charmbracelet/bubbles/spinner"
+
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	// "github.com/muesli/reflow/indent"
 )
 
 type menuModel struct {
-	mode   Mode
-	header string
-	status string
+	mode      Mode
+	header    string
+	status    string
+	devstatus bool
 
 	menulist list.Model
 	parents  []list.Model
@@ -25,6 +29,8 @@ type menuModel struct {
 	manyInputs []textinput.Model
 	cursorMode textinput.CursorMode
 
+	response string
+	spinme   spinner.Model
 	quitting bool
 	err      error
 	cursor   int
@@ -36,10 +42,8 @@ type (
 )
 
 type item struct {
-	itype              Mode
-	title, desc        string
-	dynamicDescription func(*menuModel) string
-	children           interface{}
+	title, desc string
+	children    interface{}
 }
 
 func (i item) Title() string       { return i.title }
@@ -65,10 +69,13 @@ func (i item) String() string {
 	}
 }
 
-func (i item) NextLevel() []list.Item {
-	chld, ok := i.children.([]list.Item)
-	if ok {
-		return chld
+func (i item) NextLevel(m menuModel) []list.Item {
+	switch c := i.children.(type) {
+	case []list.Item:
+		return c
+	case func(m menuModel) []list.Item:
+		return c(m)
+
 	}
 	return nil
 }
@@ -80,7 +87,7 @@ func InitialMenuModel(userOptions map[string]string) menuModel {
 		menulist:   list.New(toplevelmenu, list.NewDefaultDelegate(), 19, 0),
 		parents:    nil,
 		choice:     "",
-		textInput:  initTextModel("..."),
+		textInput:  initTextModel("...", false, ""),
 		focusIndex: 0,
 		manyInputs: make([]textinput.Model, 0),
 		cursorMode: textinput.CursorBlink,
@@ -89,15 +96,87 @@ func InitialMenuModel(userOptions map[string]string) menuModel {
 		cursor:     0,
 		opts:       userOptions,
 	}
-	m.showStatus(Device)
-	// 	manyInputs: make([]textinput.Model, 3),
-	// }
+	// m.showStatus()
+	return m
+}
 
-	// var t textinput.Model
-	// for i := range m.manyInputs {
-	// 	t = textinput.New()
-	// 	t.CursorStyle = cursorStyle
-	// 	t.CharLimit = 32
+// //////////////////////////
+// /////// General //////////
+// init / update / view ///
+// ////////////////////////
+func (m menuModel) Init() tea.Cmd {
+	log.Warnf("Init model:  \n%s", m)
+	return textinput.Blink
+}
+
+// ////////////////////////
+func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// always exit keys
+	log.Debugf(mag("UPDATE INCOMING -> %+v [%T]"), msg, msg)
+	if msg, ok := msg.(tea.KeyMsg); ok {
+		k := msg.String()
+		if k == "ctrl+c" || k == "esc" {
+			m.quitting = true
+			return m, tea.Quit
+		}
+	}
+	log.Debugf(cyan("PREUPD mod -> %v"), m)
+	switch m.mode {
+	case selectList:
+		return updateList(msg, m)
+	case inputMessage:
+		return updateInput(msg, m)
+	case multiInput:
+		return updateFormInput(msg, m)
+	case runExec:
+		return updateExec(msg, m)
+	}
+	return m, tea.Quit
+}
+
+///////////////////////////////////
+
+func (m menuModel) View() string {
+	var s string
+	log.Warnf(cyan("SEND TO VIEW (model) -> %v"), m)
+	if m.quitting {
+		return "\n  See you later, Space Cowboy!\n\n"
+	}
+	switch m.mode {
+	case selectList:
+		s = listView(m)
+	case inputMessage:
+		s = inputView(m)
+	case multiInput:
+		s = inputFormView(m)
+	case runExec:
+		s = execView(m)
+	}
+	// r := strings.NewReplacer("[", "", "\n", "", "#", "", " ", "")
+	// log.Trace("RESULTING STRING --> %50s", r.Replace(s))
+	return indent.String("\n\n"+s+"\n\n", 3)
+}
+
+//////////////////////////////////
+
+///////////////////////
+//// helper func  ////
+/////////////////////
+
+func initTextModel(placeholder string, focus bool, prom string) textinput.Model {
+	ti := textinput.New()
+	ti.Placeholder = placeholder
+	ti.CursorStyle = cursorStyle
+	ti.CharLimit = 156
+	if focus {
+		ti.Focus()
+		ti.PromptStyle = focusedStyle
+		ti.TextStyle = focusedStyle
+	}
+	// ti.Width = 20
+	ti.PromptStyle.Underline(true)
+	ti.Prompt = prom + sep
+	return ti
 
 	// 	switch i {
 	// 	case 0:
@@ -113,331 +192,20 @@ func InitialMenuModel(userOptions map[string]string) menuModel {
 	// 		//                    t.EchoMode = textinput.EchoPassword
 	// 		t.EchoCharacter = '•'
 	// 	}
-
-	// 	m.manyInputs[i] = t
-
-	return m
 }
 
-// //////////////////////////
-// /////// General //////////
-// init / update / view ///
-// ////////////////////////
-func (m menuModel) Init() tea.Cmd {
-	return textinput.Blink
-}
-
-// ////////////////////////
-func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	// always exit keys
-	if msg, ok := msg.(tea.KeyMsg); ok {
-		k := msg.String()
-		if k == "ctrl+c" {
-			m.quitting = true
-			return m, tea.Quit
-		}
-	}
-
-	switch m.mode {
-	case selectList:
-		return updateList(msg, m)
-	case inputMessage:
-		return updateInput(msg, m)
-	}
-	return m, tea.Quit
-}
-
-///////////////////////////////////
-
-func (m menuModel) View() string {
-	var s string
-	if m.quitting {
-		return "\n  See you later, Space Cowboy!\n\n"
-	}
-	switch m.mode {
-	case selectList:
-		s = listView(m)
-	case inputMessage:
-		s = inputView(m)
-	}
-	return s // indent.String("\n"+s+"\n", 2)
-}
-
-//////////////////////////////////
-
-/////////////////////////////
-//// UPD. SelectList ///////
-///////////////////////////
-
-func updateList(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "esc":
-			return m, tea.Quit
-		case "enter", "spacebar":
-			if itm, ok := m.menulist.SelectedItem().(item); ok {
-				m.choice = itm.FilterValue()
-				switch chld := itm.children.(type) {
-				case textinput.Model:
-					m.textInput = chld
-					m.mode = inputMessage
-					m.textInput, cmd = m.textInput.Update(msg)
-					return m, cmd
-
-				case []textinput.Model:
-					m.manyInputs = chld
-					m.mode = inputMessage
-					m.textInput, cmd = m.textInput.Update(msg)
-					return m, cmd
-				case []list.Item:
-					// go deeper in menu
-					m.parents = append(m.parents, m.menulist)
-					m.menulist.SetItems(itm.NextLevel())
-				case func(m menuModel):
-					chld(m)
-				case func(m menuModel) []list.Item:
-					m.parents = append(m.parents, m.menulist)
-					m.menulist.SetItems(chld(m))
-				}
-			}
-
-		case "backspace":
-			// go up to top using chain parents
-			if len(m.parents) > 0 {
-				m.menulist.SetItems(m.parents[len(m.parents)-1].Items())
-				m.parents = m.parents[:len(m.parents)-1]
-			}
-		}
-		// May be... some day
-		// case tea.WindowSizeMsg:
-		// 	h, v := docStyle.GetFrameSize()
-		// 	m.menulist.SetSize(msg.Width-h, msg.Height-v)
-	}
-
-	// m.showStatus(Device)
-	m.menulist, cmd = m.menulist.Update(msg)
-	return m, cmd
-}
-
-//	else {
-//		// itm, ok = m.list.SelectedItem()
-//		return m, tea.Quit
-//
-// //////////////////////////
-
-// ///////////////////////////
-// ///// UPD. Input /////////
-// /////////////////////////
-func updateInput(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyEnter, tea.KeyCtrlC, tea.KeyEsc:
-			m.mode = selectList
-			m.opts[m.choice] = m.textInput.Value()
-			updateDto(m.opts)
-			m.showStatus(Device)
-			return m, cmd
-		}
-
-	// We handle errors just like any other message
-	case errMsg:
-		m.err = msg
-		return m, nil
-	}
-
-	m.textInput, cmd = m.textInput.Update(msg)
-	return m, cmd
-}
-
-// ///////// UPD Multiline input /////////
-func updateFormInput(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "esc":
-			return m, tea.Quit
-
-		// Change cursor mode
-		case "ctrl+r":
-			m.cursorMode++
-			if m.cursorMode > textinput.CursorHide {
-				m.cursorMode = textinput.CursorBlink
-			}
-			cmds := make([]tea.Cmd, len(m.manyInputs))
-			for i := range m.manyInputs {
-				cmds[i] = m.manyInputs[i].SetCursorMode(m.cursorMode)
-			}
-			return m, tea.Batch(cmds...)
-
-		// Set focus to next input
-		case "tab", "shift+tab", "enter", "up", "down":
-			s := msg.String()
-
-			// Did the user press enter while the submit button was focused?
-			// If so, exit.
-			if s == "enter" && m.focusIndex == len(m.manyInputs) {
-				return m, tea.Quit
-			}
-
-			// Cycle indexes
-			if s == "up" || s == "shift+tab" {
-				m.focusIndex--
-			} else {
-				m.focusIndex++
-			}
-
-			if m.focusIndex > len(m.manyInputs) {
-				m.focusIndex = 0
-			} else if m.focusIndex < 0 {
-				m.focusIndex = len(m.manyInputs)
-			}
-
-			cmds := make([]tea.Cmd, len(m.manyInputs))
-			for i := 0; i <= len(m.manyInputs)-1; i++ {
-				if i == m.focusIndex {
-					// Set focused state
-					cmds[i] = m.manyInputs[i].Focus()
-					m.manyInputs[i].PromptStyle = focusedStyle
-					m.manyInputs[i].TextStyle = focusedStyle
-					continue
-				}
-				// Remove focused state
-				m.manyInputs[i].Blur()
-				m.manyInputs[i].PromptStyle = noStyle
-				m.manyInputs[i].TextStyle = noStyle
-			}
-
-			return m, tea.Batch(cmds...)
-		}
-	}
-
-	// Handle character input and blinking
-	cmd := m.updatemanyInputs(msg)
-
-	return m, cmd
-}
-
-// func (m multiInputModel) Data() []textinput.Model {
-// 	return m.manyInputs
-// }
-
-// *
-func (m menuModel) updatemanyInputs(msg tea.Msg) tea.Cmd {
-	cmds := make([]tea.Cmd, len(m.manyInputs))
-
-	// Only text manyInputs with Focus() set will respond, so it's safe to simply
-	// update all of them here without any further logic.
-	for i := range m.manyInputs {
-		m.manyInputs[i], cmds[i] = m.manyInputs[i].Update(msg)
-	}
-
-	return tea.Batch(cmds...)
-}
-
-// /////////////////////////////////
-// /////// VIEW Input /////////////
-// ///////////////////////////////
-
-// /////////////////////////
-// func (m menuModel) View() string {
-// //////////////////////////
-func listView(m menuModel) string {
-	// showStatus(m)
-	// for _, v := range m.menulist.Items() {
-	// 	if i, ok := v.(item); ok {
-	// 		if i.dynamicDescription != nil {
-	// 			i.desc = i.dynamicDescription(&m)
-	// 		}
-	// 	}
-	// }
-	return docStyle.Render(m.header + m.status + m.menulist.View())
-}
-
-func inputView(m menuModel) string {
-	return fmt.Sprintf(
-		"Please, enter <%v> property\n\n%s\n\n%s",
-		m.choice,
-		m.textInput.View(),
-		"(esc to quit)",
-	) + "\n"
-}
-
-func inputFormView(m menuModel) string {
+func (m *menuModel) showStatus() {
 	var b strings.Builder
-
-	for i := range m.manyInputs {
-		b.WriteString(m.manyInputs[i].View())
-		if i < len(m.manyInputs)-1 {
-			b.WriteRune('\n')
-		}
+	m.status = ""
+	t := fmt.Sprintf("Device --> [%v] \nProfile --> [Game: %v, User: %v]\nConnection status: ",
+		m.opts[connection], m.opts[game], m.opts[account])
+	b.WriteString(t)
+	if m.devstatus {
+		b.WriteString(green("Online"))
+	} else {
+		b.WriteString(red("Offline"))
 	}
-
-	button := &blurredButton
-	if m.focusIndex == len(m.manyInputs) {
-		button = &focusedButton
-	}
-	_, err := fmt.Fprintf(&b, "\n\n%s\n\n", *button)
-	if err != nil {
-		return ""
-	}
-
-	b.WriteString(helpStyle.Render("cursor mode is "))
-	b.WriteString(cursorModeHelpStyle.Render(m.cursorMode.String()))
-	b.WriteString(helpStyle.Render(" (ctrl+r to change style)"))
-
-	return b.String()
-}
-
-//func (m *MenuModel) Update(ud UserData) *MenuModel {
-//	switch ud := ud.(type) {
-//	case MenuModel:
-//		if ud.choice != "" {
-//			m.choice = ud.choice
-//		}
-//		if ud.header != "" {
-//			m.header = ud.header
-//		}
-//		if ud.promt != "" {
-//			m.promt = ud.promt
-//		}
-//		if len(ud.items) > 0 {
-//			m.items = ud.items
-//		}
-//		if ud.footer != "" {
-//			m.footer = ud.footer
-//		}
-//	}
-//	return m
-//}
-
-///////////////////////
-//// helper func  ////
-/////////////////////
-
-func initTextModel(placeholder string) textinput.Model {
-	ti := textinput.New()
-	ti.Placeholder = placeholder
-	ti.Focus()
-	ti.CharLimit = 156
-	ti.Width = 20
-
-	return ti
-}
-
-func (m *menuModel) showStatus(s Status) {
-	m.status = "\n"
-	for _, v := range s.Opts() {
-		if str := fmt.Sprintf("%10s	-> %v\n", v, m.opts[v]); !m.isSet(v) {
-			m.status += red(str)
-		} else {
-			m.status += green(str)
-		}
-	}
+	m.status = statusStyle.Render(b.String())
 }
 
 func (m menuModel) isSet(property string) bool {
@@ -445,4 +213,9 @@ func (m menuModel) isSet(property string) bool {
 		return true
 	}
 	return false
+}
+
+func (m menuModel) String() string {
+	log.Tracef("[ options ]\n[ %v ]\n[ from yaml ]", m.opts)
+	return fmt.Sprintf(green("\n[Mode : %s ][DevStatus : %v][Quitting : %v]\n\t[Choice : %v]"), m.mode, m.devstatus, m.quitting, m.choice)
 }

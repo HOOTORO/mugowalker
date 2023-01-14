@@ -7,10 +7,13 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"time"
 
 	"golang.org/x/sys/windows"
 
 	"worker/ui"
+
+	"github.com/sirupsen/logrus"
 
 	"worker/afk"
 	"worker/cfg"
@@ -21,6 +24,8 @@ import (
 	"github.com/erikgeiser/coninput"
 	"golang.org/x/exp/slices"
 )
+
+var log *logrus.Logger
 
 func run() (err error) {
 	con, err := windows.GetStdHandle(windows.STD_INPUT_HANDLE)
@@ -98,22 +103,64 @@ func testWinEvents() {
 }
 
 func main() {
+	log = cfg.Logger()
 	if len(os.Args) > 1 && os.Args[1] == "-t" {
 		color.HiRed("%v", "TEST RUN")
 		// user := cfg.UserProfile{Account: "ss", Game: "aa"}
-		//		ocrtest()
+		ocrtest()
 		return
 	}
+
+	// log.Error("knock knock")
+	// ocrtest()
+	log.Warnf(color.RedString("RUN BEGIN : %v"), time.Now())
 	testselect()
+	// dev, _ := adb.Connect(cfg.Env.DeviceSerial)
+	// gm := afk.New(cfg.Env.UserProfile)
+	// b := bot.New(dev, gm)
+	// t := b.Task(afk.DOPUSHCAMP)
+	// b.React(t)
 	// testWinEvents()
 }
+
+// func RunBot(choice string, confg *cfg.AppConfig) {
+// 	rTaskConf := []string{"assets/reactions.yaml", "assets/daily.yaml"}
+
+// 	gm := afk.New(confg.UserProfile)
+// 	bt := bot.New(, gm)
+
+// 	switch choice {
+// 	case "0":
+// 		bt.UpAll()
+// 	case "1":
+// 		bt.Daily()
+// 	case "2":
+// 		push := bt.Task(afk.DOPUSHCAMP)
+// 		bt.React(push)
+// 	case "3":
+// 		kt := bt.Task(afk.Kings)
+// 		bt.React(kt)
+// 	case "4":
+// 		kt := bt.Task(afk.Light)
+// 		bt.React(kt)
+// 	case "5":
+// 		kt := bt.Task(afk.Mauler)
+// 		bt.React(kt)
+// 	case "6":
+// 		kt := bt.Task(afk.Wilder)
+// 		bt.React(kt)
+// 	case "7":
+// 		kt := bt.Task(afk.Graveborn)
+// 		bt.React(kt)
+// 	}
+// }
 
 func testselect() {
 	conf := ui.CfgDto(cfg.Env)
 
 	err := ui.RunMainMenu(conf)
 	if err != nil {
-		fmt.Printf("ERROROR: %v", err)
+		log.Errorf("ERROROR: %v", err)
 	}
 
 	//	ui.SoloStrInput()
@@ -238,7 +285,7 @@ func testloc(img string, loc *cfg.Location) (r1 bool) {
 	for _, line := range tl {
 		str := fail("	> ")
 		for _, v := range line.String {
-			if len(v.CONTENT) > 3 || slices.Contains(cfg.OcrConf.Exceptions, v.CONTENT) {
+			if len(v.CONTENT) > 3 || slices.Contains(cfg.Env.Exceptions, v.CONTENT) {
 				str += fmt.Sprintf("%s	->	%s | ", pass("%-12s", cutlong(v.CONTENT, 10)), fail("%sx%-4s", v.HPOS, v.VPOS))
 			}
 		}

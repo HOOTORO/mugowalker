@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	locations = "cfg/locations.yaml"
-	reactions = "cfg/reactions.yaml"
-	daily     = "cfg/daily.yaml"
+	locations = "assets/locations.yaml"
+	reactions = "assets/reactions.yaml"
+	daily     = "assets/daily.yaml"
 )
 
 func Set(p, flag DailyQuest) DailyQuest {

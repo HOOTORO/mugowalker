@@ -13,7 +13,6 @@ import (
 
 	"github.com/fatih/color"
 
-	"worker/adb"
 	"worker/afk/repository"
 
 	"github.com/sirupsen/logrus"
@@ -25,7 +24,7 @@ const (
 	profileEnv  = "USERPROFILE"
 	programData = "ProgramData"
 	temp        = "TEMP"
-	cfg         = "assets/default.yaml"
+	defaultcfg  = "assets/default.yaml"
 )
 
 const (
@@ -45,22 +44,23 @@ var (
 	red, green func(...interface{}) string
 )
 
-var OcrConf *OcrConfig
-
 func init() {
 	red = color.New(color.FgHiRed).SprintFunc()
 	green = color.New(color.FgHiGreen).SprintFunc()
 
 	log = Logger()
 	if Env == nil {
-		Env = loadConf()
+		Env = defaultAppConfig
 	}
 
 	e := createDirStructure()
 
+	Env = loadConf()
+
 	e = Env.validateDependencies()
 
-	f, e := os.OpenFile(Env.Logfile, os.O_APPEND|os.O_CREATE, 0o644)
+	f, e := os.OpenFile(Env.Logfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	// defer f.Close()
 	if e == nil {
 		Env.Logfile = f.Name()
 	}
@@ -76,7 +76,8 @@ func init() {
 	if e != nil {
 		panic(e)
 	}
-
+	a, _ := f.Stat()
+	log.Warnf("somepepeedoor%+v", a)
 	repository.DbInit(func(x string) string {
 		return filepath.Join(roamdata, x)
 	})
@@ -98,7 +99,7 @@ func Logger() *logrus.Logger {
 	}
 }
 
-func (rt ReactiveTask) React(trigger string) *adb.Point {
+func (rt ReactiveTask) React(trigger string) (image.Point, int) {
 	for _, v := range rt.Reactions {
 		if trigger == v.If {
 			return cutgrid(v.Do)
@@ -229,24 +230,47 @@ func safeEnv(n string) string {
 
 func loadConf() *AppConfig {
 	conf := &AppConfig{}
-	e := Parse(cfg, conf)
+	lastcfg := lookupLastConfig()
+
+	e := Parse(lastcfg, conf)
 	if e != nil {
-		log.Warnf("Configuration file not found, invalid or maybe this  is first run!.\nInitialize creating configuration\n")
 		conf = inputminsettings()
 	} else {
-		conf.Thiscfg = UsrDir(cfg)
+		conf.Thiscfg = UsrDir(lastcfg)
 	}
-
 	return conf
 }
 
 func inputminsettings() *AppConfig {
 	settings := defaultAppConfig
-	cfgpath := UsrDir(cfg)
+	cfgpath := UsrDir(defaultcfg)
 	settings.Thiscfg = cfgpath
-	Save(cfg, settings)
+	Save(defaultcfg, settings)
 
 	return settings
+}
+
+func lookupLastConfig() string {
+	lookoutdirs := []string{userfolder, appdata}
+	last := time.Time{}
+	res := ""
+	for _, d := range lookoutdirs {
+		dir, e := os.ReadDir(userfolder)
+		if e != nil {
+			fmt.Printf("\nerr:%v\nduring run:%v", e, "lookout")
+		}
+		for _, entry := range dir {
+			if !entry.IsDir() && filepath.Ext(entry.Name()) == ".yaml" {
+				i, _ := entry.Info()
+				if i.ModTime().After(last) {
+					last = i.ModTime()
+					res = filepath.Join(d, i.Name())
+				}
+			}
+		}
+
+	}
+	return res
 }
 
 func toInt(s string) int {
@@ -257,17 +281,15 @@ func toInt(s string) int {
 	return num
 }
 
-func cutgrid(str string) (p *adb.Point) {
+func cutgrid(str string) (p image.Point, off int) {
+	off = 1 // default
 	ords := strings.Split(str, ":")
-	p = &adb.Point{
-		Point: image.Point{
-			X: toInt(ords[0]),
-			Y: toInt(ords[1]),
-		},
-		Offset: 1,
+	p = image.Point{
+		X: toInt(ords[0]),
+		Y: toInt(ords[1]),
 	}
 	if len(ords) > 2 {
-		p.Offset = toInt(ords[2])
+		off = toInt(ords[2])
 	}
 	return
 }

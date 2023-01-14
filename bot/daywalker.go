@@ -63,14 +63,14 @@ func (dw *Daywalker) React(r *cfg.ReactiveTask) error {
 	cnt := 0
 	for dw.Reactive && r.Limit >= cnt {
 		loc := dw.MyLocation()
-		grid := r.React(loc)
+		grid, off := r.React(loc)
 		before, ok := afk.IsAction(r.Before(loc))
 
 		if ok {
 			dw.RunBefore(before)
 		}
 
-		dw.TapGO(grid.X, grid.Y, grid.Offset)
+		dw.TapGO(grid.X, grid.Y, off)
 
 		after, ok := afk.IsAction(r.After(loc))
 
@@ -154,11 +154,11 @@ func (dw *Daywalker) RunBefore(action afk.Action) {
 		//            dw.TapGO(ords.X, ords.Y, ords.Offset)
 	case afk.RepeatX:
 		task := dw.Task(dw.CurrentLocation())
-		point := task.React(dw.CurrentLocation().String())
+		point, off := task.React(dw.CurrentLocation().String())
 		for i := 0; i < 5; i++ {
-			dw.TapGO(point.X, point.Y, point.Offset)
+			dw.TapGO(point.X, point.Y, off)
 			time.Sleep(time.Second)
-			dw.TapGO(1, 18, point.Offset)
+			dw.TapGO(1, 18, off)
 		}
 
 	}

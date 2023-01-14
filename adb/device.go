@@ -8,14 +8,17 @@ import (
 	"strconv"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"worker/cfg"
 )
 
 // DevState represents the last queried state of an Android device.
 
 type DevState int
 
-var ErrNoDevices = errors.New("attached devices not found")
+var (
+	log          = cfg.Logger()
+	ErrNoDevices = errors.New("attached devices not found")
+)
 
 // Point Offset:
 // 0 -> full x*height
@@ -38,6 +41,12 @@ const (
 	Online
 	Unauthorized
 )
+
+var strstates = [...]string{"Offline", "Online", "Unautorized"}
+
+func (d DevState) String() string {
+	return strstates[d]
+}
 
 // Device represents an attached Android device.
 type Device struct {

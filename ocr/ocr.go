@@ -92,7 +92,7 @@ func cleanText(s string) []string {
 	res := strings.Fields(s)
 	var filtered []string
 	for _, v := range res {
-		if len(v) > 3 || strings.ContainsAny(v, "01234356789") || slices.Contains(cfg.OcrConf.Exceptions, v) {
+		if len(v) > 3 || strings.ContainsAny(v, "01234356789") || slices.Contains(cfg.Env.Exceptions, v) {
 			filtered = append(filtered, v)
 		}
 	}

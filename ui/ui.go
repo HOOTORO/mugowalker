@@ -4,21 +4,14 @@ import (
 	"fmt"
 	"io"
 
-	"worker/cfg"
-
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/fatih/color"
-	"github.com/sirupsen/logrus"
 )
 
-var (
-	log                           *logrus.Logger
-	red, green, cyan, yellow, mag func(...interface{}) string
-)
+var red, green, cyan, yellow, mag func(...interface{}) string
 
 func init() {
-	log = cfg.Logger()
 	red = color.New(color.FgHiRed).SprintFunc()
 	green = color.New(color.FgHiGreen).SprintFunc()
 	cyan = color.New(color.FgHiCyan).SprintFunc()

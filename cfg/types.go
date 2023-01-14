@@ -166,7 +166,7 @@ var defaultAppConfig = &AppConfig{
 		GameConf string `yaml:"gameConf"`
 		TestData string `yaml:"testData"`
 	}{
-		Root:     ".afk_data",
+		Root:     ".afkworker",
 		TempImg:  "work_images",
 		SqDB:     "db",
 		GameConf: "cfg",

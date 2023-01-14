@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -46,7 +45,7 @@ var (
 		"80%",
 	}
 	simpletess = []string{"--psm", "3", "-c", "tessedit_create_alto=1", "quiet"}
-	origocr    = cfg.OcrConf
+	origocr    = cfg.Env.Imagick
 	//    origmagick = []string{"-colorspace",
 	//        "Gray",
 	//        "-alpha",
@@ -105,8 +104,8 @@ WaitForLoc:
 			time.Sleep(8 * time.Second)
 			if step >= dw.maxocrtry {
 				color.HiRed("Using improved ocr settings")
-				cfg.OcrConf.Imagick = impmagick
-				cfg.OcrConf.Tesseract = simpletess
+				cfg.Env.Imagick = impmagick
+				cfg.Env.Tesseract = simpletess
 			}
 			if step >= dw.maxocrtry+2 {
 				dw.Back()
@@ -116,7 +115,7 @@ WaitForLoc:
 		} else {
 			if step >= dw.maxocrtry {
 				color.HiCyan("Returnin ocr params")
-				cfg.OcrConf = origocr
+				cfg.Env.Imagick = origocr
 
 			}
 			step = 0
@@ -168,7 +167,7 @@ func drawTap(tx, ty int, bot *Daywalker) {
 	s, e := bot.Screenshot(fmt.Sprintf("%v", step))
 	circle := fmt.Sprintf("circle %v,%v %v,%v", tx, ty, tx+20, ty+20)
 	no := fmt.Sprintf("+%v+%v", tx-20, ty+20)
-	cmd := exec.Command("magick", s, "-fill", "red", "-draw", circle, "-fill", "black", "-pointsize", "60", "-annotate", no, fmt.Sprintf("%v", step), filepath.Join("steps", filepath.Base(bot.lastscreenshot)))
+	cmd := exec.Command("magick", s, "-fill", "red", "-draw", circle, "-fill", "black", "-pointsize", "60", "-annotate", no, fmt.Sprintf("%v", step), cfg.UsrDir(bot.lastscreenshot))
 	e = cmd.Run()
 
 	if e != nil {

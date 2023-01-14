@@ -1,0 +1,282 @@
+# Reactive Tasks
+# Given a simple idea, that bot always reacts on location
+
+- name: push
+#  limit: 5
+#  criteria: result
+  avail: Mon/Tue/Wed/Thu/Fri/Sat/Sun
+  reactions:
+    - if: campain
+      do: 3:16:0
+    - if: bossnode
+      do: 3:13
+    - if: prepare
+      do: 3:18
+    - if: result
+      do: 3:17
+    - if: victory
+      do: 3:17
+#    - if: victory
+#      do: 5:17
+#    - if: stat
+#      before: updProgress
+#      do: 2:15
+#      after: aft1
+    - if: ranhorn
+      do: 3:18
+    - if: rBanOpen
+      do: 5:10
+    - if: lBanOpen
+      do: 1:10
+    - if: popextra
+      do: 1:18
+
+- name: kt
+#  limit: 5
+#  criteria: result
+  avail: Mon/Tue/Wed/Thu/Fri/Sat/Sun
+  reactions:
+    - if: campain
+      do: 2:18
+    - if: ranhorn
+      do: 2:18
+    - if: forrest
+      do: 3:9
+    - if: kt
+      do: 3:9
+    - if: king
+      do: 3:10
+    - if: prepare
+      do: 3:18
+    - if: result
+      do: 3:17
+    - if: victory
+      do: 3:17
+#      do: 5:17
+#    - if: stat
+#      before: updProgress
+#      do: 3:17
+#      after: HeroInfo
+    - if: rBanOpen
+      do: 5:10
+    - if: lBanOpen
+      do: 1:10
+    - if: popextra
+      do: 1:18
+
+- name: tol
+  # limit: 5
+  # criteria: result
+  avail: Mon/Fri/Sun
+  reactions:
+    - if: campain
+      do: 2:18
+    - if: ranhorn
+      do: 2:18
+    - if: forrest
+      do: 3:9
+    - if: kt
+      do: 2:9
+    - if: tol
+      do: 3:10
+    - if: prepare
+      do: 3:18
+    - if: result
+      do: 3:17
+    - if: victory
+      do: 3:17
+    # - if: stat
+    #   before: updProgress
+    #   do: 2:15
+    #   after: aft1
+    - if: rBanOpen
+      do: 5:10
+    - if: lBanOpen
+      do: 1:10
+    - if: popextra
+      do: 1:18
+
+- name: bc
+#  limit: 5
+#  criteria: result
+  avail: Tue/Fri/Sun
+  reactions:
+    - if: campain
+      do: 2:18
+    - if: ranhorn
+      do: 2:18
+    - if: forrest
+      do: 3:9
+    - if: kt
+      do: 2:12
+    - if: bc
+      do: 3:10
+    - if: prepare
+      do: 3:18
+    - if: result
+      do: 3:17
+    - if: victory
+#      do: 5:17
+#    - if: stat
+#      before: updProgress
+      do: 3:17
+    - if: rBanOpen
+      do: 5:10
+    - if: lBanOpen
+      do: 1:10
+    - if: popextra
+      do: 1:18
+
+- name: wt
+  limit: 5
+  criteria: result
+  avail: Wed/Sat/Sun
+  reactions:
+    - if: campain
+      do: 2:18
+    - if: ranhorn
+      do: 2:18
+    - if: forrest
+      do: 3:9
+    - if: kt
+      do: 4:8
+    - if: wt
+      do: 3:10
+    - if: prepare
+      do: 3:18
+    - if: result
+      do: 3:17
+    - if: victory
+      do: 5:17
+    - if: stat
+      before: updProgress
+      do: 3:17
+    - if: rBanOpen
+      do: 5:10
+    - if: lBanOpen
+      do: 1:10
+    - if: popextra
+      do: 1:18
+
+- name: fn
+  limit: 5
+  criteria: result
+  avail: Thu/Sat/Sun
+  reactions:
+    - if: campain
+      do: 2:18
+    - if: ranhorn
+      do: 2:18
+    - if: forrest
+      do: 3:9
+    - if: kt
+      do: 4:11
+    - if: fn
+      do: 3:10
+    - if: prepare
+      do: 3:18
+    - if: result
+      do: 3:17
+    - if: victory
+#      do: 5:17
+#    - if: stat
+#      before: updProgress
+      do: 3:17
+    - if: rBanOpen
+      do: 5:10
+    - if: lBanOpen
+      do: 1:10
+    - if: popextra
+      do: 1:18
+
+- name: cs
+  limit: 5
+  criteria: result
+  avail: Wed/Fri/Sun
+  reactions:
+    - if: campain
+      do: 2:18
+    - if: ranhorn
+      do: 2:18
+    - if: forrest
+      do: 3:9
+    - if: kt
+      do: 2:6
+    - if: cs
+      do: 3:10
+    - if: prepare
+      do: 3:18
+    - if: result
+      do: 3:17
+    - if: victory
+      do: 5:17
+    - if: stat
+      before: updProgress
+      do: 3:17
+    - if: rBanOpen
+      do: 5:10
+    - if: lBanOpen
+      do: 1:10
+    - if: popextra
+      do: 1:18
+
+- name: if
+  limit: 5
+  criteria: result
+  avail: Thu/Sat/Sun
+  reactions:
+    - if: campain
+      do: 2:18
+    - if: ranhorn
+      do: 2:18
+    - if: forrest
+      do: 3:9
+    - if: kt
+      do: 3:14
+    - if: if
+      do: 3:10
+    - if: prepare
+      do: 3:18
+    - if: result
+      do: 3:17
+    - if: victory
+      do: 5:17
+    - if: stat
+      before: updProgress
+      do: 3:17
+    - if: rBanOpen
+      do: 5:10
+    - if: lBanOpen
+      do: 1:10
+    - if: popextra
+      do: 1:18
+
+- name: arena
+  limit: 5
+  criteria: result
+  avail: Mon/Tue/Wed/Thu/Fri/Sat/Sun
+  reactions:
+    - if: campain
+      do: 2:18
+    - if: ranhorn
+      do: 2:18
+    - if: forrest
+      do: 4:10
+    - if: arena
+      do: 3:6
+    - if: soloarena
+      do: 3:18
+    - if: opponent
+      do: 4:13:2
+    - if: arenafight
+      do: 3:18
+    - if: victory
+      do: 3:17
+    - if: result
+      do: 3:17
+    - if: rBanOpen
+      do: 5:10
+    - if: lBanOpen
+      do: 1:10
+    - if: popextra
+      do: 1:18
