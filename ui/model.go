@@ -208,7 +208,7 @@ func (m *menuModel) showStatus() {
 	m.status = statusStyle.Render(b.String())
 }
 
-func (m menuModel) isSet(property string) bool {
+func (m *menuModel) isSet(property string) bool {
 	if m.opts[property] != "" {
 		return true
 	}

@@ -273,7 +273,7 @@ func lookupLastConfig() string {
 	return res
 }
 
-func toInt(s string) int {
+func ToInt(s string) int {
 	num, e := strconv.Atoi(s)
 	if e != nil {
 		log.Errorf("\nerr:%v\nduring run:%v", e, "intconv")
@@ -285,11 +285,11 @@ func cutgrid(str string) (p image.Point, off int) {
 	off = 1 // default
 	ords := strings.Split(str, ":")
 	p = image.Point{
-		X: toInt(ords[0]),
-		Y: toInt(ords[1]),
+		X: ToInt(ords[0]),
+		Y: ToInt(ords[1]),
 	}
 	if len(ords) > 2 {
-		off = toInt(ords[2])
+		off = ToInt(ords[2])
 	}
 	return
 }
@@ -353,9 +353,6 @@ func RunBlue() error {
 	args := Env.Bluestacks
 	cmd := exec.Command(bluestacks, args...)
 	log.Tracef("cmd bs : %v\n", cmd.String())
-	// uncomment for ocr log
-	// cmd.Stdout = os.Stdout
-	// cmd.Stderr = os.Stderr
 	return cmd.Start()
 }
 

@@ -103,8 +103,8 @@ WaitForLoc:
 		if !dw.checkLoc(dw.ScanScreen()) {
 			time.Sleep(8 * time.Second)
 			if step >= dw.maxocrtry {
-				color.HiRed("Using improved ocr settings")
-				cfg.Env.Imagick = impmagick
+				color.HiRed("Using improved ocr settings\r")
+				cfg.Env.UseAltImagick = true
 				cfg.Env.Tesseract = simpletess
 			}
 			if step >= dw.maxocrtry+2 {
@@ -115,7 +115,7 @@ WaitForLoc:
 		} else {
 			if step >= dw.maxocrtry {
 				color.HiCyan("Returnin ocr params")
-				cfg.Env.Imagick = origocr
+				cfg.Env.UseAltImagick = false
 
 			}
 			step = 0
@@ -123,7 +123,8 @@ WaitForLoc:
 
 		}
 	}
-	color.HiYellow("My Location most likely -> %v", dw.lastLoc)
+	color.Yellow("My Location most likely -> %v\n\r", dw.lastLoc)
+	// fmt.Printf("My Location most likely -> %v\n\r", dw.lastLoc)
 	return dw.lastLoc.Key
 }
 
@@ -133,7 +134,8 @@ func (dw *Daywalker) checkLoc(o ocr.Result) (ok bool) {
 		hit := o.Intersect(loc.Keywords)
 		if len(hit) >= loc.Threshold && len(hit) >= maxh {
 			maxh = len(hit)
-			color.HiYellow("## Keywords hit %v -> %v ##...", loc.Key, hit)
+			// fmt.Printf("## Keywords hit %v -> %v ##...\n\r", loc.Key, hit)
+			color.HiYellow("## Keywords hit %v -> %v ##...\n\r", loc.Key, hit)
 			dw.lastLoc = &dw.Locations[k]
 			ok = true
 			repository.RawLocData(loc.Key, strings.Join(o.Fields(), ";"))
@@ -156,7 +158,8 @@ func (dw *Daywalker) TapGO(gx, gy, off int) {
 		drawTap(px, py, dw)
 	}
 	e := dw.Tap(fmt.Sprint(px), fmt.Sprint(py))
-	color.HiGreen("Tap: Grid-> %v:%v, Point-> %vx%v px", gx, gy, px, py)
+	// fmt.Printf("Tap: Grid-> %v:%v, Point-> %vx%v px\n\r", gx, gy, px, py)
+	color.HiGreen("Tap: Grid-> %v:%v, Point-> %vx%v px\n\r", gx, gy, px, py)
 	if e != nil {
 		log.Warnf("Have an error during tap: %v", e.Error())
 	}

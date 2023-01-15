@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"golang.org/x/exp/slices"
 	"worker/adb"
 	"worker/afk"
 	"worker/bot"
@@ -44,6 +45,10 @@ func getDevices() []list.Item {
 
 func runTask(m *menuModel) {
 	cf := DtoCfg(m.opts)
+	m.menulist.Styles.HelpStyle = noStyle
+	m.spinme.Style = noStyle
+	m.textInput.TextStyle = noStyle
+
 	dev, _ := adb.Connect(cf.DeviceSerial)
 	gm := afk.New(cf.UserProfile)
 	b := bot.New(dev, gm)
@@ -164,7 +169,9 @@ func DtoCfg(m map[string]string) *cfg.AppConfig {
 		case bluestacks:
 			res.Bluestacks = strings.Split(v, " ")
 		case adbp, magick, bluestacksexe, tesserexe:
-			res.RequiredInstalledSoftware = append(res.RequiredInstalledSoftware, v)
+			if !slices.Contains(res.RequiredInstalledSoftware, v) {
+				res.RequiredInstalledSoftware = append(res.RequiredInstalledSoftware, v)
+			}
 		}
 	}
 	return res

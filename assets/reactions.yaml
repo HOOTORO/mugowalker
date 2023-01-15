@@ -7,7 +7,7 @@
   avail: Mon/Tue/Wed/Thu/Fri/Sat/Sun
   reactions:
     - if: campain
-      do: 3:16:0
+      do: 3:17
     - if: bossnode
       do: 3:13
     - if: prepare

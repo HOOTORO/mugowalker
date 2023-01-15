@@ -15,6 +15,36 @@ import (
 	"golang.org/x/exp/slices"
 )
 
+type AltoResult struct {
+	linechars string
+	x, y      int
+}
+
+func TextExtractAlto(img string) []AltoResult {
+	defer timeTrack(time.Now(), "AltOcr")
+	imgPrep := AltOptimize(img)
+	f, _ := tmpFile()
+	tessAlto(imgPrep, f.Name())
+	s := UnmarshalAlto(f.Name())
+	return s.parse()
+}
+
+func (a Alto) parse() []AltoResult {
+	var res []AltoResult
+	res = make([]AltoResult, 0)
+	//    fmt.Printf("%v", pass("%v",))
+	fmt.Print("\n			<----------- /Alto/ ----------------------> \n\n")
+	tl := a.Layout.Page.PrintSpace.ComposedBlock.TextBlock.TextLine
+	for _, line := range tl {
+		for _, v := range line.String {
+			if len(v.CONTENT) > 3 || slices.Contains(cfg.Env.Exceptions, v.CONTENT) {
+				res = append(res, AltoResult{linechars: v.CONTENT, x: cfg.ToInt(v.HPOS), y: cfg.ToInt(v.VPOS)})
+			}
+		}
+	}
+	return res
+}
+
 type Result struct {
 	raw    string
 	fields []string
@@ -64,14 +94,6 @@ func TextExtract(img string) Result {
 	imgPrep := OptimizeForOCR(img)
 	t, _ := recognize(imgPrep)
 	return t
-}
-
-func TextExtractAlto(img string) Alto {
-	defer timeTrack(time.Now(), "RegularOcr")
-	imgPrep := OptimizeForOCR(img)
-	f, _ := tmpFile()
-	runOcr(imgPrep, f.Name())
-	return UnmarshalAlto(f.Name())
 }
 
 // recognize text on a given img
@@ -124,5 +146,5 @@ func readTmp(fname string) ([]byte, error) {
 func timeTrack(start time.Time, name string) {
 	c := color.New(color.BgHiBlue, color.FgCyan, color.Underline, color.Bold).SprintfFunc()
 	elapsed := time.Since(start)
-	fmt.Printf("%v\n", c("[%s] %s", name, elapsed.Round(time.Millisecond)))
+	fmt.Printf("%v\n\r", c("\r[%s] %s", name, elapsed.Round(time.Millisecond)))
 }

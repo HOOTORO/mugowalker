@@ -6,7 +6,6 @@ import (
 	"image"
 	"os"
 	"os/signal"
-	"strings"
 	"time"
 
 	"golang.org/x/sys/windows"
@@ -279,21 +278,22 @@ func testloc(img string, loc *cfg.Location) (r1 bool) {
 	pass("xu")
 	al := ocr.TextExtractAlto(img)
 	//    fmt.Printf("%v", pass("%v",))
-	fmt.Print(regular("\n			<----------- /Alto/ ----------------------> \n\n"))
-	tl := al.Layout.Page.PrintSpace.ComposedBlock.TextBlock.TextLine
-	//	width := 30
-	for _, line := range tl {
-		str := fail("	> ")
-		for _, v := range line.String {
-			if len(v.CONTENT) > 3 || slices.Contains(cfg.Env.Exceptions, v.CONTENT) {
-				str += fmt.Sprintf("%s	->	%s | ", pass("%-12s", cutlong(v.CONTENT, 10)), fail("%sx%-4s", v.HPOS, v.VPOS))
-			}
-		}
-		if fail("	> ") != strings.TrimLeft(str, " ") {
-			fmt.Printf("%v\n", str)
-		}
+	fmt.Print(regular("\n			<----------- /Alto/ ----------------------> \n\n\t"))
+	fmt.Printf("%v", al)
+	// tl := al.Layout.Page.PrintSpace.ComposedBlock.TextBlock.TextLine
+	// //	width := 30
+	// for _, line := range tl {
+	// 	str := fail("	> ")
+	// 	for _, v := range line.String {
+	// 		if len(v.CONTENT) > 3 || slices.Contains(cfg.Env.Exceptions, v.CONTENT) {
+	// 			str += fmt.Sprintf("%s	->	%s | ", pass("%-12s", cutlong(v.CONTENT, 10)), fail("%sx%-4s", v.HPOS, v.VPOS))
+	// 		}
+	// 	}
+	// 	if fail("	> ") != strings.TrimLeft(str, " ") {
+	// 		fmt.Printf("%v\n", str)
+	// 	}
 
-	}
+	// }
 	fmt.Print("#\n#\n" + divider + "\n\n\n")
 	return
 }
