@@ -87,6 +87,7 @@
     - defeat
     - teams
     - advance
+    - VS
 
 
 - name: result
@@ -260,8 +261,8 @@
 #######################################################################
 
 - name: bossnode
-  hits: 2
-  delay: 1
+  hits: 3
+
   keywords:
     - Enemy
     - Formation
@@ -270,9 +271,6 @@
     - Completition
     - Rewards
     - ormavion
-  actions:
-      - locid: BeginBoss
-      - locid: back
 
 
 - name: fastrewards

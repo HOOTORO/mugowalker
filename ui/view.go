@@ -13,7 +13,7 @@ import (
 // func (m menuModel) View() string {
 // //////////////////////////
 func listView(m menuModel) string {
-	s := strings.Join([]string{m.header, m.status, m.menulist.View()}, "\n")
+	s := strings.Join([]string{m.header, m.menulist.View()}, "\n")
 	return docStyle.Render(s)
 }
 
@@ -53,7 +53,7 @@ func inputFormView(m menuModel) string {
 }
 
 func execView(m menuModel) string {
-	s := strings.Join([]string{m.header, m.status}, "\n")
-	r := fmt.Sprintf("Response: %v\nresult: %v\nwas chosen: %v ", m.response, m.devstatus, m.choice)
-	return docStyle.Render(s) + "\n" + execRespStyle.Render(r)
+	m.showmore = true
+	s := fmt.Sprintf("%v\n\n\nRunnin task: %v", m.header, m.activeTask)
+	return docStyle.Render(s)
 }

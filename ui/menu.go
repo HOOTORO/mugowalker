@@ -21,7 +21,7 @@ func RunMainMenu(options map[string]string) error {
 	m := InitialMenuModel(options)
 	m.header = headerStyle.Render(header)
 	m.menulist.Title = "Choose..."
-	m.menulist.SetSize(50, 20)
+	m.menulist.SetSize(40, 30)
 	m.menulist.SetShowHelp(true)
 	m.menulist.SetShowPagination(true)
 	m.menulist.SetShowTitle(true)

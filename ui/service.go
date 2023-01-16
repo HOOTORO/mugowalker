@@ -1,13 +1,9 @@
 package ui
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"strconv"
 	"strings"
 
-	"golang.org/x/exp/slices"
 	"worker/adb"
 	"worker/afk"
 	"worker/bot"
@@ -15,20 +11,6 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 )
-
-func intInput(maxi int) int {
-	reader := bufio.NewReader(os.Stdin)
-	bufio.NewReader(os.Stdin)
-	text, _ := reader.ReadString('\n')
-	// convert CRLF to LF
-	text = strings.Replace(text, "\n", "", -1)
-	r := strings.Trim(text, "\r")
-	dig, e := strconv.Atoi(r)
-	if e != nil || dig > maxi {
-		return 0
-	}
-	return dig
-}
 
 func getDevices() []list.Item {
 	var devs []list.Item
@@ -50,7 +32,7 @@ func runTask(m *menuModel) {
 	m.textInput.TextStyle = noStyle
 
 	dev, _ := adb.Connect(cf.DeviceSerial)
-	gm := afk.New(cf.UserProfile)
+	gm := afk.New(cf.User)
 	b := bot.New(dev, gm)
 	log.Warnf(yellow("CHOSEN RUNTASK >>> %v <<<"), m.choice)
 	switch m.choice {
@@ -58,6 +40,7 @@ func runTask(m *menuModel) {
 		b.UpAll()
 	case "Do daily?":
 		go func() {
+			// m.strch <- "Hi< from DAILY routine"
 			b.Daily()
 		}()
 	case "Push Campain?":
@@ -72,11 +55,13 @@ func runTask(m *menuModel) {
 		}()
 	case "Towers of Light":
 		go func() {
+			m.taskch <- taskinfo{Task: "TOL", Message: "Hi< from LIGHT routine"}
 			t := b.Task(afk.Light)
 			b.React(t)
 		}()
 	case "Brutal Citadel":
 		go func() {
+			// m.strch <- "Hi< from BRUTAL routine"
 			t := b.Task(afk.Mauler)
 			b.React(t)
 		}()
@@ -122,56 +107,39 @@ func runConnect(m *menuModel) bool {
 
 func updateDto(v map[string]string) {
 	o := DtoCfg(v)
-	cfg.Save(cfg.UsrDir(o.UserProfile.Account+".yaml"), o)
+	cfg.Save(cfg.UserFile(o.User.Account+".yaml"), o)
 }
 
-func CfgDto(conf *cfg.AppConfig) map[string]string {
+func CfgDto(conf *cfg.Profile) map[string]string {
 	dto := make(map[string]string, 0)
 	dto[connection] = conf.DeviceSerial
-	dto[account] = conf.UserProfile.Account
-	dto[game] = conf.UserProfile.Game
+	dto[account] = conf.User.Account
+	dto[game] = conf.User.Game
 	dto[imagick] = strings.Join(conf.Imagick, " ")
 	dto[tesseract] = strings.Join(conf.Tesseract, " ")
 	dto[bluestacks] = strings.Join(conf.Bluestacks, " ")
-	dto[adbp] = reqsoft(adbp, conf)
-	dto[magick] = reqsoft(magick, conf)
-	dto[bluestacksexe] = reqsoft(bluestacksexe, conf)
-	dto[tesserexe] = reqsoft(tesseract, conf)
 	// dto[] = conf.
 	// dto[] = conf.
 	return dto
 }
 
-func reqsoft(prop string, cfgn *cfg.AppConfig) string {
-	for _, v := range cfgn.RequiredInstalledSoftware {
-		if strings.Contains(v, prop) {
-			return v
-		}
-	}
-	return ""
-}
-
-func DtoCfg(m map[string]string) *cfg.AppConfig {
-	res := cfg.Env
+func DtoCfg(m map[string]string) *cfg.Profile {
+	res := cfg.ActiveUser()
 
 	for k, v := range m {
 		switch k {
 		case connection:
 			res.DeviceSerial = v
 		case account:
-			res.UserProfile.Account = v
+			res.User.Account = v
 		case game:
-			res.UserProfile.Game = v
+			res.User.Game = v
 		case imagick:
 			res.Imagick = strings.Split(v, " ")
 		case tesseract:
 			res.Tesseract = strings.Split(v, " ")
 		case bluestacks:
 			res.Bluestacks = strings.Split(v, " ")
-		case adbp, magick, bluestacksexe, tesserexe:
-			if !slices.Contains(res.RequiredInstalledSoftware, v) {
-				res.RequiredInstalledSoftware = append(res.RequiredInstalledSoftware, v)
-			}
 		}
 	}
 	return res

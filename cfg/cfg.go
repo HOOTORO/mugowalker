@@ -20,18 +20,9 @@ import (
 )
 
 const (
-	appdataEnv  = "APPDATA"
-	profileEnv  = "USERPROFILE"
-	programData = "ProgramData"
-	temp        = "TEMP"
-	defaultcfg  = "assets/default.yaml"
+	defaultcfg = "assets/default.yaml"
+	game       = "AFK Arena"
 )
-
-const (
-	game = "AFK Arena"
-)
-
-var roamdata, userfolder, appdata, tempdir string
 
 var (
 	ErrWorkDirFail        = errors.New("working dirictories wasn't created. Exit")
@@ -40,46 +31,38 @@ var (
 
 var (
 	log        *logrus.Logger
-	Env        *AppConfig
-	red, green func(...interface{}) string
+	activeUser *Profile
+	sysvars    *SystemVars
+	red, green     func(...interface{}) string
 )
 
 func init() {
 	red = color.New(color.FgHiRed).SprintFunc()
 	green = color.New(color.FgHiGreen).SprintFunc()
-
 	log = Logger()
-	if Env == nil {
-		Env = defaultAppConfig
-	}
+	sysvars = loadSysconf()
 
-	e := createDirStructure()
-
-	Env = loadConf()
-
-	e = Env.validateDependencies()
-
-	f, e := os.OpenFile(Env.Logfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-	// defer f.Close()
+	f, e := os.OpenFile(sysvars.Logfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if e == nil {
-		Env.Logfile = f.Name()
+		sysvars.Logfile = f.Name()
+		log.SetOutput(f)
 	}
 
-	loglvl, e := logrus.ParseLevel(Env.Loglevel)
+	activeUser = loadUser()
+
+	loglvl, e := logrus.ParseLevel(activeUser.Loglevel)
 	if e != nil {
 		log.Errorf("logrus err: %v", e)
 	}
-
 	log.SetLevel(loglvl)
-	log.SetOutput(f)
+
 
 	if e != nil {
 		panic(e)
 	}
-	a, _ := f.Stat()
-	log.Warnf("somepepeedoor%+v", a)
+
 	repository.DbInit(func(x string) string {
-		return filepath.Join(roamdata, x)
+		return filepath.Join(sysvars.Db, x)
 	})
 }
 
@@ -99,6 +82,18 @@ func Logger() *logrus.Logger {
 	}
 }
 
+func ActiveUser() *Profile{
+	if activeUser != nil {
+		return activeUser
+	}
+	return defUser
+}
+func RunBlue() error {
+	args := activeUser.Bluestacks
+	cmd := exec.Command(bluestacks, args...)
+	log.Tracef("cmd bs : %v\n", cmd.String())
+	return cmd.Start()
+}
 func (rt ReactiveTask) React(trigger string) (image.Point, int) {
 	for _, v := range rt.Reactions {
 		if trigger == v.If {
@@ -155,7 +150,7 @@ func Save(name string, in interface{}) {
 	log.Tracef("MARSHALLED: %v\n\n", f)
 }
 
-//func Load(a *AppConfig) *adb.Device {
+//func Load(a *Profile) *adb.Device {
 //	devs, e := adb.Devices()
 //	if e != nil || len(devs) == 0 {
 //		d, e := adb.Connect(a.DeviceSerial)
@@ -176,7 +171,7 @@ func Save(name string, in interface{}) {
 //	return devs[num]
 //}
 
-func LoadTask(up *UserProfile) (r []ReactiveTask) {
+func LoadTask(up *User) (r []ReactiveTask) {
 	for _, t := range up.TaskConfigs {
 		reactiveTasks := make([]ReactiveTask, 0)
 		Parse(t, &reactiveTasks)
@@ -186,23 +181,23 @@ func LoadTask(up *UserProfile) (r []ReactiveTask) {
 }
 
 func GetImages() []string {
-	d, e := os.ReadDir(tempdir)
+	d, e := os.ReadDir(sysvars.Temp)
 	if e != nil {
-		panic("crop err")
+		panic("get imgs")
 	}
 	var res []string
 	for _, f := range d {
-		res = append(res, ImageDir(f.Name()))
+		res = append(res, TempFile(f.Name()))
 	}
 	return res
 }
 
-func ImageDir(f string) string {
-	return absJoin(tempdir, f)
+func TempFile(f string) string {
+	return absJoin(sysvars.Temp, f)
 }
 
-func UsrDir(f string) string {
-	return absJoin(userfolder, f)
+func UserFile(f string) string {
+	return absJoin(sysvars.Userhome, f)
 }
 
 func LookupPath(name string) (path string) {
@@ -218,6 +213,39 @@ func LookupPath(name string) (path string) {
 /*
 	Helper func
 */
+func ToInt(s string) int {
+	num, e := strconv.Atoi(s)
+	if e != nil {
+		log.Errorf("\nerr:%v\nduring run:%v", e, "intconv")
+	}
+	return num
+}
+
+func loadSysconf() *SystemVars {
+	sys := &SystemVars{}
+	e :=	loadParties(sys)
+	if e != nil {
+		log.Errorf("Load parties mailfunc: %v", e)
+	}
+	sys.Db, sys.Userhome, sys.App, sys.Temp, e = createDirStructure()
+	if e != nil {
+		log.Errorf("Create app folders mailfunc: %v", e)
+	}
+	sys.Logfile = logfile
+	return sys
+}
+func loadUser() *Profile {
+	conf := &Profile{}
+	lastcfg := lookupLastConfig(sysvars.Userhome, sysvars.Db)
+
+	e := Parse(lastcfg, conf)
+	if e != nil {
+		conf = defaultUser()
+	} else {
+		sysvars.UserConfPath = UserFile(lastcfg)
+	}
+	return conf
+}
 
 func safeEnv(n string) string {
 	str, ok := os.LookupEnv(n)
@@ -228,34 +256,30 @@ func safeEnv(n string) string {
 	return ""
 }
 
-func loadConf() *AppConfig {
-	conf := &AppConfig{}
-	lastcfg := lookupLastConfig()
-
-	e := Parse(lastcfg, conf)
-	if e != nil {
-		conf = inputminsettings()
-	} else {
-		conf.Thiscfg = UsrDir(lastcfg)
-	}
-	return conf
-}
-
-func inputminsettings() *AppConfig {
-	settings := defaultAppConfig
-	cfgpath := UsrDir(defaultcfg)
-	settings.Thiscfg = cfgpath
+func defaultUser() *Profile {
+	settings := defUser
+	cfgpath := UserFile(defaultcfg)
+	sysvars.UserConfPath = cfgpath
 	Save(defaultcfg, settings)
 
 	return settings
 }
+func loadParties(sys *SystemVars) error {
+	for _, s := range thirdparty() {
+		if pt := LookupPath(s); pt != "" {
+			sys.parties = append(sys.parties, &RunableExe{name: s, path: pt})
+		} else {
+			return ErrRequiredProgram404
+		}
+	}
+	return nil
+}
 
-func lookupLastConfig() string {
-	lookoutdirs := []string{userfolder, appdata}
+func lookupLastConfig(dirs ...string) string {
 	last := time.Time{}
 	res := ""
-	for _, d := range lookoutdirs {
-		dir, e := os.ReadDir(userfolder)
+	for _, d := range dirs {
+		dir, e := os.ReadDir(d)
 		if e != nil {
 			fmt.Printf("\nerr:%v\nduring run:%v", e, "lookout")
 		}
@@ -273,14 +297,6 @@ func lookupLastConfig() string {
 	return res
 }
 
-func ToInt(s string) int {
-	num, e := strconv.Atoi(s)
-	if e != nil {
-		log.Errorf("\nerr:%v\nduring run:%v", e, "intconv")
-	}
-	return num
-}
-
 func cutgrid(str string) (p image.Point, off int) {
 	off = 1 // default
 	ords := strings.Split(str, ":")
@@ -294,44 +310,33 @@ func cutgrid(str string) (p image.Point, off int) {
 	return
 }
 
-func createDirStructure() error {
-	roamdata = makeEnvDir(appdataEnv, Env.Dirs.SqDB)
-	userfolder = makeEnvDir(profileEnv, Env.Dirs.GameConf)
-	tempdir = makeEnvDir(temp, Env.Dirs.TempImg)
-	appdata = makeEnvDir(programData, Env.Dirs.TestData)
+func createDirStructure() (dbfolder, userfolder, appdata, tempfolder string, e error) {
+	dbfolder = makeEnvDir(appdataEnv, programRootDir)
+	userfolder = makeEnvDir(userhome, programRootDir)
+	tempfolder = makeEnvDir(temp, programRootDir)
+	appdata = makeEnvDir(programData, programRootDir)
 
 	// Saturday cleaning
 	if time.Now().Weekday().String() == "Saturday" {
-		truncateDir(tempdir)
+		truncateDir(tempfolder)
 	}
 
-	if roamdata == safeEnv(appdataEnv) || userfolder == safeEnv(profileEnv) || tempdir == safeEnv(temp) || appdata == safeEnv(programData) {
-		return ErrWorkDirFail
+	if dbfolder == "" || userfolder == "" || tempfolder == "" || appdata == "" {
+		e = ErrWorkDirFail
 	}
 
-	log.Infof("\ninit: success; dirs created: \n%v\n%v\n%v\n%v", roamdata, userfolder, tempdir, appdata)
-	return nil
+	log.Infof("\ninit: success; dirs created: \n%v\n%v\n%v\n%v", dbfolder, userfolder, tempfolder, appdata)
+	return
 }
 
 func makeEnvDir(env, dir string) string {
 	envpath := safeEnv(env)
-	patyh := filepath.Join(envpath, Env.Dirs.Root, dir)
+	patyh := filepath.Join(envpath, dir)
 	e := os.MkdirAll(patyh, os.ModeDir)
 	if e != nil {
 		log.Errorf("make dir mailfunc: %v", e)
 	}
 	return patyh
-}
-
-func (ac *AppConfig) validateDependencies() error {
-	for i, s := range ac.RequiredInstalledSoftware {
-		if pt := LookupPath(s); pt != "" {
-			ac.RequiredInstalledSoftware[i] = pt
-		} else {
-			return ErrRequiredProgram404
-		}
-	}
-	return nil
 }
 
 func truncateDir(d string) {
@@ -349,16 +354,10 @@ func absJoin(d, f string) string {
 	return filepath.Join(wd, fb)
 }
 
-func RunBlue() error {
-	args := Env.Bluestacks
-	cmd := exec.Command(bluestacks, args...)
-	log.Tracef("cmd bs : %v\n", cmd.String())
-	return cmd.Start()
-}
 
-//app := &cfg.AppConfig{
+//app := &cfg.Profile{
 //    DeviceSerial: "192.168.1.7:5555",
-//    UserProfile: &cfg.UserProfile{
+//    User: &cfg.User{
 //        Account:     "E6osh!ro",
 //        Game:        "AFK Arena",
 //        TaskConfigs: []string{"cfg/reactions.yaml", "cfg/daily.yaml"},

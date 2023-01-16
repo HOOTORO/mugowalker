@@ -24,8 +24,14 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-var log *logrus.Logger
+var (
+	log *logrus.Logger
+	user *cfg.Profile
+)
 
+func init() {
+	user = cfg.ActiveUser()
+}
 func run() (err error) {
 	con, err := windows.GetStdHandle(windows.STD_INPUT_HANDLE)
 	if err != nil {
@@ -105,7 +111,7 @@ func main() {
 	log = cfg.Logger()
 	if len(os.Args) > 1 && os.Args[1] == "-t" {
 		color.HiRed("%v", "TEST RUN")
-		// user := cfg.UserProfile{Account: "ss", Game: "aa"}
+		// user := cfg.User{Account: "ss", Game: "aa"}
 		ocrtest()
 		return
 	}
@@ -114,18 +120,18 @@ func main() {
 	// ocrtest()
 	log.Warnf(color.RedString("RUN BEGIN : %v"), time.Now())
 	testselect()
-	// dev, _ := adb.Connect(cfg.Env.DeviceSerial)
-	// gm := afk.New(cfg.Env.UserProfile)
+	// dev, _ := adb.Connect(user.DeviceSerial)
+	// gm := afk.New(user.User)
 	// b := bot.New(dev, gm)
 	// t := b.Task(afk.DOPUSHCAMP)
 	// b.React(t)
 	// testWinEvents()
 }
 
-// func RunBot(choice string, confg *cfg.AppConfig) {
+// func RunBot(choice string, confg *cfg.Profile) {
 // 	rTaskConf := []string{"assets/reactions.yaml", "assets/daily.yaml"}
 
-// 	gm := afk.New(confg.UserProfile)
+// 	gm := afk.New(confg.User)
 // 	bt := bot.New(, gm)
 
 // 	switch choice {
@@ -155,7 +161,7 @@ func main() {
 // }
 
 func testselect() {
-	conf := ui.CfgDto(cfg.Env)
+	conf := ui.CfgDto(user)
 
 	err := ui.RunMainMenu(conf)
 	if err != nil {
@@ -166,9 +172,9 @@ func testselect() {
 }
 
 func ocrtest() {
-	b := afk.New(&cfg.UserProfile{Account: "test", Game: "afk", TaskConfigs: []string{"cfg/reactions.yaml"}})
+	b := afk.New(&cfg.User{Account: "test", Game: "afk", TaskConfigs: []string{"cfg/reactions.yaml"}})
 
-	cfg.Env.Imagick = []string{
+	user.Imagick = []string{
 		//		to try convert test.tif -fill black -fuzz 30% +opaque "#FFFFFF" result.tif
 		//		convert test.tif -brightness-contrast -40x10 -units pixelsperinch -density 300 -negate -noise 10 -threshold 70% result.tif
 		//		convert test.tif -fill black -fuzz 30% +opaque "#FFFFFF" result.tif
@@ -195,7 +201,7 @@ func ocrtest() {
 		//            "-negate",
 	}
 
-	cfg.Env.Tesseract = []string{
+	user.Tesseract = []string{
 		//            "--tessdata-dir",
 		//			"C:\\Program Files\\Tesseract-OCR\\tessdata\\frmgit\\tessdata_fast",
 		"--psm", "3",
@@ -285,7 +291,7 @@ func testloc(img string, loc *cfg.Location) (r1 bool) {
 	// for _, line := range tl {
 	// 	str := fail("	> ")
 	// 	for _, v := range line.String {
-	// 		if len(v.CONTENT) > 3 || slices.Contains(cfg.Env.Exceptions, v.CONTENT) {
+	// 		if len(v.CONTENT) > 3 || slices.Contains(user.Exceptions, v.CONTENT) {
 	// 			str += fmt.Sprintf("%s	->	%s | ", pass("%-12s", cutlong(v.CONTENT, 10)), fail("%sx%-4s", v.HPOS, v.VPOS))
 	// 		}
 	// 	}

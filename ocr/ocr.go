@@ -16,8 +16,12 @@ import (
 )
 
 type AltoResult struct {
-	linechars string
-	x, y      int
+	Linechars string
+	X, Y      int
+}
+
+func (a AltoResult) String() string {
+	return fmt.Sprintf("%vx%v | |> %v <|", a.X, a.Y, a.Linechars)
 }
 
 func TextExtractAlto(img string) []AltoResult {
@@ -33,12 +37,12 @@ func (a Alto) parse() []AltoResult {
 	var res []AltoResult
 	res = make([]AltoResult, 0)
 	//    fmt.Printf("%v", pass("%v",))
-	fmt.Print("\n			<----------- /Alto/ ----------------------> \n\n")
+	fmt.Print("\r\n		<----------- /Alto/ ----------------------> \n\n")
 	tl := a.Layout.Page.PrintSpace.ComposedBlock.TextBlock.TextLine
 	for _, line := range tl {
 		for _, v := range line.String {
-			if len(v.CONTENT) > 3 || slices.Contains(cfg.Env.Exceptions, v.CONTENT) {
-				res = append(res, AltoResult{linechars: v.CONTENT, x: cfg.ToInt(v.HPOS), y: cfg.ToInt(v.VPOS)})
+			if len(v.CONTENT) > 3 || slices.Contains(user.Exceptions, v.CONTENT) {
+				res = append(res, AltoResult{Linechars: v.CONTENT, X: cfg.ToInt(v.HPOS), Y: cfg.ToInt(v.VPOS)})
 			}
 		}
 	}
@@ -74,6 +78,21 @@ func (or Result) Intersect(k []string) (r []string) {
 		if slices.Contains(or.fields, v) {
 			r = append(r, v)
 		}
+	}
+	return r
+}
+
+func Intersect(or []AltoResult, k []string) (r []string) {
+midl:
+	for _, v := range or {
+		for _, kw := range k {
+			if strings.Contains(v.Linechars, kw) {
+				r = append(r, v.Linechars)
+				continue midl
+			}
+		}
+		// if slices.Contains(k, v.Linechars) || strings.Contains(strings.Join(k, ""), v.Linechars) {
+		// }
 	}
 	return r
 }
@@ -114,7 +133,7 @@ func cleanText(s string) []string {
 	res := strings.Fields(s)
 	var filtered []string
 	for _, v := range res {
-		if len(v) > 3 || strings.ContainsAny(v, "01234356789") || slices.Contains(cfg.Env.Exceptions, v) {
+		if len(v) > 3 || strings.ContainsAny(v, "01234356789") || slices.Contains(user.Exceptions, v) {
 			filtered = append(filtered, v)
 		}
 	}

@@ -2,58 +2,41 @@ package cfg
 
 import (
 	"fmt"
-	"strings"
 )
 
-type AppConfig struct {
+type Profile struct {
 	DeviceSerial string `yaml:"connection"`
 
-	UserProfile *UserProfile
+	User *User `yaml:"userprofile"`
 	//  Recognition settings (cmd args for 'Imagick' and 'Tesseract')
-	//  Split     []string `yaml:"split"`
 	Imagick       []string `yaml:"imagick"`
 	AltImagick    []string `yaml:"alt_imagick"`
-	UseAltImagick bool     `yaml:"use_alt_imagick"`
 	Tesseract     []string `yaml:"tesseract"`
 	AltTesseract  []string `yaml:"alt_tesseract"`
-	UseAltTess    bool     `yaml:"use_alt_tess"`
 	Bluestacks    []string `yaml:"bluestacks"`
+	UseAltImagick bool     `yaml:"use_alt_imagick"`
+	UseAltTess    bool     `yaml:"use_alt_tess"`
 
 	// Dict short word exceptions (>= 3)
 	Exceptions []string `yaml:"dict_shrt_except"`
 
-	Logfile  string `yaml:"logfile"`
 	Loglevel string `yaml:"loglevel"`
 	DrawStep bool   `yaml:"draw_step"`
-
-	Dirs struct {
-		Root    string `yaml:"root"`
-		TempImg string `yaml:"tempImg"`
-		SqDB    string `yaml:"sqDB"`
-		//		User     string `yaml:"user"`
-		GameConf string `yaml:"gameConf"`
-		TestData string `yaml:"testData"`
-	}
-	RequiredInstalledSoftware []string `yaml:"required_installed_software"`
-	Thiscfg                   string   `yaml:"thiscfg"`
 }
 
-func (ac *AppConfig) String() string {
-	reqsoft := "-> Required software..."
-	for _, v := range ac.RequiredInstalledSoftware {
-		if strings.Contains(v, adbp) {
-			reqsoft += isStr(v)(" \n ADB: " + v)
-		}
-		if strings.Contains(v, magic) {
-			reqsoft += isStr(v)(" \n IMAGICK: " + v)
-		}
-		if strings.Contains(v, tesseract) {
-			reqsoft += isStr(v)(" \n TESSERACT: " + v)
-		}
-		if strings.Contains(v, bluestacks) {
-			reqsoft += isStr(v)(" \n BLUESTACKS: " + v)
-		}
-	}
+type SystemVars struct {
+	Logfile            string `yaml:"logfile"`
+	UserConfPath       string
+	parties            []*RunableExe
+	App, Userhome, Temp, Db string
+}
+
+type RunableExe struct {
+	name string
+	path string
+}
+
+func (ac *Profile) String() string {
 	return fmt.Sprintf(
 		"%v"+
 			"%s\n"+
@@ -62,16 +45,11 @@ func (ac *AppConfig) String() string {
 			" Magick: %v\n"+
 			" Tesseract: %v\n"+
 			"%v\n"+
-			"-> Config: %v\n"+
-			"-> Logfile: %v\n",
 		isStr(ac.DeviceSerial)(" -> Device: "),
-		ac.UserProfile,
+		ac.User,
 		ac.Bluestacks,
 		ac.Imagick,
 		ac.Tesseract,
-		reqsoft,
-		ac.Thiscfg,
-		ac.Logfile,
 	)
 }
 
@@ -83,19 +61,19 @@ func isStr(str string) func(...interface{}) string {
 	}
 }
 
-type UserProfile struct {
-	Account     string
-	Game        string
-	TaskConfigs []string
+type User struct {
+	Account     string `yaml:"account"`
+	Game        string `yaml:"game"`
+	TaskConfigs []string `yaml:"taskconfigs"`
 }
 
-func (up *UserProfile) String() string {
+func (up *User) String() string {
 	return fmt.Sprint(isStr(up.Game)("\n -> Game: "+up.Game+"\n ") +
 		isStr(up.Account)("     Account: "+up.Account+"\n "))
 }
 
-func User(accname, game string, taskcfgpath []string) *UserProfile {
-	return &UserProfile{Account: accname, Game: game, TaskConfigs: taskcfgpath}
+func New(accname, game string, taskcfgpath []string) *User {
+	return &User{Account: accname, Game: game, TaskConfigs: taskcfgpath}
 }
 
 type ReactiveTask struct {
@@ -130,9 +108,9 @@ func (l *Location) String() string {
 	return fmt.Sprintf("Location key: %v", l.Key)
 }
 
-var defaultAppConfig = &AppConfig{
+var defUser = &Profile{
 	DeviceSerial: "",
-	UserProfile: &UserProfile{
+	User: &User{
 		Account:     "",
 		Game:        "AFK Arena",
 		TaskConfigs: []string{"cfg/reactions.yaml", "cfg/daily.yaml"},
@@ -156,21 +134,6 @@ var defaultAppConfig = &AppConfig{
 	AltTesseract: []string{"--psm", "3", "hoot", "quiet"},
 	Bluestacks:   []string{"--instance", "Rvc64", "--cmd", "launchApp", "--package", "com.lilithgames.hgame.gp.id"},
 	Exceptions:   []string{"Go", "Up ", "In", "Tap"},
-	Logfile:      "app.conf",
 	Loglevel:     "FATAL",
 	DrawStep:     false,
-	Dirs: struct {
-		Root     string `yaml:"root"`
-		TempImg  string `yaml:"tempImg"`
-		SqDB     string `yaml:"sqDB"`
-		GameConf string `yaml:"gameConf"`
-		TestData string `yaml:"testData"`
-	}{
-		Root:     ".afkworker",
-		TempImg:  "work_images",
-		SqDB:     "db",
-		GameConf: "cfg",
-		TestData: "_test",
-	},
-	RequiredInstalledSoftware: []string{magic, adbp, tesseract, bluestacks},
 }

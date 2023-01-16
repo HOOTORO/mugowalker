@@ -2,6 +2,7 @@ package ui
 
 import (
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -18,9 +19,9 @@ func updateList(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "q", "esc":
+		case "ctrl+c", "q":
 			return m, tea.Quit
-		case "enter", "spacebar":
+		case "enter", " ":
 			if itm, ok := m.menulist.SelectedItem().(item); ok {
 				m.choice = itm.FilterValue()
 				switch chld := itm.children.(type) {
@@ -43,7 +44,7 @@ func updateList(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 				case func(m *menuModel):
 					chld(&m)
 					m.mode = runExec
-					// m.showStatus()
+					// m.updateStatus()
 					return m, cmd
 				}
 			}
@@ -55,7 +56,7 @@ func updateList(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 				m.parents = m.parents[:len(m.parents)-1]
 			}
 		}
-		log.Debugf(red("FOCUS # %v"), m.menulist.SelectedItem().FilterValue())
+		// log.Debugf(red("FOCUS # %v"), m.menulist.SelectedItem().FilterValue())
 		// May be... some day
 		// case tea.WindowSizeMsg:
 		// 	h, v := docStyle.GetFrameSize()
@@ -79,7 +80,7 @@ func updateInput(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 			m.mode = selectList
 			m.opts[m.choice] = m.textInput.Value()
 			updateDto(m.opts)
-			m.showStatus()
+			m.updateStatus()
 			return m, cmd
 		}
 
@@ -123,7 +124,7 @@ func updateFormInput(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 			if (s == "enter" && m.focusIndex == len(m.manyInputs)) || s == "esc" {
 				m.mode = selectList
 				updateDto(m.opts)
-				m.showStatus()
+				m.updateStatus()
 				// cmd = m.updatemanyInputs(msg)
 				return m, cmd
 			}
@@ -195,7 +196,7 @@ func updateExec(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 			m.mode = selectList
 			m.response = "some response"
 			updateDto(m.opts)
-			m.showStatus()
+			m.updateStatus()
 			// return m, cmd
 		}
 
@@ -204,7 +205,10 @@ func updateExec(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 		m.err = msg
 		return m, nil
 	}
-
-	// m.menulist, cmd = m.menulist.Update(msg)
+	time.Sleep(3 * time.Second)
+	m.mode = selectList
+	m.response = "some response"
+	m.updateStatus()
+	m.menulist, cmd = m.menulist.Update(msg)
 	return m, cmd
 }

@@ -3,7 +3,9 @@ package ocr
 import (
 	"fmt"
 	"image"
+	"math/rand"
 	"os/exec"
+	"time"
 
 	"worker/cfg"
 
@@ -16,10 +18,17 @@ const (
 	CROP = "-crop"
 )
 
+var imagickSets [][]string
+
 func init() {
 	// Fallback to searching on PATH.
 	magick = cfg.LookupPath("magick")
 	log = cfg.Logger()
+	// origin
+	imagickSets = append(imagickSets, []string{"-colorspace", "Gray", "-alpha", "off", "threshold", "75%", "-edge", "2", "-negate", "-black-threshold", "90%"})
+	imagickSets = append(imagickSets, []string{"-alpha", "off", "-fill", "black", "-fuzz", "30%", "+opaque", "#FFFFFF"})
+	imagickSets = append(imagickSets, []string{"-alpha", "off", "-brightness-contrast", "-40x10", "-units pixelsperinch", "-density", "300", "-negate", "-noise", "10", "-threshold", "70%"})
+	imagickSets = append(imagickSets, []string{"-alpha", "off", "-negate", "-threshold", "100", "-negate"})
 }
 
 type Cutter interface {
@@ -71,7 +80,7 @@ func OpenImg(fname string) image.Image {
 // }
 
 func Magick(img string, args ...string) (string, error) {
-	out := cfg.ImageDir(img)
+	out := cfg.TempFile(img)
 	args = append([]string{img}, args...)
 	args = append(args, out)
 	log.Tracef("Imagick args -> %v", args)
@@ -103,3 +112,8 @@ func Concat(f string, topleft, bottomright image.Point) string {
 // 	}
 // 	return crpdImages
 // }
+
+func MagickArgs() []string {
+	rand.Seed(time.Now().Unix())
+	return imagickSets[rand.Intn(len(imagickSets))]
+}

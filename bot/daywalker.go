@@ -107,9 +107,9 @@ func (dw *Daywalker) Daily() (bool, error) {
 func (dw *Daywalker) Screenshot(name string) (string, error) {
 	f := fmt.Sprintf("%v_%v_%v.png", dw.fprefix, dw.id, name)
 	dw.Screencap(f)
-	dw.lastscreenshot = cfg.ImageDir(f)
-	err := dw.Pull(f, cfg.ImageDir(""))
-	return cfg.ImageDir(f), err
+	dw.lastscreenshot = cfg.TempFile(f)
+	err := dw.Pull(f, cfg.TempFile(""))
+	return cfg.TempFile(f), err
 }
 
 func (dw *Daywalker) ZeroPosition() bool {
@@ -138,8 +138,8 @@ func availiableToday(days string) bool {
 func (dw *Daywalker) Gameshot(name string) string {
 	f := fmt.Sprintf("%v_%v_%v.png", dw.fprefix, dw.id, name)
 	dw.Screencap(f)
-	_ = dw.Pull(f, cfg.UsrDir(""))
-	return cfg.UsrDir(f)
+	_ = dw.Pull(f, cfg.UserFile(""))
+	return cfg.UserFile(f)
 }
 
 func (dw *Daywalker) RunBefore(action afk.Action) {

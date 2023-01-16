@@ -37,7 +37,7 @@ type Game struct {
 	Active        bool
 	Locations     []cfg.Location
 	User          *repository.User
-	profile       *cfg.UserProfile
+	profile       *cfg.User
 	tasks, dailys []cfg.ReactiveTask
 }
 
@@ -45,7 +45,7 @@ func (g *Game) String() string {
 	return fmt.Sprintf("Name: %v\n User:%v\n", g.Name, g.User.Username)
 }
 
-func New(up *cfg.UserProfile) *Game {
+func New(up *cfg.User) *Game {
 	color.HiMagenta("\nLaunch %v!", up)
 	locs := make([]cfg.Location, 1, 1)
 	tasks := make([]cfg.ReactiveTask, 1, 1)
