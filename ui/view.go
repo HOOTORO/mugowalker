@@ -17,15 +17,6 @@ func listView(m menuModel) string {
 	return docStyle.Render(s)
 }
 
-func inputView(m menuModel) string {
-	return fmt.Sprintf(
-		"Please, enter <%v> property\n\n%s\n\n%s",
-		m.choice,
-		m.textInput.View(),
-		"(esc to quit)",
-	) + "\n"
-}
-
 func inputFormView(m menuModel) string {
 	var b strings.Builder
 
@@ -54,6 +45,6 @@ func inputFormView(m menuModel) string {
 
 func execView(m menuModel) string {
 	m.showmore = true
-	s := fmt.Sprintf("%v\n\n\nRunnin task: %v", m.header, m.activeTask)
+	s := fmt.Sprintf("%v\n\n%v exec: %v", m.header, m.spinme.View(), m.choice)
 	return docStyle.Render(s)
 }

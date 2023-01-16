@@ -6,12 +6,15 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
 const (
 	header = "#### AFK Worker v0.1_alpha ####\n####### Active setup ###########"
 )
+
+var f = fmt.Sprintf
 
 // keymapping
 const (
@@ -112,26 +115,99 @@ var (
 	}
 
 	toplevelmenu = []list.Item{
-		item{title: "Launch Bluestacks", desc: "check args in settings before!", children: func(m *menuModel) { m.devstatus = runBluestacks(m) }},
-		item{title: "Connect", desc: "from settings: ", children: func(m *menuModel) { m.devstatus = runConnect(m) }},
-		item{title: "Availible devices", desc: "via 'adb devices'", children: devices},
-		item{title: "Settings", children: settingsV2},
-		item{title: "Do daily?", children: func(m *menuModel) { runTask(m) }},
-		item{title: "Push Campain?", children: func(m *menuModel) { runTask(m) }},
-		item{title: "Kings Tower", children: func(m *menuModel) { runTask(m) }},
+		item{
+			title: "Launch Bluestacks",
+			desc:  "check args in settings before!",
+			children: func(m *menuModel) tea.Cmd {
+				return func() tea.Msg {
+					return runBluestacks(m)
+				}
+			},
+		},
+		item{
+			title: "Check",
+			desc:  "prcss",
+			children: func(m *menuModel) tea.Cmd {
+				return func() tea.Msg {
+					return test(m)
+				}
+			},
+		},
+		item{
+			title: "Connect to",
+			desc:  "serial/ip set in 'Device'",
+			children: func(m *menuModel) bool {
+				return runConnect(m)
+			},
+		},
+		item{
+			title:    "Availible devices",
+			desc:     "'adb devices -l'",
+			children: devices,
+		},
+		item{
+			title:    "Settings",
+			desc:     "Imagick, Tesseract and other",
+			children: settingsV2,
+		},
+		item{
+			title: "Do daily?",
+			desc:  "Do quest till 100pts",
+			children: func(m *menuModel) bool {
+				return runTask(m)
+			},
+		},
+		item{
+			title: "Push Campain?",
+			desc:  "if you cant",
+			children: func(m *menuModel) bool {
+				return runTask(m)
+			},
+		},
+		item{
+			title: "Kings Tower",
+			desc:  "Not yours",
+			children: func(m *menuModel) bool {
+				return runTask(m)
+			},
+		},
 
 		// item{title: "Climb Towers?", children: towers},
 		// item{title: "Tasks", children: tasks},
 	}
 
 	tasks = []list.Item{
-		item{title: "Run all", children: func(m *menuModel) { runTask(m) }},
+		item{title: "Run all",
+			children: func(m *menuModel) bool {
+				return runTask(m)
+			},
+		},
 	}
 	towers = []list.Item{
-		item{title: "Towers of Light", children: func(m *menuModel) { runTask(m) }},
-		item{title: "Brutal Citadel", children: func(m *menuModel) { runTask(m) }},
-		item{title: "World Tree", children: func(m *menuModel) { runTask(m) }},
-		item{title: "Forsaken Necropolis", children: func(m *menuModel) { runTask(m) }},
+		item{
+			title: "Towers of Light",
+			children: func(m *menuModel) bool {
+				return runTask(m)
+			},
+		},
+		item{
+			title: "Brutal Citadel",
+			children: func(m *menuModel) bool {
+				return runTask(m)
+			},
+		},
+		item{
+			title: "World Tree",
+			children: func(m *menuModel) bool {
+				return runTask(m)
+			},
+		},
+		item{
+			title: "Forsaken Necropolis",
+			children: func(m *menuModel) bool {
+				return runTask(m)
+			},
+		},
 	}
 )
 

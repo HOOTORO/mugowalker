@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"math/rand"
 	"strings"
 	"time"
 
@@ -20,18 +19,17 @@ import (
 const showLastTasks = 10
 
 type menuModel struct {
-	mode       Mode
-	header     string
-	status     string
-	devstatus  bool
-	activeTask string
-	showmore   bool
+	bluestcksPid int
+	mode         Mode
+	header       string
+	status       string
+	devstatus    bool
+	activeTask   string
+	showmore     bool
 
 	menulist list.Model
 	parents  []list.Model
 	choice   string
-
-	textInput textinput.Model
 
 	focusIndex int
 	manyInputs []textinput.Model
@@ -49,42 +47,20 @@ type menuModel struct {
 
 func (m menuModel) String() string {
 	log.Tracef("[ options ]\n[ %v ]\n[ from yaml ]", m.opts)
-	return fmt.Sprintf(green("\n[Mode : %s ][DevStatus : %v][Quitting : %v]\n\t[Choice : %v]"), m.mode, m.devstatus, m.quitting, m.choice)
+	return fmt.Sprintf(green("\n[Mode : %s ] [DevStatus : %v] [Quitting : %v]\n[ ActvTask : %v] [Choice : %v]"), m.mode, m.devstatus, m.quitting, m.activeTask, m.choice)
 }
 
-// responseMsg    struct{}
-// responseMsgStr string
+// taskinfo is send when a pretend process completes.
 type taskinfo struct {
 	Task     string
 	Message  string
-	Duration time.Duration
+	Duration time.Time
 }
 
 // A command that waits for the activity on a channel.
 func activityListener(strch chan taskinfo) tea.Cmd {
 	return func() tea.Msg {
 		return taskinfo(<-strch)
-	}
-}
-
-// processFinishedMsg is send when a pretend process completes.
-type processFinishedMsg time.Duration
-
-// pretendProcess simulates a long-running process.
-func runPretendProcess() tea.Msg {
-	pause := time.Duration(rand.Int63n(899)+100) * time.Millisecond
-	time.Sleep(pause)
-	return processFinishedMsg(pause)
-}
-
-// generate activity
-func listenForActivity(sub chan struct{}) tea.Cmd {
-	return func() tea.Msg {
-		for {
-			execTime := time.Second * time.Duration(rand.Intn(5))
-			time.Sleep(execTime)
-			sub <- struct{}{}
-		}
 	}
 }
 
@@ -100,7 +76,7 @@ func (m menuModel) Init() tea.Cmd {
 	log.Warnf("Init model:  \n%s", m)
 	return tea.Batch(
 		textinput.Blink,
-		spinner.Tick,
+		// spinner.Tick,
 		// listenForActivity(m.sub), // generate activity
 		activityListener(m.taskch), // wait for activity
 	)
@@ -117,43 +93,33 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		if k.String() == "alt+s" {
-			//			var cmd tea.Cmd
-			//			m.quitting = true
 			m.showmore = !m.showmore
-			//			return m, runPretendProcess
 		}
 		if k.String() == "ctrl+k" {
 			var cmd tea.Cmd
-			//			m.quitting = true
-			d := time.Second * time.Duration(rand.Intn(5))
-			rt := taskinfo{Task: "eureka", Message: "Some sh! happened, ctrl-l pressed", Duration: d}
+			rt := taskinfo{Task: "eureka", Message: "Some sh! happened, ctrl-l pressed", Duration: time.Now()}
 			m.activeTask = rt.Task
 			m.taskch <- rt
 			return m, cmd
 		}
+
 	case taskinfo:
+		m.mode = selectList
 		m.taskmsgs = append(m.taskmsgs[1:], k)
 		return m, activityListener(m.taskch)
-	case processFinishedMsg:
-		d := time.Duration(k)
-		res := taskinfo{Task: "Immitating task", Duration: d}
-		// log.Printf("%s finished in %s", res.Task, res.Duration)
-		m.taskmsgs = append(m.taskmsgs[1:], res)
-		return m, runPretendProcess
+
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinme, cmd = m.spinme.Update(msg)
 		return m, cmd
 	}
 
-	log.Debugf(cyan("PREUPD mod -> %v"), m)
+	log.Debugf(yellow("PREUPD -> %v\n%v"), m.mode, m)
 	switch m.mode {
 	case selectList:
 		return updateList(msg, m)
-	case inputMessage:
-		return updateInput(msg, m)
 	case multiInput:
-		return updateFormInput(msg, m)
+		return updateInput(msg, m)
 	case runExec:
 		return updateExec(msg, m)
 	}
@@ -163,8 +129,6 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 ///////////////////////////////////
 
 func (m menuModel) View() string {
-	log.Warnf(cyan("SEND TO VIEW (model) -> %v"), m)
-
 	var srt, res string
 
 	if m.showmore {
@@ -173,11 +137,10 @@ func (m menuModel) View() string {
 	if m.quitting {
 		return quitStyle.Render("\n  See you later, Space Cowboy!\n\n")
 	}
+	log.Warnf(cyan("SEND TO VIEW -> %s"), m.mode)
 	switch m.mode {
 	case selectList:
 		res = listView(m)
-	case inputMessage:
-		res = inputView(m)
 	case multiInput:
 		res = inputFormView(m)
 	case runExec:
@@ -246,6 +209,14 @@ func (m *menuModel) updateStatus() {
 		statusStyle.BorderForeground(bloodRed)
 		b.WriteString(red("Offline"))
 	}
+	b.WriteString("\n Bluestacks: ")
+	if test(m) {
+		statusStyle.BorderForeground(brightGreen)
+		b.WriteString(green("Running"))
+	} else {
+		statusStyle.BorderForeground(bloodRed)
+		b.WriteString(red("Shutdown"))
+	}
 	m.status = statusStyle.Render(b.String())
 }
 
@@ -264,7 +235,6 @@ func InitialMenuModel(userOptions map[string]string) menuModel {
 		menulist:   list.New(availMenuItems(), list.NewDefaultDelegate(), 19, 0),
 		parents:    nil,
 		choice:     "",
-		textInput:  initTextModel("...", false, ""),
 		focusIndex: 0,
 		manyInputs: make([]textinput.Model, 0),
 		cursorMode: textinput.CursorBlink,
@@ -277,6 +247,7 @@ func InitialMenuModel(userOptions map[string]string) menuModel {
 		spinme:     spinner.New(),
 	}
 	m.updateStatus()
+
 	m.spinme.Spinner = spinner.Moon
 	m.spinme.Style = spinnerStyle
 	return m

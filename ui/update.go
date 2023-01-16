@@ -1,8 +1,9 @@
 package ui
 
 import (
+	"reflect"
+	"runtime"
 	"strings"
-	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -25,25 +26,23 @@ func updateList(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 			if itm, ok := m.menulist.SelectedItem().(item); ok {
 				m.choice = itm.FilterValue()
 				switch chld := itm.children.(type) {
-				case textinput.Model:
-					m.textInput = chld
-					m.mode = inputMessage
-					// m.textInput, cmd = m.textInput.Update(msg)
-					return m, cmd
 
+				// go deeper in menu
+				case []list.Item, func(m menuModel) []list.Item:
+					m.mode = selectList
+					m.parents = append(m.parents, m.menulist)
+					m.menulist.SetItems(itm.NextLevel(m))
+					// input window updateInput
 				case func(m menuModel) []textinput.Model:
 					m.manyInputs = chld(m)
 					m.mode = multiInput
 					// m.textInput, cmd = m.textInput.Update(msg)
 					return m, cmd
-				case []list.Item, func(m menuModel) []list.Item:
-					// go deeper in menu
-					m.mode = selectList
-					m.parents = append(m.parents, m.menulist)
-					m.menulist.SetItems(itm.NextLevel(m))
-				case func(m *menuModel):
-					chld(&m)
+
+					//// Run something go to updateExec
+				case func(m *menuModel) bool, func(m *menuModel) string:
 					m.mode = runExec
+					// chld(&m)
 					// m.updateStatus()
 					return m, cmd
 				}
@@ -67,35 +66,11 @@ func updateList(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-// ///////////////////////////
-// ///// UPD. Input /////////
-// /////////////////////////
+// //////////////////////////////
+// ///// UPD. Input ////////////
+// ////////////////////////////
+// / UPD Multiline input /////
 func updateInput(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyEnter, tea.KeyCtrlC, tea.KeyEsc:
-			m.mode = selectList
-			m.opts[m.choice] = m.textInput.Value()
-			updateDto(m.opts)
-			m.updateStatus()
-			return m, cmd
-		}
-
-	// We handle errors just like any other message
-	case errMsg:
-		m.err = msg
-		return m, nil
-	}
-
-	m.textInput, cmd = m.textInput.Update(msg)
-	return m, cmd
-}
-
-// ///////// UPD Multiline input /////////
-func updateFormInput(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -184,31 +159,38 @@ func (m menuModel) updatemanyInputs(msg tea.Msg) tea.Cmd {
 }
 
 func updateExec(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+c":
 			m.quitting = true
 			return m, tea.Quit
-		case "enter", "backspace", "esc":
-			m.mode = selectList
-			m.response = "some response"
-			updateDto(m.opts)
-			m.updateStatus()
+			// case "enter", "backspace", "esc":
+			// m.mode = selectList
+			// m.response = "some response"
+			// m.updateStatus()
 			// return m, cmd
 		}
-
-	// We handle errors just like any other message
-	case errMsg:
-		m.err = msg
-		return m, nil
 	}
-	time.Sleep(3 * time.Second)
+	if item, ok := m.menulist.SelectedItem().(item); ok {
+		switch fu := item.children.(type) {
+		case func(m *menuModel) tea.Cmd:
+			// m.activeTask = GetFunctionName(fu)\
+			m.activeTask = item.title
+
+			res := fu(&m)
+			m.taskch <- notify(m.activeTask, f("result: %v", res))
+		}
+	}
+
 	m.mode = selectList
-	m.response = "some response"
+	// updateDto(m.opts)
 	m.updateStatus()
+	var cmd tea.Cmd
 	m.menulist, cmd = m.menulist.Update(msg)
 	return m, cmd
+}
+
+func GetFunctionName(i interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
 }

@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"worker/adb"
 	"worker/afk"
@@ -25,13 +26,20 @@ func getDevices() []list.Item {
 	return devs
 }
 
-func runTask(m *menuModel) {
+func test(m *menuModel) bool {
+	return cfg.ProcessInfo(m.bluestcksPid)
+}
+
+func runTask(m *menuModel) bool {
 	cf := DtoCfg(m.opts)
 	m.menulist.Styles.HelpStyle = noStyle
 	m.spinme.Style = noStyle
-	m.textInput.TextStyle = noStyle
 
-	dev, _ := adb.Connect(cf.DeviceSerial)
+	dev, e := adb.Connect(cf.DeviceSerial)
+	if e != nil {
+		log.Errorf("deverr:%v", e)
+		return false
+	}
 	gm := afk.New(cf.User)
 	b := bot.New(dev, gm)
 	log.Warnf(yellow("CHOSEN RUNTASK >>> %v <<<"), m.choice)
@@ -76,30 +84,34 @@ func runTask(m *menuModel) {
 			b.React(t)
 		}()
 	}
+	return true
 }
 
-func Connect(s string) string {
+func Connect(s string) (string, bool) {
 	dev, e := adb.Connect(s)
 	if e != nil {
-		return ""
+		log.Errorf("Conn err: %v", e)
+		return "", false
 	}
-
-	return dev.Serial
+	return dev.Serial, true
 }
 
 func runBluestacks(m *menuModel) bool {
 	_ = DtoCfg(m.opts)
-	e := cfg.RunBlue()
+	pid, e := cfg.StartProc(bluestacksexe, m.opts[bluestacks])
+
 	if e != nil {
 		fmt.Printf("\nerr:%v\nduring run:%v", e, "run bluestacks")
 		return false
 	}
+	m.bluestcksPid = pid
+	m.taskch <- notify(bluestacksexe, f("started, pid: %v", pid))
 	return true
 }
 
 func runConnect(m *menuModel) bool {
-	devs := Connect(m.opts[connection])
-	if devs != "" {
+	_, ok := Connect(m.opts[connection])
+	if ok {
 		return true
 	}
 	return false
@@ -143,4 +155,8 @@ func DtoCfg(m map[string]string) *cfg.Profile {
 		}
 	}
 	return res
+}
+
+func notify(ev, desc string) taskinfo {
+	return taskinfo{Task: ev, Message: desc, Duration: time.Now()}
 }

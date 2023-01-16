@@ -33,8 +33,9 @@ var (
 	log        *logrus.Logger
 	activeUser *Profile
 	sysvars    *SystemVars
-	red, green     func(...interface{}) string
+	red, green func(...interface{}) string
 )
+var f = fmt.Sprintf
 
 func init() {
 	red = color.New(color.FgHiRed).SprintFunc()
@@ -55,7 +56,6 @@ func init() {
 		log.Errorf("logrus err: %v", e)
 	}
 	log.SetLevel(loglvl)
-
 
 	if e != nil {
 		panic(e)
@@ -82,18 +82,13 @@ func Logger() *logrus.Logger {
 	}
 }
 
-func ActiveUser() *Profile{
+func ActiveUser() *Profile {
 	if activeUser != nil {
 		return activeUser
 	}
 	return defUser
 }
-func RunBlue() error {
-	args := activeUser.Bluestacks
-	cmd := exec.Command(bluestacks, args...)
-	log.Tracef("cmd bs : %v\n", cmd.String())
-	return cmd.Start()
-}
+
 func (rt ReactiveTask) React(trigger string) (image.Point, int) {
 	for _, v := range rt.Reactions {
 		if trigger == v.If {
@@ -211,7 +206,7 @@ func LookupPath(name string) (path string) {
 }
 
 /*
-	Helper func
+Helper func
 */
 func ToInt(s string) int {
 	num, e := strconv.Atoi(s)
@@ -223,7 +218,7 @@ func ToInt(s string) int {
 
 func loadSysconf() *SystemVars {
 	sys := &SystemVars{}
-	e :=	loadParties(sys)
+	e := loadParties(sys)
 	if e != nil {
 		log.Errorf("Load parties mailfunc: %v", e)
 	}
@@ -234,6 +229,7 @@ func loadSysconf() *SystemVars {
 	sys.Logfile = logfile
 	return sys
 }
+
 func loadUser() *Profile {
 	conf := &Profile{}
 	lastcfg := lookupLastConfig(sysvars.Userhome, sysvars.Db)
@@ -264,6 +260,7 @@ func defaultUser() *Profile {
 
 	return settings
 }
+
 func loadParties(sys *SystemVars) error {
 	for _, s := range thirdparty() {
 		if pt := LookupPath(s); pt != "" {
@@ -353,7 +350,6 @@ func absJoin(d, f string) string {
 	wd, _ := os.Getwd()
 	return filepath.Join(wd, fb)
 }
-
 
 //app := &cfg.Profile{
 //    DeviceSerial: "192.168.1.7:5555",
