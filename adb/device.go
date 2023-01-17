@@ -94,7 +94,6 @@ func Connect(hostport string) (*Device, error) {
 
 	if out, err := cmd.Call(); err == nil && checkOut(out) {
 		dev := &Device{Serial: hostport, DevState: Online}
-		err = resolution(dev)
 		Abi(dev)
 		log.Infof("--> %v <--\n", out)
 		return dev, nil
@@ -153,10 +152,8 @@ func resolution(d *Device) error {
 			switch k {
 			case 1:
 				(d.Resolution).Y, err = strconv.Atoi(v)
-				break
 			case 2:
 				(d.Resolution).X, err = strconv.Atoi(v)
-				break
 			}
 		}
 	}
@@ -172,8 +169,6 @@ func state(str string) DevState {
 
 func checkOut(str string) bool {
 	log.Debugf("adbc out: %v", str)
-	if strings.Contains(str, "Connected to") || strings.Contains(str, "Already connected") {
-		return true
-	}
-	return false
+	return strings.Contains(str, "connected to") || strings.Contains(str, "already connected to")
+
 }

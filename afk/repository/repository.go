@@ -2,10 +2,10 @@ package repository
 
 import (
 	"errors"
+	"os"
 	"time"
 
-	"github.com/fatih/color"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -16,6 +16,7 @@ const (
 )
 
 var udb, lcdb *gorm.DB
+var log *logrus.Logger
 
 type Client interface {
 	GetDaily() map[string]bool
@@ -52,6 +53,19 @@ type Daily struct {
 }
 
 func DbInit(fn func(string) string) {
+	f, _ := os.OpenFile(fn("db.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+
+	log = &logrus.Logger{
+		Out: f,
+		Formatter: &logrus.TextFormatter{
+			ForceColors:               true,
+			EnvironmentOverrideColors: true,
+			PadLevelText:              true,
+			TimestampFormat:           time.Stamp,
+		},
+		Level: logrus.TraceLevel,
+	}
+
 	udb = CreateDBConnection(fn(appdata))
 	migrateScheme(udb, &User{}, &Daily{}, &Progress{})
 	lcdb = CreateDBConnection(fn(locations))
@@ -70,7 +84,7 @@ func migrateScheme(g *gorm.DB, datatypes ...interface{}) {
 	// Migrate the schema
 	e := g.AutoMigrate(datatypes...)
 	if e != nil {
-		color.HiWhite("\nerr:%v\nduring run:%v", e, "udb connect")
+		log.Errorf("\nerr:%v\nduring run:%v", e, "udb connect")
 	}
 }
 
@@ -86,7 +100,7 @@ func GetUser(user string) *User {
 
 func (u *User) save() {
 	r := udb.Save(u)
-	color.HiWhite("\nudb: %v user updated", r.RowsAffected)
+	log.Errorf("\nudb: %v user updated", r.RowsAffected)
 	if r.Error != nil {
 		panic("DB ERROR : " + r.Error.Error())
 	}
@@ -111,7 +125,7 @@ func (u *User) DailyData() *Daily {
 func (u *Daily) Update(quest uint8) {
 	u.Quests = quest
 	r := udb.Save(u)
-	color.HiWhite("\nudb: %v user updated", r.RowsAffected)
+	log.Errorf("\nudb: %v user updated", r.RowsAffected)
 	if r.Error != nil {
 		panic("DB ERROR : " + r.Error.Error())
 	}
@@ -120,7 +134,7 @@ func (u *Daily) Update(quest uint8) {
 func (u *Progress) Update(level uint) {
 	u.Level = level
 	r := udb.Save(u)
-	color.HiWhite("\nudb: %v user updated", r.RowsAffected)
+	log.Errorf("\nudb: %v user updated", r.RowsAffected)
 	if r.Error != nil {
 		panic("DB ERROR : " + r.Error.Error())
 	}
@@ -163,6 +177,3 @@ func NowInMoscow() time.Time {
 func RawLocData(loc, txt string) {
 	lcdb.Create(&RawLocation{Name: loc, Text: txt})
 }
-
-
-

@@ -39,7 +39,7 @@ require (
 
 require (
 	github.com/charmbracelet/bubbles v0.14.0
-	golang.org/x/exp v0.0.0-20230105202349-8879d0199aa3
+	golang.org/x/exp v0.0.0-20230116083435-1de6713980de
 	golang.org/x/sys v0.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/sqlite v1.4.4

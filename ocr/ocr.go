@@ -20,12 +20,14 @@ type AltoResult struct {
 	X, Y      int
 }
 
+var send func(string, string)
+
 func (a AltoResult) String() string {
 	return fmt.Sprintf("%vx%v | |> %v <|", a.X, a.Y, a.Linechars)
 }
 
 func TextExtractAlto(img string) []AltoResult {
-	defer timeTrack(time.Now(), "AltOcr")
+	// defer  timeTrack(time.Now(), "AltOcr")
 	imgPrep := AltOptimize(img)
 	f, _ := tmpFile()
 	tessAlto(imgPrep, f.Name())
@@ -37,7 +39,6 @@ func (a Alto) parse() []AltoResult {
 	var res []AltoResult
 	res = make([]AltoResult, 0)
 	//    fmt.Printf("%v", pass("%v",))
-	fmt.Print("\r\n		<----------- /Alto/ ----------------------> \n\n")
 	tl := a.Layout.Page.PrintSpace.ComposedBlock.TextBlock.TextLine
 	for _, line := range tl {
 		for _, v := range line.String {
@@ -55,7 +56,7 @@ type Result struct {
 }
 
 func (or Result) String() string {
-	return or.raw // strings.Join(or.fields, " | ")
+	return or.raw
 }
 
 func (or Result) Fields() []string {
@@ -82,23 +83,8 @@ func (or Result) Intersect(k []string) (r []string) {
 	return r
 }
 
-func Intersect(or []AltoResult, k []string) (r []string) {
-midl:
-	for _, v := range or {
-		for _, kw := range k {
-			if strings.Contains(v.Linechars, kw) {
-				r = append(r, v.Linechars)
-				continue midl
-			}
-		}
-		// if slices.Contains(k, v.Linechars) || strings.Contains(strings.Join(k, ""), v.Linechars) {
-		// }
-	}
-	return r
-}
-
 func RegionText(img string, topleft, size image.Point) Result {
-	defer timeTrack(time.Now(), "\nRegionText")
+	// defer timeTrack(time.Now(), "\nRegionText")
 	cropedregion := Concat(img, topleft, size)
 	prep := OptimizeForOCR(cropedregion)
 	r, e := recognize(prep)
@@ -109,7 +95,7 @@ func RegionText(img string, topleft, size image.Point) Result {
 }
 
 func TextExtract(img string) Result {
-	defer timeTrack(time.Now(), "RegularOcr")
+	// defer timeTrack(time.Now(), "RegularOcr")
 	imgPrep := OptimizeForOCR(img)
 	t, _ := recognize(imgPrep)
 	return t
@@ -118,13 +104,12 @@ func TextExtract(img string) Result {
 // recognize text on a given img
 func recognize(img string) (Result, error) {
 	f, _ := tmpFile()
-	e := runOcr(img, f.Name())
+	runOcr(img, f.Name())
 	raw, e := readTmp(f.Name() + ".txt")
 	r := Result{
 		raw: formatStr(strings.TrimSpace(string(raw))),
 	}
 	log.Tracef("Raw OCR: %s", raw)
-	//	color.HiCyan("Raw OCR: %s", raw)
 	r.fields = cleanText(r.raw)
 	return r, e
 }
@@ -147,10 +132,10 @@ func formatStr(in string) string {
 
 func tmpFile() (*os.File, error) {
 	outfile, err := os.CreateTemp("", "ghost-tesseract-out-")
-	defer outfile.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer outfile.Close()
 	return outfile, nil
 }
 
@@ -162,8 +147,8 @@ func readTmp(fname string) ([]byte, error) {
 	return bytes, nil
 }
 
-func timeTrack(start time.Time, name string) {
+func timeTrack(start time.Time, name string) string {
 	c := color.New(color.BgHiBlue, color.FgCyan, color.Underline, color.Bold).SprintfFunc()
 	elapsed := time.Since(start)
-	fmt.Printf("%v\n\r", c("\r[%s] %s", name, elapsed.Round(time.Millisecond)))
+	return fmt.Sprintf("%v\n\r", c("\r[%s] %s", name, elapsed.Round(time.Millisecond)))
 }

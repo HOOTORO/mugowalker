@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"reflect"
-	"runtime"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -15,36 +13,37 @@ import (
 //// UPD. SelectList ///////
 ///////////////////////////
 
-func updateList(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
+func updateMenu(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
+
 	case tea.KeyMsg:
 		switch msg.String() {
+
 		case "ctrl+c", "q":
 			return m, tea.Quit
+
 		case "enter", " ":
 			if itm, ok := m.menulist.SelectedItem().(item); ok {
-				m.choice = itm.FilterValue()
-				switch chld := itm.children.(type) {
 
+				m.choice = itm.FilterValue()
+
+				switch chld := itm.children.(type) {
 				// go deeper in menu
 				case []list.Item, func(m menuModel) []list.Item:
-					m.mode = selectList
 					m.parents = append(m.parents, m.menulist)
 					m.menulist.SetItems(itm.NextLevel(m))
-					// input window updateInput
+
 				case func(m menuModel) []textinput.Model:
+					m.inpitChosen = true
 					m.manyInputs = chld(m)
-					m.mode = multiInput
-					// m.textInput, cmd = m.textInput.Update(msg)
-					return m, cmd
+
+					return updateInput(msg, m)
 
 					//// Run something go to updateExec
-				case func(m *menuModel) bool, func(m *menuModel) string:
-					m.mode = runExec
-					// chld(&m)
-					// m.updateStatus()
-					return m, cmd
+				case func(m *menuModel) tea.Cmd:
+					m.taskch <- notify(itm.title, "Launched!")
+					return m, chld(&m)
 				}
 			}
 
@@ -61,6 +60,8 @@ func updateList(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 		// 	h, v := docStyle.GetFrameSize()
 		// 	m.menulist.SetSize(msg.Width-h, msg.Height-v)
 	}
+	// 	// updateDto(m.opts)
+	// 	m.updateStatus()
 
 	m.menulist, cmd = m.menulist.Update(msg)
 	return m, cmd
@@ -75,10 +76,11 @@ func updateInput(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
+
 		case "ctrl+c":
 			return m, tea.Quit
 
-			// Change cursor mode
+		// Change cursor mode
 		case "ctrl+r":
 			m.cursorMode++
 			if m.cursorMode > textinput.CursorHide {
@@ -91,17 +93,14 @@ func updateInput(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 			return m, tea.Batch(cmds...)
 
 			// Set focus to next input
-		case "tab", "shift+tab", "enter", "up", "down":
+		case "tab", "shift+tab", "enter", "up", "down", "esc":
 			s := msg.String()
 
 			// Did the user press enter while the submit button was focused?
 			// If so, exit.
+			log.Warnf("Focus: %v  len(%v)", m.focusIndex, len(m.manyInputs))
 			if (s == "enter" && m.focusIndex == len(m.manyInputs)) || s == "esc" {
-				m.mode = selectList
-				updateDto(m.opts)
-				m.updateStatus()
-				// cmd = m.updatemanyInputs(msg)
-				return m, cmd
+				m.inpitChosen = false
 			}
 
 			// Cycle indexes
@@ -150,7 +149,7 @@ func (m menuModel) updatemanyInputs(msg tea.Msg) tea.Cmd {
 	r := strings.NewReplacer(sep, "")
 	for i := range m.manyInputs {
 		if m.manyInputs[i].Value() != "" {
-			m.opts[r.Replace(m.manyInputs[i].Prompt)] = m.manyInputs[i].Value()
+			m.usersettings[r.Replace(m.manyInputs[i].Prompt)] = m.manyInputs[i].Value()
 		}
 		m.manyInputs[i], cmds[i] = m.manyInputs[i].Update(msg)
 	}
@@ -158,39 +157,26 @@ func (m menuModel) updatemanyInputs(msg tea.Msg) tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
-func updateExec(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c":
-			m.quitting = true
-			return m, tea.Quit
-			// case "enter", "backspace", "esc":
-			// m.mode = selectList
-			// m.response = "some response"
-			// m.updateStatus()
-			// return m, cmd
-		}
-	}
-	if item, ok := m.menulist.SelectedItem().(item); ok {
-		switch fu := item.children.(type) {
-		case func(m *menuModel) tea.Cmd:
-			// m.activeTask = GetFunctionName(fu)\
-			m.activeTask = item.title
+// func updateExec(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
+// 	switch msg := msg.(type) {
+// 	case tea.KeyMsg:
+// 		switch msg.String() {
+// 		case "ctrl+c":
+// 			m.quitting = true
+// 			return m, tea.Quit
+// 		}
+// 	}
+// 	if item, ok := m.menulist.SelectedItem().(item); ok {
+// 		switch fu := item.children.(type) {
+// 		case func(m *menuModel) tea.Cmd:
 
-			res := fu(&m)
-			m.taskch <- notify(m.activeTask, f("result: %v", res))
-		}
-	}
-
-	m.mode = selectList
-	// updateDto(m.opts)
-	m.updateStatus()
-	var cmd tea.Cmd
-	m.menulist, cmd = m.menulist.Update(msg)
-	return m, cmd
-}
-
-func GetFunctionName(i interface{}) string {
-	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
-}
+// 			m.taskch <- notify(item.title, "Launched!")
+// 			return m, fu(&m)
+// 		}
+// 	}
+// 	// updateDto(m.opts)
+// 	m.updateStatus()
+// 	var cmd tea.Cmd
+// 	m.menulist, cmd = m.menulist.Update(msg)
+// 	return m, cmd
+// }

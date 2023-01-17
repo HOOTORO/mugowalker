@@ -56,6 +56,7 @@ func init() {
 		log.Errorf("logrus err: %v", e)
 	}
 	log.SetLevel(loglvl)
+	// log.SetReportCaller(true)
 
 	if e != nil {
 		panic(e)

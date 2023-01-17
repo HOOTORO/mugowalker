@@ -2,9 +2,15 @@ package ui
 
 import (
 	"fmt"
-	"io"
+	"os"
+	"worker/cfg"
 
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/spinner"
+
+	"github.com/sirupsen/logrus"
+
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/fatih/color"
 )
@@ -19,34 +25,60 @@ func init() {
 	mag = color.New(color.FgHiMagenta, color.BgHiWhite).SprintFunc()
 }
 
-const (
-	listHeight   = 20
-	defaultWidth = 200
-)
+var log *logrus.Logger
 
-type menuItem string
+func init() {
+	log = cfg.Logger()
+}
 
-func (i menuItem) FilterValue() string { return string(i) }
+func RunMainMenu(options map[string]string) error {
+	log.Debug("entered UI")
+	m := InitialMenuModel(options)
+	m.header = headerStyle.Render(header)
+	m.menulist.Title = "Choose..."
+	m.menulist.SetSize(40, 30)
+	m.menulist.SetShowHelp(true)
+	m.menulist.SetShowPagination(true)
+	m.menulist.SetShowTitle(true)
+	m.menulist.SetShowStatusBar(true)
+	m.menulist.Styles.Title = hotStyle
+	m.menulist.Styles.TitleBar = tbStyle
+	log.Debugf("Run p, w/ param %s", m)
+	p := tea.NewProgram(m, tea.WithAltScreen())
 
-type itemDelegate struct{}
-
-func (d itemDelegate) Height() int                               { return 1 }
-func (d itemDelegate) Spacing() int                              { return 0 }
-func (d itemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
-func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	i, ok := listItem.(menuItem)
-	if !ok {
-		return
+	if _, err := p.Run(); err != nil {
+		fmt.Println("Error running program:", err)
+		os.Exit(1)
+		return err
 	}
 
-	str := fmt.Sprintf("%d. %s", index+1, i)
+	return nil
+}
 
-	fn := itemStyle.Render
-	if index == m.Index() {
-		fn = func(s string) string {
-			return selectedItemStyle.Render("> " + s)
-		}
+func NotifyUI(task, desc string) {
+
+}
+
+func InitialMenuModel(userOptions map[string]string) menuModel {
+	m := menuModel{
+
+		header:       "Worker Setup",
+		menulist:     list.New(availMenuItems(), list.NewDefaultDelegate(), 19, 0),
+		parents:      nil,
+		choice:       "",
+		focusIndex:   0,
+		manyInputs:   make([]textinput.Model, 0),
+		cursorMode:   textinput.CursorBlink,
+		quitting:     false,
+		usersettings: userOptions,
+		taskch:       make(chan taskinfo),
+		taskmsgs:     make([]taskinfo, showLastTasks),
+		spinme:       spinner.New(),
+		showmore:     true,
 	}
+	m.updateStatus()
 
-	fmt.Fprint(w, fn(str))
+	m.spinme.Spinner = spinner.Moon
+	m.spinme.Style = spinnerStyle
+	return m
 }

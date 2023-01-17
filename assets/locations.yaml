@@ -30,7 +30,6 @@
     - Legends
     - Quests
 
-
 - name: campain
   hits: 4
   grid: 3:18
@@ -44,8 +43,6 @@
     - World’Map
     - Camp
     - Quests
-
-
 
 - name: forrest
   hits: 5
@@ -65,7 +62,6 @@
     - Expedition
     - Bounty
     - Board
-
 
 #######################################################################
 ################## FIGHT RELATED LOCATIONS ############################
@@ -89,7 +85,6 @@
     - advance
     - VS
 
-
 - name: result
   hits: 5
   delay: 1
@@ -105,7 +100,6 @@
     - Level
     - next
     - Fall
-
 
 - name: victory
   hits: 3
@@ -126,9 +120,6 @@
     - Rewards
     - Next
     - Stage
-
-
-
 
 - name: stat
   hits: 2
@@ -208,8 +199,6 @@
     - locid: back
     - locid: close
 
-
-
 - name: quests
   hits: 3
   keywords:
@@ -220,14 +209,28 @@
     - Weeklies
     - Campaign
     - Completed
+    - Begin
+    - Battle
+    - Kings's
+    - Tower
+    - QUESTS
+    - Refreshes
+    - Level
+    - Hero
+    - Time)'
+    - Enhance
+    - Your
+    - Gear
+    - Timey
+    - Summon
+    - Hero
+    - Tavern
 
 - name: friends
   hits: 2
   keywords:
     - Friends
     - Garrisoned
-
-
 
 - name: mail
   grid: 4:3
@@ -254,8 +257,6 @@
     - Congratulations
     - bundle
 
-
-
 #######################################################################
 ##################### CAMPAIN CHILD LOCATIONS #########################
 #######################################################################
@@ -272,14 +273,13 @@
     - Rewards
     - ormavion
 
-
 - name: fastrewards
   hits: 3
   keywords:
-      - Collect
-      - Close
-      - Rewards
-      - Fast
+    - Collect
+    - Close
+    - Rewards
+    - Fast
 
 - name: loot
   grid: 3:12
@@ -365,7 +365,6 @@
 #   keywords:
 #     - Battle
 
-
 # kingstower:
 - name: kt
   grid: 3:9
@@ -419,7 +418,6 @@
     - Cleared
     - Challendge
 
-
 - name: wt
   grid: 3:9
   hits: 5
@@ -434,7 +432,6 @@
     - Cleared
     - Challendge
 
-
 - name: tol
   grid: 3:9
   hits: 5
@@ -447,7 +444,6 @@
     - Info
     - Cleared
     - Challendge
-
 
 - name: bc
   hits: 5
@@ -490,8 +486,6 @@
     - Cleared
     - Challendge
 
-
-
 #######################################################################
 ####################### RANHORNY TAB CHILD LOCATIONS ##################
 #######################################################################
@@ -521,15 +515,12 @@
     - with
     - everyone
 
-
-
 # wrizz:
 - name: wrizz
   hits: 2
   keywords:
     - Wrizz
     - Challenge
-
 
 - name: skipf
   hits: 3
@@ -539,7 +530,6 @@
     - Sweep
     - most
     - recent
-
 
 # shop:
 - name: shop
@@ -563,9 +553,6 @@
     - Smart
     - Selections
     - Manage
-
-
-
 # <location>:
 #   - name:
 #     hits:

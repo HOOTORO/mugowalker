@@ -25,9 +25,9 @@ type Profile struct {
 }
 
 type SystemVars struct {
-	Logfile            string `yaml:"logfile"`
-	UserConfPath       string
-	parties            []*RunableExe
+	Logfile                 string `yaml:"logfile"`
+	UserConfPath            string
+	parties                 []*RunableExe
 	App, Userhome, Temp, Db string
 }
 
@@ -45,7 +45,7 @@ func (ac *Profile) String() string {
 			" Magick: %v\n"+
 			" Tesseract: %v\n"+
 			"%v\n"+
-		isStr(ac.DeviceSerial)(" -> Device: "),
+			isStr(ac.DeviceSerial)(" -> Device: "),
 		ac.User,
 		ac.Bluestacks,
 		ac.Imagick,
@@ -62,8 +62,8 @@ func isStr(str string) func(...interface{}) string {
 }
 
 type User struct {
-	Account     string `yaml:"account"`
-	Game        string `yaml:"game"`
+	Account     string   `yaml:"account"`
+	Game        string   `yaml:"game"`
 	TaskConfigs []string `yaml:"taskconfigs"`
 }
 
@@ -74,6 +74,15 @@ func (up *User) String() string {
 
 func New(accname, game string, taskcfgpath []string) *User {
 	return &User{Account: accname, Game: game, TaskConfigs: taskcfgpath}
+}
+
+type ReactiveAlto struct {
+	Name      string      `yaml:"name"`
+	Taptarget []Areaction `yaml:"reactions"`
+}
+type Areaction struct {
+	If string   `yaml:"if"`
+	Do []string `yaml:"do"`
 }
 
 type ReactiveTask struct {
@@ -89,13 +98,6 @@ type Reaction struct {
 	Before string `yaml:"before"`
 	Do     string `yaml:"do"`
 	After  string `yaml:"after"`
-}
-
-type OcrConfig struct {
-	Split      []string `yaml:"split"`
-	Imagick    []string `yaml:"imagick"`
-	Tesseract  []string `yaml:"tesseract"`
-	Exceptions []string `yaml:"dict_shrt_except"`
 }
 
 type Location struct {

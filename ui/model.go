@@ -2,7 +2,7 @@ package ui
 
 import (
 	"fmt"
-	"strings"
+	"io"
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
@@ -19,65 +19,43 @@ import (
 const showLastTasks = 10
 
 type menuModel struct {
-	bluestcksPid int
-	mode         Mode
-	header       string
-	status       string
-	devstatus    bool
-	activeTask   string
-	showmore     bool
+	bluestcksPid     int
+	connectionStatus int
 
-	menulist list.Model
-	parents  []list.Model
-	choice   string
+	statusInfo string
+	header     string
+	showmore   bool
+
+	menulist    list.Model
+	parents     []list.Model
+	choice      string
+	inpitChosen bool
 
 	focusIndex int
 	manyInputs []textinput.Model
 	cursorMode textinput.CursorMode
 
-	response string
-	spinme   spinner.Model
-	quitting bool
-	err      error
-	cursor   int
-	opts     map[string]string
-	taskch   chan taskinfo
-	taskmsgs []taskinfo
+	spinme       spinner.Model
+	quitting     bool
+	usersettings map[string]string
+	taskch       chan taskinfo
+	taskmsgs     []taskinfo
 }
 
 func (m menuModel) String() string {
-	log.Tracef("[ options ]\n[ %v ]\n[ from yaml ]", m.opts)
-	return fmt.Sprintf(green("\n[Mode : %s ] [DevStatus : %v] [Quitting : %v]\n[ ActvTask : %v] [Choice : %v]"), m.mode, m.devstatus, m.quitting, m.activeTask, m.choice)
+	log.Tracef("[ options ]\n[ %v ]\n[ from yaml ]", m.usersettings)
+	return fmt.Sprintf(green("\n[DevStatus : %v]	[Quitting : %v]\n[Choice : %v]	[BluePid : %v]"), m.connectionStatus, m.quitting, m.choice, m.bluestcksPid)
 }
-
-// taskinfo is send when a pretend process completes.
-type taskinfo struct {
-	Task     string
-	Message  string
-	Duration time.Time
-}
-
-// A command that waits for the activity on a channel.
-func activityListener(strch chan taskinfo) tea.Cmd {
-	return func() tea.Msg {
-		return taskinfo(<-strch)
-	}
-}
-
-type (
-	errMsg error
-)
 
 // //////////////////////////
 // /////// General //////////
 // init / update / view ///
 // ////////////////////////
 func (m menuModel) Init() tea.Cmd {
-	log.Warnf("Init model:  \n%s", m)
+	log.Warnf("\nInit model:  \n%s", m)
 	return tea.Batch(
 		textinput.Blink,
-		// spinner.Tick,
-		// listenForActivity(m.sub), // generate activity
+		checkVM,
 		activityListener(m.taskch), // wait for activity
 	)
 }
@@ -85,45 +63,53 @@ func (m menuModel) Init() tea.Cmd {
 // ////////////////////////
 func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// always exit keysl
-	log.Debugf(mag("UPDATE INC. -> %+v [%T]"), msg, msg)
+	var cmd tea.Cmd
+	log.Debugf(mag("\nUPDATE INC. -> %+v [%T]"), msg, msg)
 	switch k := msg.(type) {
 	case tea.KeyMsg:
+
 		if k.String() == "ctrl+c" {
 			m.quitting = true
 			return m, tea.Quit
 		}
+
 		if k.String() == "alt+s" {
 			m.showmore = !m.showmore
 		}
+
 		if k.String() == "ctrl+k" {
 			var cmd tea.Cmd
 			rt := taskinfo{Task: "eureka", Message: "Some sh! happened, ctrl-l pressed", Duration: time.Now()}
-			m.activeTask = rt.Task
 			m.taskch <- rt
 			return m, cmd
 		}
 
 	case taskinfo:
-		m.mode = selectList
+		k.Message = shorterer(k.Message)
 		m.taskmsgs = append(m.taskmsgs[1:], k)
+		// m.updateStatus()
+		// m.Update(msg)
 		return m, activityListener(m.taskch)
 
 	case spinner.TickMsg:
-		var cmd tea.Cmd
 		m.spinme, cmd = m.spinme.Update(msg)
+		return m, cmd
+
+	case vmStatusMsg:
+		m.bluestcksPid = int(k)
+		return m, cmd
+
+	case connectionMsg:
+		m.connectionStatus = int(k)
 		return m, cmd
 	}
 
-	log.Debugf(yellow("PREUPD -> %v\n%v"), m.mode, m)
-	switch m.mode {
-	case selectList:
-		return updateList(msg, m)
-	case multiInput:
+	log.Debugf(yellow("\nPREUPD -> %v\n%v"), m)
+
+	if m.inpitChosen {
 		return updateInput(msg, m)
-	case runExec:
-		return updateExec(msg, m)
 	}
-	return m, tea.Quit
+	return updateMenu(msg, m) //m, tea.Quit
 }
 
 ///////////////////////////////////
@@ -131,25 +117,22 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m menuModel) View() string {
 	var srt, res string
 
-	if m.showmore {
-		srt = m.statusPanel()
-	}
 	if m.quitting {
 		return quitStyle.Render("\n  See you later, Space Cowboy!\n\n")
 	}
-	log.Warnf(cyan("SEND TO VIEW -> %s"), m.mode)
-	switch m.mode {
-	case selectList:
-		res = listView(m)
-	case multiInput:
-		res = inputFormView(m)
-	case runExec:
-		res = execView(m)
-		// res = lipgloss.JoinVertical(lipgloss.Bottom, srt, res)
-	}
-	res = lipgloss.JoinHorizontal(lipgloss.Top, res, srt)
 
-	return indent.String("\n\n"+res+"\n\n", 10)
+	if m.inpitChosen {
+		res = inputFormView(m)
+	} else {
+		res = listView(m)
+	}
+
+	if m.showmore {
+		srt = m.statusPanel()
+		res = lipgloss.JoinHorizontal(lipgloss.Top, res, srt)
+	}
+
+	return indent.String("\n\n"+res+"\n\n", 2)
 }
 
 //////////////////////////////////
@@ -174,16 +157,17 @@ func initTextModel(placeholder string, focus bool, prom string) textinput.Model 
 	return ti
 }
 
-func (m menuModel) statusPanel() string {
+func (m *menuModel) statusPanel() string {
+	log.Debugf("Upd status spanel....%v:%v", m.connectionStatus, m.bluestcksPid)
 	var s, rt string
 	m.updateStatus()
-	s = m.status
+	s = m.statusInfo
 	rt = fmt.Sprintf("\n"+
-		m.spinme.View()+" Runing task %s...\n\n", m.activeTask)
+		m.spinme.View()+" Runing task %s...\n\n", m.choice)
 
 	for _, res := range m.taskmsgs {
 		if res.Task == "" {
-			rt += "........................................\n"
+			rt += "....................................................................\n"
 		} else {
 			rt += fmt.Sprintf("[%s]|>%s<|\n", res.Task, res.Message)
 		}
@@ -197,58 +181,103 @@ func (m menuModel) statusPanel() string {
 }
 
 func (m *menuModel) updateStatus() {
-	var b strings.Builder
-	m.status = ""
-	t := fmt.Sprintf("Device --> [%v] \nProfile --> \n\t[Game: %v]\n\t[User: %v]\nConnection status: ",
-		m.opts[connection], m.opts[game], m.opts[account])
-	b.WriteString(t)
-	if m.devstatus {
-		statusStyle.BorderForeground(brightGreen)
-		b.WriteString(green("Online"))
-	} else {
-		statusStyle.BorderForeground(bloodRed)
-		b.WriteString(red("Offline"))
+	var con, emu string
+
+	m.statusInfo = ""
+	statusStyle.BorderForeground(bloodRed)
+	con, emu = red("Offline"), red("Shutdown")
+
+	if m.connectionStatus != 0 {
+		con = green("Online")
 	}
-	b.WriteString("\n Bluestacks: ")
-	if test(m) {
-		statusStyle.BorderForeground(brightGreen)
-		b.WriteString(green("Running"))
-	} else {
-		statusStyle.BorderForeground(bloodRed)
-		b.WriteString(red("Shutdown"))
+	if m.bluestcksPid != 0 {
+
+		emu = green("Running")
 	}
-	m.status = statusStyle.Render(b.String())
+	if m.connectionStatus != 0 && m.bluestcksPid != 0 {
+		statusStyle.BorderForeground(brightGreen)
+	}
+
+	t := f("Device --> [%v] \n"+
+		"Profile --> \n\t[Game: %v]\n\t[User: %v]"+
+		"\nConnection status: %v \n Bluestacks: %v",
+		m.usersettings[connection], m.usersettings[game], m.usersettings[account], con, emu)
+	m.statusInfo = statusStyle.Render(t)
 }
 
 func (m *menuModel) isSet(property string) bool {
-	if m.opts[property] != "" {
-		return true
+	return m.usersettings[property] != ""
+
+}
+func shorterer(str string) string {
+	if len(str) > 50 {
+		return str[:47] + "..."
 	}
-	return false
+	return str
 }
 
-func InitialMenuModel(userOptions map[string]string) menuModel {
-	m := menuModel{
-		mode:       selectList,
-		showmore:   true,
-		header:     "Worker Setup",
-		menulist:   list.New(availMenuItems(), list.NewDefaultDelegate(), 19, 0),
-		parents:    nil,
-		choice:     "",
-		focusIndex: 0,
-		manyInputs: make([]textinput.Model, 0),
-		cursorMode: textinput.CursorBlink,
-		quitting:   false,
-		err:        nil,
-		cursor:     0,
-		opts:       userOptions,
-		taskch:     make(chan taskinfo),
-		taskmsgs:   make([]taskinfo, showLastTasks),
-		spinme:     spinner.New(),
-	}
-	m.updateStatus()
+type item struct {
+	title, desc string
+	children    interface{}
+}
 
-	m.spinme.Spinner = spinner.Moon
-	m.spinme.Style = spinnerStyle
-	return m
+func (i item) Title() string       { return i.title }
+func (i item) Description() string { return i.String() }
+func (i item) FilterValue() string { return i.title }
+
+func (i item) String() string {
+	elems := i.desc
+	switch children := i.children.(type) {
+	case []list.Item:
+		for _, v := range children {
+			elems += "<" + v.FilterValue() + sep
+		}
+		if elems == "" {
+			return i.desc
+		}
+		return elems
+	case textinput.Model:
+		return children.Placeholder
+
+	default:
+		return elems
+	}
+}
+
+func (i item) NextLevel(m menuModel) []list.Item {
+	switch c := i.children.(type) {
+	case []list.Item:
+		return c
+	case func(m menuModel) []list.Item:
+		return c(m)
+
+	}
+	return nil
+}
+
+type menuItem string
+
+func (i menuItem) FilterValue() string { return string(i) }
+
+type itemDelegate struct{}
+
+func (d itemDelegate) Height() int                               { return 1 }
+func (d itemDelegate) Spacing() int                              { return 0 }
+func (d itemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
+func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
+	i, ok := listItem.(menuItem)
+	if !ok {
+		return
+	}
+
+	str := fmt.Sprintf("%d. %s", index+1, i)
+
+	fn := itemStyle.Render
+	if index == m.Index() {
+		fn = func(s string) string {
+			return selectedItemStyle.Render("> " + s)
+		}
+	}
+
+	fmt.Fprint(w, fn(str))
 }

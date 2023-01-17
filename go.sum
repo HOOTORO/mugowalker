@@ -76,8 +76,8 @@ github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5Cc
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/vitali-fedulov/images/v2 v2.1.5 h1:zhAss4mN/3JzpPYxsvw9RL0AQPZqQ3keFw/0pVdgtME=
 github.com/vitali-fedulov/images/v2 v2.1.5/go.mod h1:Uf6xw8bNfbWjRE/qS0kDNvSTchTwohLBZR0AKhmfNWM=
-golang.org/x/exp v0.0.0-20230105202349-8879d0199aa3 h1:fJwx88sMf5RXwDwziL0/Mn9Wqs+efMSo/RYcL+37W9c=
-golang.org/x/exp v0.0.0-20230105202349-8879d0199aa3/go.mod h1:CxIveKay+FTh1D0yPZemJVgC/95VzuuOLq5Qi4xnoYc=
+golang.org/x/exp v0.0.0-20230116083435-1de6713980de h1:DBWn//IJw30uYCgERoxCg84hWtA97F4wMiKOIh00Uf0=
+golang.org/x/exp v0.0.0-20230116083435-1de6713980de/go.mod h1:CxIveKay+FTh1D0yPZemJVgC/95VzuuOLq5Qi4xnoYc=
 golang.org/x/sys v0.0.0-20200116001909-b77594299b42/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=

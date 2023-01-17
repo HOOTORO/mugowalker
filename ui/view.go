@@ -13,7 +13,9 @@ import (
 // func (m menuModel) View() string {
 // //////////////////////////
 func listView(m menuModel) string {
+	m.updateStatus()
 	s := strings.Join([]string{m.header, m.menulist.View()}, "\n")
+
 	return docStyle.Render(s)
 }
 
@@ -44,7 +46,7 @@ func inputFormView(m menuModel) string {
 }
 
 func execView(m menuModel) string {
-	m.showmore = true
+
 	s := fmt.Sprintf("%v\n\n%v exec: %v", m.header, m.spinme.View(), m.choice)
 	return docStyle.Render(s)
 }

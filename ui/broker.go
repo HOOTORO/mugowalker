@@ -21,35 +21,41 @@ func getDevices() []list.Item {
 	}
 	for _, v := range d {
 		descu := fmt.Sprintf("State: %s, T_Id: %v, WMsize: %v", v.DevState, v.TransportId, v.Resolution)
-		devs = append(devs, item{title: v.Serial, desc: descu, children: func(m *menuModel) { m.devstatus = runConnect(m) }})
+		devs = append(devs, item{title: v.Serial, desc: descu, children: func(m *menuModel) {}})
 	}
 	return devs
 }
 
 func test(m *menuModel) bool {
-	return cfg.ProcessInfo(m.bluestcksPid)
+	if m.bluestcksPid != 0 {
+
+		return cfg.ProcessInfo(m.bluestcksPid)
+	}
+	return false
 }
 
 func runTask(m *menuModel) bool {
-	cf := DtoCfg(m.opts)
+	cf := DtoCfg(m.usersettings)
 	m.menulist.Styles.HelpStyle = noStyle
 	m.spinme.Style = noStyle
 
 	dev, e := adb.Connect(cf.DeviceSerial)
 	if e != nil {
-		log.Errorf("deverr:%v", e)
+		log.Errorf("\ndeverr:%v", e)
 		return false
 	}
 	gm := afk.New(cf.User)
 	b := bot.New(dev, gm)
-	log.Warnf(yellow("CHOSEN RUNTASK >>> %v <<<"), m.choice)
+	log.Warnf(yellow("\nCHOSEN RUNTASK >>> %v <<<"), m.choice)
 	switch m.choice {
 	case "Run all":
 		b.UpAll()
 	case "Do daily?":
 		go func() {
 			// m.strch <- "Hi< from DAILY routine"
-			b.Daily()
+			b.AltoRun("quests", func(s, d string) {
+				m.taskch <- notify(s, d)
+			})
 		}()
 	case "Push Campain?":
 		go func() {
@@ -87,34 +93,24 @@ func runTask(m *menuModel) bool {
 	return true
 }
 
-func Connect(s string) (string, bool) {
-	dev, e := adb.Connect(s)
-	if e != nil {
-		log.Errorf("Conn err: %v", e)
-		return "", false
-	}
-	return dev.Serial, true
-}
-
 func runBluestacks(m *menuModel) bool {
-	_ = DtoCfg(m.opts)
-	pid, e := cfg.StartProc(bluestacksexe, m.opts[bluestacks])
+	_ = DtoCfg(m.usersettings)
+	// pid, e := cfg.StartProc(bluestacksexe, strings.Fields(m.opts[bluestacks])...)
+	cmd := cfg.RunProc(bluestacksexe, strings.Fields(m.usersettings[bluestacks])...)
 
-	if e != nil {
-		fmt.Printf("\nerr:%v\nduring run:%v", e, "run bluestacks")
-		return false
-	}
-	m.bluestcksPid = pid
-	m.taskch <- notify(bluestacksexe, f("started, pid: %v", pid))
+	m.bluestcksPid = cmd.Process.Pid
+	m.updateStatus()
+	log.Warnf("\nwait in another gourutine %v", cmd.Process.Pid)
+
+	go func() {
+		e := cmd.Wait()
+		if e != nil {
+			fmt.Printf("\nerr:%v\nduring run:%v", e, "run bluestacks")
+		}
+		m.taskch <- notify(bluestacksexe, f("finished, pid: %v", m.bluestcksPid))
+		m.bluestcksPid = 0
+	}()
 	return true
-}
-
-func runConnect(m *menuModel) bool {
-	_, ok := Connect(m.opts[connection])
-	if ok {
-		return true
-	}
-	return false
 }
 
 func updateDto(v map[string]string) {

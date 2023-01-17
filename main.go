@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"os"
+	"os/exec"
 	"os/signal"
 	"time"
 
@@ -25,7 +26,7 @@ import (
 )
 
 var (
-	log *logrus.Logger
+	log  *logrus.Logger
 	user *cfg.Profile
 )
 
@@ -93,11 +94,10 @@ func run() (err error) {
 		for _, event := range events {
 			fmt.Println("  ", event)
 		}
-	}
 
+	}
 	return nil
 }
-
 func testWinEvents() {
 	err := run()
 	if err != nil {
@@ -119,46 +119,9 @@ func main() {
 	// log.Error("knock knock")
 	// ocrtest()
 	log.Warnf(color.RedString("RUN BEGIN : %v"), time.Now())
+
 	testselect()
-	// dev, _ := adb.Connect(user.DeviceSerial)
-	// gm := afk.New(user.User)
-	// b := bot.New(dev, gm)
-	// t := b.Task(afk.DOPUSHCAMP)
-	// b.React(t)
-	// testWinEvents()
 }
-
-// func RunBot(choice string, confg *cfg.Profile) {
-// 	rTaskConf := []string{"assets/reactions.yaml", "assets/daily.yaml"}
-
-// 	gm := afk.New(confg.User)
-// 	bt := bot.New(, gm)
-
-// 	switch choice {
-// 	case "0":
-// 		bt.UpAll()
-// 	case "1":
-// 		bt.Daily()
-// 	case "2":
-// 		push := bt.Task(afk.DOPUSHCAMP)
-// 		bt.React(push)
-// 	case "3":
-// 		kt := bt.Task(afk.Kings)
-// 		bt.React(kt)
-// 	case "4":
-// 		kt := bt.Task(afk.Light)
-// 		bt.React(kt)
-// 	case "5":
-// 		kt := bt.Task(afk.Mauler)
-// 		bt.React(kt)
-// 	case "6":
-// 		kt := bt.Task(afk.Wilder)
-// 		bt.React(kt)
-// 	case "7":
-// 		kt := bt.Task(afk.Graveborn)
-// 		bt.React(kt)
-// 	}
-// }
 
 func testselect() {
 	conf := ui.CfgDto(user)
@@ -173,40 +136,6 @@ func testselect() {
 
 func ocrtest() {
 	b := afk.New(&cfg.User{Account: "test", Game: "afk", TaskConfigs: []string{"cfg/reactions.yaml"}})
-
-	user.Imagick = []string{
-		//		to try convert test.tif -fill black -fuzz 30% +opaque "#FFFFFF" result.tif
-		//		convert test.tif -brightness-contrast -40x10 -units pixelsperinch -density 300 -negate -noise 10 -threshold 70% result.tif
-		//		convert test.tif -fill black -fuzz 30% +opaque "#FFFFFF" result.tif
-		// convert test.tif -negate -threshold 100 -negate result.tif
-		// textcleaner -g -e normalize -f 30 -o 12 -s 2 http://i.stack.imgur.com/ficx7.jpg out.png
-		"-colorspace", "Gray", "-alpha", "off",
-		"-threshold",
-		"75%",
-		"-edge",
-		"2",
-		"-negate",
-		//            "-canny",
-		//            "0x1+10%+30%",
-		//            "-unsharp",
-		//            "1x1",
-		//            "-blur",
-		//            "0x1",
-
-		"-black-threshold",
-		//			"-white-threshold",
-		//			"60%",
-		"90%",
-		//			"-bordercolor", "black", "-border", "3x3",
-		//            "-negate",
-	}
-
-	user.Tesseract = []string{
-		//            "--tessdata-dir",
-		//			"C:\\Program Files\\Tesseract-OCR\\tessdata\\frmgit\\tessdata_fast",
-		"--psm", "3",
-		"hoot", "quiet",
-	}
 
 	testdata := func(lo uint, im string) *struct {
 		loc afk.ArenaLocation
@@ -241,10 +170,6 @@ func ocrtest() {
 		//        testdata( afk.STAT ,"test/stt1.png"),
 		//        testdata( afk.STAT ,"test/stt2.png"),
 		//        testdata( afk.WIN , "test/cpn_win.png"),
-		//        testdata( "", ""),
-		//        testdata( "", ""),
-		//        testdata( "", ""),
-		//        testdata( "", ""),
 	)
 
 	overall := 0
@@ -281,6 +206,7 @@ func testloc(img string, loc *cfg.Location) (r1 bool) {
 	} else {
 		fmt.Print(fail(restr, r1, len(ass), loc.Threshold))
 	}
+
 	pass("xu")
 	al := ocr.TextExtractAlto(img)
 	//    fmt.Printf("%v", pass("%v",))
@@ -327,4 +253,31 @@ func highlight(k, s []string, fn func(s string, a ...interface{}) string) []stri
 		}
 	}
 	return k
+}
+
+// startkill example
+func runcnd() {
+
+	// hoho, e := cfg.StartProc("HD-Player", cfg.ActiveUser().Bluestacks...)
+	cmd := exec.Command("HD-Player", cfg.ActiveUser().Bluestacks...)
+	log.Debugf("run cmd: %v\n", cmd.String())
+	cmd.Stdout = os.Stdout
+	e1 := cmd.Start()
+
+	e2 := cmd.Wait()
+	log.Errorf("wearefinish %v", e1, e2)
+	// hoho := 11348
+	// if e != nil {
+	// 	log.Warn("RAUCREATEDN", e, hoho)
+	// }
+	// log.Warn("RAUCREATEDN", e, hoho)
+	// go func() {
+	// 	time.Sleep(5 * time.Second)
+	// 	p, _ := os.FindProcess(hoho)
+	// 	e := p.Signal(syscall.SIGKILL)
+	// 	log.Warn("kill ee", e)
+
+	// 	log.Warnf("PROCESS --> %+v", p)
+	// }()
+	// e = p.Kill()
 }

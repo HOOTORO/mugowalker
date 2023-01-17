@@ -10,7 +10,6 @@ import (
 	"worker/cfg"
 	"worker/ocr"
 
-	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 )
@@ -29,6 +28,8 @@ type Daywalker struct {
 }
 
 var log *logrus.Logger
+var f = fmt.Sprintf
+var Fnotify func(string, string)
 
 func init() {
 	log = cfg.Logger()
@@ -43,6 +44,27 @@ func (dw *Daywalker) CurrentLocation() afk.ArenaLocation {
 		return afk.ArenaLoc(dw.lastLoc.Key)
 	}
 	return 0
+}
+
+func (dw *Daywalker) AltoRun(str string, fn func(string, string)) {
+	Fnotify = fn
+	taks := dw.Reactivalto(str)
+	red("TAPTARGET %s", taks)
+	altos := dw.ScanScreen()
+	where := GuessLocByKeywords(altos, dw.Locations)
+
+	for _, r := range taks.Taptarget {
+		if strings.Contains(where, r.If) {
+			for _, do := range r.Do {
+				x, y := TextPosition(do, altos)
+				if x != 0 && y != 0 {
+					dw.Tap(f("%v", x), f("%v", y))
+				}
+			}
+
+		}
+	}
+
 }
 
 func (dw *Daywalker) UpAll() {
@@ -85,12 +107,12 @@ func (dw *Daywalker) React(r *cfg.ReactiveTask) error {
 }
 
 func (dw *Daywalker) Daily() (bool, error) {
-	color.HiRed("\n--> DAILY <-- \nUndone:   %08b", dw.ActiveDailies())
+	Fnotify("|>", red("\n--> DAILY <-- \nUndone:   %08b", dw.ActiveDailies()))
 	ignoredDailies := []afk.DailyQuest{afk.QCamp, afk.QKT}
 	for _, daily := range dw.ActiveDailies() {
-		color.HiRed("--> RUN # [%s]", daily)
+		Fnotify("|>", red("--> RUN # [%s]", daily))
 		if slices.Contains(ignoredDailies, daily) {
-			color.HiCyan("--> IGNORING # [%s]", daily)
+			Fnotify("|>", cyan("--> IGNORING # [%s]", daily))
 			dw.MarkDone(daily)
 			continue
 		}

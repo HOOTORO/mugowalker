@@ -7,13 +7,7 @@ import (
 	"worker/cfg"
 	"worker/ocr"
 
-	"github.com/fatih/color"
-)
-
-var (
-	locations = "assets/locations.yaml"
-	reactions = "assets/reactions.yaml"
-	daily     = "assets/daily.yaml"
+	"github.com/sirupsen/logrus"
 )
 
 func Set(p, flag DailyQuest) DailyQuest {
@@ -32,6 +26,12 @@ func HasOneOf(p, flag DailyQuest) bool {
 	return p&flag != 0
 }
 
+var log *logrus.Logger
+
+func init() {
+	log = cfg.Logger()
+}
+
 type Game struct {
 	Name          string
 	Active        bool
@@ -39,6 +39,7 @@ type Game struct {
 	User          *repository.User
 	profile       *cfg.User
 	tasks, dailys []cfg.ReactiveTask
+	dailysTwo     []cfg.ReactiveAlto
 }
 
 func (g *Game) String() string {
@@ -46,14 +47,18 @@ func (g *Game) String() string {
 }
 
 func New(up *cfg.User) *Game {
-	color.HiMagenta("\nLaunch %v!", up)
-	locs := make([]cfg.Location, 1, 1)
-	tasks := make([]cfg.ReactiveTask, 1, 1)
-	dailys := make([]cfg.ReactiveTask, 1, 1)
+	log.Infof("\nLaunch %v!", up)
+	locs := make([]cfg.Location, 1)
+	tasks := make([]cfg.ReactiveTask, 1)
+	dailys := make([]cfg.ReactiveTask, 1)
+	dailysTwo := make([]cfg.ReactiveAlto, 1)
 
-	cfg.Parse(locations, &locs)
-	cfg.Parse(reactions, &tasks)
-	cfg.Parse(daily, &dailys)
+	cfg.Parse(locationsCfg, &locs)
+	cfg.Parse(reactionsCfg, &tasks)
+	cfg.Parse(dailyCfg, &dailys)
+	cfg.Parse(dailyCfgTwo, &dailysTwo)
+
+	log.Warnf("NEW DAILY CONF %+v", dailysTwo)
 
 	user := repository.GetUser(up.Account)
 
@@ -65,6 +70,7 @@ func New(up *cfg.User) *Game {
 		profile:   up,
 		tasks:     tasks,
 		dailys:    dailys,
+		dailysTwo: dailysTwo,
 	}
 }
 
@@ -139,7 +145,7 @@ func (g *Game) MarkDone(quesst DailyQuest) {
 			DailyData().
 			Update(
 				Set(userQuests, quesst).Id())
-		color.HiRed("--> DAILY <-- \nCurrent: [%08b] \nOverall: [%08b]", quesst, g.ActiveDailies())
+		// Fnotify("|>",red("--> DAILY <-- \nCurrent: [%08b] \nOverall: [%08b]", quesst, g.ActiveDailies()))
 	}
 }
 
