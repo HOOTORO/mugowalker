@@ -34,15 +34,16 @@ func init() {
 func RunMainMenu(options map[string]string) error {
 	log.Debug("entered UI")
 	m := InitialMenuModel(options)
-	m.header = headerStyle.Render(header)
-	m.menulist.Title = "Choose..."
+	// m.header = headerStyle.Render(header)
+	m.menulist.Title = header
 	m.menulist.SetSize(40, 30)
 	m.menulist.SetShowHelp(true)
 	m.menulist.SetShowPagination(true)
 	m.menulist.SetShowTitle(true)
-	m.menulist.SetShowStatusBar(true)
-	m.menulist.Styles.Title = hotStyle
+	m.menulist.SetShowStatusBar(false)
+	m.menulist.Styles.Title = tStyle
 	m.menulist.Styles.TitleBar = tbStyle
+
 	log.Debugf("Run p, w/ param %s", m)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 
@@ -61,8 +62,6 @@ func NotifyUI(task, desc string) {
 
 func InitialMenuModel(userOptions map[string]string) menuModel {
 	m := menuModel{
-
-		header:       "Worker Setup",
 		menulist:     list.New(availMenuItems(), list.NewDefaultDelegate(), 19, 0),
 		parents:      nil,
 		choice:       "",
@@ -76,7 +75,6 @@ func InitialMenuModel(userOptions map[string]string) menuModel {
 		spinme:       spinner.New(),
 		showmore:     true,
 	}
-	m.updateStatus()
 
 	m.spinme.Spinner = spinner.Moon
 	m.spinme.Style = spinnerStyle

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"time"
-    "worker/emulator"
+	"worker/emulator"
 )
 
 type AdbArgs interface {
@@ -35,10 +35,10 @@ const (
 func (d *Device) Tap(x, y string) error {
 	e := d.Command(input, tap, x, y).Run()
 	if e != nil {
-		fmt.Printf("\nerr:%v\nduring run:%v", e, "tap")
-        keepAliveVM()
-        time.Sleep(10*time.Second)
-        d.Tap(x, y)
+		log.Errorf("\nerr:%v\nduring run:%v", e, "tap")
+		// keepAliveVM()
+		time.Sleep(10 * time.Second)
+		d.Tap(x, y)
 	}
 	time.Sleep(1 * time.Second)
 	return e
@@ -53,9 +53,9 @@ func (d *Device) Swipe(x, y, x1, y1, td int) error {
 	duration := strconv.Itoa(td)
 	e := d.Command(swipe, xPos, yPos, x1Pos, y1Pos, duration).Run()
 	if e != nil {
-		fmt.Printf("\nerr:%vduring run:%v", e, "swipe")
+		log.Errorf("\nerr:%vduring run:%v", e, "swipe")
 	}
-    return e
+	return e
 }
 
 // "screencap -p /sdcard/ff.png"
@@ -64,9 +64,9 @@ func (d *Device) Screencap(f string) {
 	e := d.Command(screencap, remotedir+f).Run()
 	if e != nil {
 		fmt.Printf("\nrun: %v err: %v", "scr", e.Error())
-        keepAliveVM()
-        time.Sleep(10*time.Second)
-        d.Screencap(f)
+		// keepAliveVM()
+		time.Sleep(10 * time.Second)
+		d.Screencap(f)
 	}
 }
 
@@ -85,8 +85,8 @@ func (d *Device) Home() {
 	}
 }
 
-func keepAliveVM()  {
-    if !emulator.IsOnline() {
-        emulator.Start()
-    }
+func keepAliveVM() {
+	if !emulator.IsOnline() {
+		emulator.Start()
+	}
 }

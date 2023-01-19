@@ -1,51 +1,85 @@
 package ui
 
-import (
-	"fmt"
-	"github.com/charmbracelet/lipgloss"
+import "github.com/charmbracelet/lipgloss"
+
+const (
+	listHeight   = 20
+	defaultWidth = 200
+)
+const (
+	header = "<|!|> AFK Worker v0.1 <|!|>"
+)
+const (
+	hotPink     = lipgloss.Color("#FF06B7")
+	black       = lipgloss.Color("0")
+	white       = lipgloss.Color("#FFFFFF")
+	darkGray    = lipgloss.Color("#767676")
+	purple      = lipgloss.Color("99")
+	brightGreen = lipgloss.Color("#00FF00")
+	bloodRed    = lipgloss.Color("#FF0000")
+	someG       = lipgloss.Color("#00FFa0")
+	someR       = lipgloss.Color("#FFa000")
+	sep         = " >>> "
 )
 
 var (
-	docStyle = lipgloss.NewStyle().
-			Align(lipgloss.Center).
-			Margin(0, 0, 0, 6)
+	//////////////
+	/// LEFT /////
+	// Panel ////
+	////////////
+	// headerStyle = blackStyle.Copy().
+	// 		Border(lipgloss.ThickBorder()).
+	// 		BorderBackground(purple).Background(purple).
+	// 		Align(lipgloss.Center).
+	// 		Bold(true)
 
-	// titleBar
-	hotStyle = lipgloss.NewStyle().Foreground(hotPink)
+	// Title
+	tStyle = lipgloss.NewStyle().
+		Bold(true).
+		// Background(purple).
+		Foreground(white).
+		ColorWhitespace(true).
+		// PaddingLeft(2).
+		Align(lipgloss.Right)
 
+	// list Title Bar
 	tbStyle = lipgloss.NewStyle().
-		Border(lipgloss.ThickBorder()).
+		ColorWhitespace(true).
+		MarginBottom(1).
+		Border(lipgloss.RoundedBorder()).
 		BorderForeground(hotPink)
+		// BorderBackground(purple)
 
-	headerStyle = lipgloss.NewStyle().
-			Width(40).
-			Border(lipgloss.ThickBorder()).
-			BorderBackground(purple).
-			Align(lipgloss.Center).
-			Bold(true) //.MarginBottom(0)
+	menulistStyle = lipgloss.NewStyle().
+			ColorWhitespace(true).
+			Align(lipgloss.Left).
+			Margin(0, 0, 0, 2).
+			Width(39)
 
-	spinnerStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("69"))
-
-	execRespStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(hotPink).
-			Foreground(lipgloss.Color("#77DE77")).
-			Align(lipgloss.Bottom).
-			MarginLeft(30)
-
+	///////////////
+	/// RIGHT ////
+	// Panel ////
+	////////////
 	statusStyle = lipgloss.NewStyle().
 			MarginLeft(1).
 			Border(lipgloss.RoundedBorder()).
 			Bold(true).
-			Width(50).
-			Align(lipgloss.Left)
+			Width(35).
+			PaddingLeft(3).
+			Align(lipgloss.Left).
+			BorderForeground(bloodRed)
 
-	runnunTaskStyle = statusStyle.Copy().MarginTop(2).UnsetBorderStyle().Width(70)
+	spinnerStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("69"))
+
+	runnunTaskStyle = statusStyle.Copy().
+			MarginTop(2).
+			UnsetPaddingLeft().
+			UnsetWidth().
+			UnsetBorderStyle()
 
 	//	happyClr = colorful.FastHappyColor()
-	helpStyle = docStyle.Copy().
-			MarginBottom(3).
+	helpStyle = lipgloss.NewStyle().
 			MarginLeft(1).
 			Align(lipgloss.Center)
 
@@ -53,27 +87,46 @@ var (
 			Bold(true).
 			Foreground(lipgloss.Color("#FF0000")).
 			MarginBackground(lipgloss.Color("#00FF00")).
-			Margin(60)
+			Margin(10)
+	// hz
+	execRespStyle = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(hotPink).
+			Foreground(lipgloss.Color("#77DE77")).
+			Align(lipgloss.Bottom).
+			MarginLeft(30)
 )
 
+// ////////////////
+// / settings ////
+// // input /////
+// /////////////
 var (
-	redProps   = lipgloss.NewStyle().Foreground(bloodRed).Render
-	greenProps = lipgloss.NewStyle().Foreground(brightGreen).Render
-
 	// Output Style selectlist
 	// MultiText Input
-	topInputStyle       = lipgloss.NewStyle().Margin(10, 0, 10, 10).Width(60)
-	focusedStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
-	blurredStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	cursorStyle         = focusedStyle.Copy()
-	noStyle             = lipgloss.NewStyle()
-	cursorModeHelpStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
+	topInputStyle = lipgloss.NewStyle().
+			Margin(10, 0, 10, 10).
+			Width(60)
+	focusedStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("205"))
+	blurredStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("240"))
 
-	focusedButton = focusedStyle.Copy().Render("[ Submit ]")
-	blurredButton = fmt.Sprintf("[ %s ]", blurredStyle.Render("Submit"))
+	cursorStyle = focusedStyle.Copy()
+
+	noStyle = lipgloss.NewStyle()
+
+	cursorModeHelpStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("244"))
+
+	focusedButton = focusedStyle.Copy().
+			Render("[ Submit ]")
+
+	blurredButton = f("[ %s ]", blurredStyle.Render("Submit"))
 )
 
 var (
 	itemStyle         = lipgloss.NewStyle().PaddingLeft(1)
-	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(1).Foreground(lipgloss.Color("170"))
+	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).
+				Foreground(lipgloss.Color("170"))
 )

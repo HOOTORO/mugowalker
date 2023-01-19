@@ -1,27 +1,6 @@
 package ocr
 
-import (
-	"os/exec"
-
-	"worker/cfg"
-
-	"github.com/sirupsen/logrus"
-)
-
-var (
-	tesser   string
-	user *cfg.Profile
-
-	altoargs = []string{"--psm", "3", "-c", "tessedit_create_alto=1", "quiet"}
-	log *logrus.Logger
-)
-
-func init() {
-	// Fallback to searching on PATH.
-	tesser = cfg.LookupPath("tesseract")
-	user = cfg.ActiveUser()
-	log = cfg.Logger()
-}
+import "os/exec"
 
 func OptimizeForOCR(f string) string {
 	res, _ := Magick(f, user.Imagick...)

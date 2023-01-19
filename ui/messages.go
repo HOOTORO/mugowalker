@@ -3,7 +3,8 @@ package ui
 import (
 	"strings"
 	"time"
-	"worker/adb"
+
+	a "worker/adb"
 	"worker/cfg"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -19,7 +20,7 @@ type (
 )
 
 func checkVM() tea.Msg {
-	taskstr, e := cfg.Tasklist(bluestacksexe)
+	taskstr, e := cfg.Tasklist(bluexe)
 	if e != nil {
 		return errMsg{e}
 	}
@@ -28,7 +29,7 @@ func checkVM() tea.Msg {
 }
 
 func adbConnect(serial string) tea.Msg {
-	dev, e := adb.Connect(serial)
+	dev, e := a.Connect(serial)
 	if e != nil {
 		log.Errorf("\nConn err: %v", e)
 		return errMsg{e}

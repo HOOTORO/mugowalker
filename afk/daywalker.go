@@ -1,64 +1,98 @@
-package bot
+package afk
 
 import (
 	"fmt"
 	"strings"
 	"time"
 
-	"worker/adb"
-	"worker/afk"
+	"worker/bot"
 	"worker/cfg"
 	"worker/ocr"
 
-	"github.com/sirupsen/logrus"
+	"github.com/fatih/color"
+
 	"golang.org/x/exp/slices"
 )
 
+const (
+	alto = "ALTO"
+)
+
 type Daywalker struct {
-	id              uint32
-	xmax, ymax, cnt uint8
-	ActiveTask      string
-	Reactive        bool
-	lastLoc         *cfg.Location
-	fprefix         string
-	lastscreenshot  string
-	maxocrtry       int
-	*adb.Device
-	*afk.Game
+	*bot.BasicBot
+	*Game
+
+	cnt            uint8
+	ActiveTask     string
+	Reactive       bool
+	lastLoc        *cfg.Location
+	fprefix        string
+	lastscreenshot string
+	maxocrtry      int
 }
 
-var log *logrus.Logger
+func NewArenaBot(b *bot.BasicBot, g *Game) *Daywalker {
+	return &Daywalker{
+		BasicBot: b,
+		Game:     g,
+		fprefix:  time.Now().Format("2006_01"),
+		lastLoc:  g.GetLocation(Campain),
+		cnt:      0, maxocrtry: 2,
+	}
+}
+
 var f = fmt.Sprintf
 var Fnotify func(string, string)
+var red, green, cyan, ylw, mgt func(...interface{}) string
 
 func init() {
 	log = cfg.Logger()
+	red = color.New(color.FgHiRed).SprintFunc()
+	green = color.New(color.FgHiGreen).SprintFunc()
+	cyan = color.New(color.FgHiCyan).SprintFunc()
+	ylw = color.New(color.FgHiYellow).SprintFunc()
+	mgt = color.New(color.FgHiMagenta).SprintFunc()
 }
 
 func (dw *Daywalker) String() string {
 	return fmt.Sprintf("Bot status:\n   Game: %v\n ActiveTask: %v\n Last Location: %v", dw.Game, dw.ActiveTask, dw.lastLoc)
 }
 
-func (dw *Daywalker) CurrentLocation() afk.ArenaLocation {
+func (dw *Daywalker) CurrentLocation() ArenaLocation {
 	if dw.lastLoc != nil {
-		return afk.ArenaLoc(dw.lastLoc.Key)
+		return ArenaLoc(dw.lastLoc.Key)
 	}
 	return 0
+}
+func (dw *Daywalker) TempScreenshot(name string) string {
+	imgf := f("%v_%v.png", dw.fprefix, name)
+	dw.lastscreenshot = cfg.TempFile(imgf)
+	pt := dw.Screenshot(cfg.TempFile(imgf))
+	return pt
+}
+func ScreenAction(r []ocr.AltoResult, act string) (x, y int) {
+	for _, line := range r {
+		if strings.Contains(line.Linechars, act) {
+			x, y = line.X, line.Y
+		}
+	}
+	return
 }
 
 func (dw *Daywalker) AltoRun(str string, fn func(string, string)) {
 	Fnotify = fn
 	taks := dw.Reactivalto(str)
-	red("TAPTARGET %s", taks)
-	altos := dw.ScanScreen()
-	where := GuessLocByKeywords(altos, dw.Locations)
+	Fnotify(alto, red("TAPTARGET \n %s", taks))
+	altos := dw.ScanText()
+	// Fnotify(alto, f("%+v", altos))
+	where := bot.GuessLocByKeywords(altos, dw.Locations)
 
 	for _, r := range taks.Taptarget {
 		if strings.Contains(where, r.If) {
 			for _, do := range r.Do {
-				x, y := TextPosition(do, altos)
+				x, y := bot.TextPosition(do, altos)
 				if x != 0 && y != 0 {
-					dw.Tap(f("%v", x), f("%v", y))
+					dw.Tap(x, y, 1)
 				}
 			}
 
@@ -84,17 +118,18 @@ func (dw *Daywalker) React(r *cfg.ReactiveTask) error {
 	dw.Reactive = true
 	cnt := 0
 	for dw.Reactive && r.Limit >= cnt {
-		loc := dw.MyLocation()
+		txt := dw.ScanText()
+		loc := bot.GuessLocByKeywords(txt, dw.Locations)
 		grid, off := r.React(loc)
-		before, ok := afk.IsAction(r.Before(loc))
+		before, ok := IsAction(r.Before(loc))
 
 		if ok {
 			dw.RunBefore(before)
 		}
 
-		dw.TapGO(grid.X, grid.Y, off)
+		dw.Tap(grid.X, grid.Y, off)
 
-		after, ok := afk.IsAction(r.After(loc))
+		after, ok := IsAction(r.After(loc))
 
 		if ok {
 			dw.RunAfter(after)
@@ -108,11 +143,11 @@ func (dw *Daywalker) React(r *cfg.ReactiveTask) error {
 
 func (dw *Daywalker) Daily() (bool, error) {
 	Fnotify("|>", red("\n--> DAILY <-- \nUndone:   %08b", dw.ActiveDailies()))
-	ignoredDailies := []afk.DailyQuest{afk.QCamp, afk.QKT}
+	ignoredDailies := []DailyQuest{QCamp, QKT}
 	for _, daily := range dw.ActiveDailies() {
-		Fnotify("|>", red("--> RUN # [%s]", daily))
+		Fnotify("daily", red("--> RUN # [%s]", daily))
 		if slices.Contains(ignoredDailies, daily) {
-			Fnotify("|>", cyan("--> IGNORING # [%s]", daily))
+			Fnotify("daily", cyan("--> IGNORING # [%s]", daily))
 			dw.MarkDone(daily)
 			continue
 		}
@@ -126,25 +161,17 @@ func (dw *Daywalker) Daily() (bool, error) {
 	return true, nil
 }
 
-func (dw *Daywalker) Screenshot(name string) (string, error) {
-	f := fmt.Sprintf("%v_%v_%v.png", dw.fprefix, dw.id, name)
-	dw.Screencap(f)
-	dw.lastscreenshot = cfg.TempFile(f)
-	err := dw.Pull(f, cfg.TempFile(""))
-	return cfg.TempFile(f), err
-}
-
 func (dw *Daywalker) ZeroPosition() bool {
 	log.Tracef("Returning to Ranhorny...")
-	if dw.cnt > maxattempt {
+	if dw.cnt > 5 {
 		log.Errorf("Reach recursion limit, quitting....")
 		return false
 	}
-	if dw.MyLocation() == afk.RANHORNY.String() {
+	if dw.Location() == RANHORNY.String() {
 		dw.cnt = 0
 		return true
 	} else {
-		dw.TapGO(1, ygrid, 1)
+		dw.Tap(1, 18, 1)
 		dw.cnt++
 		dw.ZeroPosition()
 		return false
@@ -157,46 +184,39 @@ func availiableToday(days string) bool {
 	return slices.Contains(d, weekday[:3])
 }
 
-func (dw *Daywalker) Gameshot(name string) string {
-	f := fmt.Sprintf("%v_%v_%v.png", dw.fprefix, dw.id, name)
-	dw.Screencap(f)
-	_ = dw.Pull(f, cfg.UserFile(""))
-	return cfg.UserFile(f)
-}
-
-func (dw *Daywalker) RunBefore(action afk.Action) {
+func (dw *Daywalker) RunBefore(action Action) {
 	switch action {
-	case afk.UpdProgress:
+	case UpdProgress:
 		loc := dw.CurrentLocation()
-		scr := dw.Gameshot(fmt.Sprintf("%v", loc))
+		scr := dw.Screenshot(cfg.UserFile(f("%v", loc)))
 		t := ocr.TextExtract(scr)
 		dw.UpdateProgress(loc, t)
 		//        default:
 		//            ords := cfg.StrToGrid()
 		//            dw.TapGO(ords.X, ords.Y, ords.Offset)
-	case afk.RepeatX:
+	case RepeatX:
 		task := dw.Task(dw.CurrentLocation())
 		point, off := task.React(dw.CurrentLocation().String())
 		for i := 0; i < 5; i++ {
-			dw.TapGO(point.X, point.Y, off)
+			dw.Tap(point.X, point.Y, off)
 			time.Sleep(time.Second)
-			dw.TapGO(1, 18, off)
+			dw.Tap(1, 18, off)
 		}
 
 	}
 }
 
-func (dw *Daywalker) RunAfter(action afk.Action) {
+func (dw *Daywalker) RunAfter(action Action) {
 	switch action {
-	case afk.Gshot:
+	case Gshot:
 		time.Sleep(3 * time.Second)
 		loc := dw.CurrentLocation()
 		pr := dw.User.GetProgress(loc.Id())
-		dw.Gameshot(fmt.Sprintf("%v_heroinfo", pr.Level))
-		dw.TapGO(1, 18, 1)
+		dw.Screenshot(cfg.UserFile(f("%v_heroinfo", pr.Level)))
+		dw.Tap(1, 18, 1)
 		time.Sleep(time.Second)
-		dw.TapGO(3, 17, 1)
-	case afk.Deactivate:
+		dw.Tap(3, 17, 1)
+	case Deactivate:
 		dw.Reactive = false
 	}
 }

@@ -95,10 +95,10 @@ func Connect(hostport string) (*Device, error) {
 	if out, err := cmd.Call(); err == nil && checkOut(out) {
 		dev := &Device{Serial: hostport, DevState: Online}
 		Abi(dev)
-		log.Infof("--> %v <--\n", out)
+		log.Infof("--> %v", out)
 		return dev, nil
 	} else {
-		return nil, err
+		return nil, ErrNoDevices
 	}
 }
 

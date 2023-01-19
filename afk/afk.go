@@ -46,8 +46,9 @@ func (g *Game) String() string {
 	return fmt.Sprintf("Name: %v\n User:%v\n", g.Name, g.User.Username)
 }
 
+// New Game for a given User
 func New(up *cfg.User) *Game {
-	log.Infof("\nLaunch %v!", up)
+	log.Infof("Launch %v", up)
 	locs := make([]cfg.Location, 1)
 	tasks := make([]cfg.ReactiveTask, 1)
 	dailys := make([]cfg.ReactiveTask, 1)
@@ -57,7 +58,16 @@ func New(up *cfg.User) *Game {
 	cfg.Parse(reactionsCfg, &tasks)
 	cfg.Parse(dailyCfg, &dailys)
 	cfg.Parse(dailyCfgTwo, &dailysTwo)
+	for _, l := range locs {
+		for i, kw := range l.Keywords {
+			if kw == "%account" {
+				l.Keywords[i] = up.Account
+			}
+		}
 
+	}
+
+	log.Infof("Locations: %v", locs)
 	log.Warnf("NEW DAILY CONF %+v", dailysTwo)
 
 	user := repository.GetUser(up.Account)

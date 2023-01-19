@@ -2,20 +2,24 @@ package ui
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
-	"worker/adb"
+	a "worker/adb"
 	"worker/afk"
 	"worker/bot"
 	"worker/cfg"
 
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/fatih/color"
 )
+
+var mgt = color.New(color.FgHiMagenta, color.BgHiWhite).SprintFunc()
 
 func getDevices() []list.Item {
 	var devs []list.Item
-	d, e := adb.Devices()
+	d, e := a.Devices()
 	if e != nil {
 		return devs
 	}
@@ -26,26 +30,22 @@ func getDevices() []list.Item {
 	return devs
 }
 
-func test(m *menuModel) bool {
-	if m.bluestcksPid != 0 {
-
-		return cfg.ProcessInfo(m.bluestcksPid)
-	}
-	return false
-}
-
 func runTask(m *menuModel) bool {
 	cf := DtoCfg(m.usersettings)
 	m.menulist.Styles.HelpStyle = noStyle
 	m.spinme.Style = noStyle
 
-	dev, e := adb.Connect(cf.DeviceSerial)
+	dev, e := a.Connect(cf.DeviceSerial)
 	if e != nil {
 		log.Errorf("\ndeverr:%v", e)
 		return false
 	}
+	fn := func(a string, b string) {
+		log.Warnf("%v |>\n %v", mgt(a), b)
+	}
 	gm := afk.New(cf.User)
-	b := bot.New(dev, gm)
+	d := bot.New(dev, fn)
+	b := afk.NewArenaBot(d, gm)
 	log.Warnf(yellow("\nCHOSEN RUNTASK >>> %v <<<"), m.choice)
 	switch m.choice {
 	case "Run all":
@@ -54,7 +54,7 @@ func runTask(m *menuModel) bool {
 		go func() {
 			// m.strch <- "Hi< from DAILY routine"
 			b.AltoRun("quests", func(s, d string) {
-				m.taskch <- notify(s, d)
+				m.taskch <- notify(f("%v |>", s), d)
 			})
 		}()
 	case "Push Campain?":
@@ -96,26 +96,21 @@ func runTask(m *menuModel) bool {
 func runBluestacks(m *menuModel) bool {
 	_ = DtoCfg(m.usersettings)
 	// pid, e := cfg.StartProc(bluestacksexe, strings.Fields(m.opts[bluestacks])...)
-	cmd := cfg.RunProc(bluestacksexe, strings.Fields(m.usersettings[bluestacks])...)
+	cmd := cfg.RunProc(bluexe, strings.Fields(m.usersettings[blueInstance])...)
 
 	m.bluestcksPid = cmd.Process.Pid
-	m.updateStatus()
+	m.statuStr()
 	log.Warnf("\nwait in another gourutine %v", cmd.Process.Pid)
 
 	go func() {
 		e := cmd.Wait()
 		if e != nil {
-			fmt.Printf("\nerr:%v\nduring run:%v", e, "run bluestacks")
+			m.taskch <- notify(bluexe, f("|> error: %v, pid: %v", e, m.bluestcksPid))
 		}
-		m.taskch <- notify(bluestacksexe, f("finished, pid: %v", m.bluestcksPid))
+		m.taskch <- notify(bluexe, f("|> finished, pid: %v", m.bluestcksPid))
 		m.bluestcksPid = 0
 	}()
 	return true
-}
-
-func updateDto(v map[string]string) {
-	o := DtoCfg(v)
-	cfg.Save(cfg.UserFile(o.User.Account+".yaml"), o)
 }
 
 func CfgDto(conf *cfg.Profile) map[string]string {
@@ -125,7 +120,8 @@ func CfgDto(conf *cfg.Profile) map[string]string {
 	dto[game] = conf.User.Game
 	dto[imagick] = strings.Join(conf.Imagick, " ")
 	dto[tesseract] = strings.Join(conf.Tesseract, " ")
-	dto[bluestacks] = strings.Join(conf.Bluestacks, " ")
+	dto[blueInstance] = conf.Bluestacks.Instance
+	dto[bluePackage] = conf.Bluestacks.Package
 	// dto[] = conf.
 	// dto[] = conf.
 	return dto
@@ -146,13 +142,39 @@ func DtoCfg(m map[string]string) *cfg.Profile {
 			res.Imagick = strings.Split(v, " ")
 		case tesseract:
 			res.Tesseract = strings.Split(v, " ")
-		case bluestacks:
-			res.Bluestacks = strings.Split(v, " ")
+		case blueInstance:
+			res.Bluestacks.Instance = v
+		case bluePackage:
+			res.Bluestacks.Package = v
 		}
 	}
 	return res
 }
 
+/////////////////////////////
+//////// helper func ///////
+///////////////////////////
+
 func notify(ev, desc string) taskinfo {
 	return taskinfo{Task: ev, Message: desc, Duration: time.Now()}
+}
+
+func updateDto(v map[string]string) {
+	o := DtoCfg(v)
+	cfg.Save(cfg.UserFile(o.User.Account+".yaml"), o)
+}
+
+func checkBlueStacks(m *menuModel) bool {
+	if m.bluestcksPid != 0 {
+
+		return cfg.ProcessInfo(m.bluestcksPid)
+	}
+	return false
+}
+func kill(pid int) bool {
+	p, e := os.FindProcess(pid)
+	if e == nil {
+		e = p.Kill()
+	}
+	return e == nil
 }

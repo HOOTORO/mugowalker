@@ -5,6 +5,7 @@
   delay: 1
   hits: 5
   keywords:
+    - "%account"
     - Guild
     - Store
     - Library
@@ -34,6 +35,7 @@
   hits: 4
   grid: 3:18
   keywords:
+    - "%account"
     - Campaign
     - World
     - Map
@@ -47,6 +49,7 @@
 - name: forrest
   hits: 5
   keywords:
+    - "%account"
     - Arena
     - Peaks
     - Time
@@ -124,6 +127,7 @@
 - name: stat
   hits: 2
   keywords:
+    - "%account"
     - Statistics
     - Battle
     - Hero
@@ -185,6 +189,7 @@
   hits: 3
   delay: 1
   keywords:
+    - "%account"
     - Bag
     - Mail
     - Friends
@@ -200,7 +205,7 @@
     - locid: close
 
 - name: quests
-  hits: 3
+  hits: 7
   keywords:
     - QUESTS
     - Quests
@@ -367,10 +372,9 @@
 
 # kingstower:
 - name: kt
-  grid: 3:9
-  hits: 4
-  delay: 1
+  description: Screen afther click on Kings Tower in Dark Forrest
   keywords:
+    - "%account"
     - Forsaken
     - Necropolis
     - Kings
@@ -382,15 +386,10 @@
     - Mon/Fri/Sun
     - Thu/Sat/Sun
     - Mon/FriiSun
-    -
-  actions:
-    - locid: kt
-    - locid: cele
-    - locid: back
+
 
 - name: king
-  grid: 3:10
-  hits: 5
+  description: Inside tower, floors
   keywords:
     - Floor
     - Leaderboard

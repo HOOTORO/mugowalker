@@ -5,15 +5,12 @@ import (
 	"io"
 	"time"
 
-	"github.com/charmbracelet/lipgloss"
-
-	"github.com/muesli/reflow/indent"
-
-	"github.com/charmbracelet/bubbles/spinner"
-
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/reflow/indent"
 )
 
 const showLastTasks = 10
@@ -128,7 +125,7 @@ func (m menuModel) View() string {
 	}
 
 	if m.showmore {
-		srt = m.statusPanel()
+		srt = m.runningTasksPanel()
 		res = lipgloss.JoinHorizontal(lipgloss.Top, res, srt)
 	}
 
@@ -155,54 +152,6 @@ func initTextModel(placeholder string, focus bool, prom string) textinput.Model 
 	ti.PromptStyle.Underline(true)
 	ti.Prompt = prom + sep
 	return ti
-}
-
-func (m *menuModel) statusPanel() string {
-	log.Debugf("Upd status spanel....%v:%v", m.connectionStatus, m.bluestcksPid)
-	var s, rt string
-	m.updateStatus()
-	s = m.statusInfo
-	rt = fmt.Sprintf("\n"+
-		m.spinme.View()+" Runing task %s...\n\n", m.choice)
-
-	for _, res := range m.taskmsgs {
-		if res.Task == "" {
-			rt += "....................................................................\n"
-		} else {
-			rt += fmt.Sprintf("[%s]|>%s<|\n", res.Task, res.Message)
-		}
-	}
-
-	rt += helpStyle.Render("\nPress 'alt+s' to hide/show this panel\n")
-	//		x, y := helpStyle.GetFrameSize()
-	//		rt += hotStyle.Render(fmt.Sprintf("btw:\nw: %v, h:%v", x, y))
-	rt = runnunTaskStyle.Render(rt)
-	return indent.String(lipgloss.JoinVertical(lipgloss.Top, s, rt), 3)
-}
-
-func (m *menuModel) updateStatus() {
-	var con, emu string
-
-	m.statusInfo = ""
-	statusStyle.BorderForeground(bloodRed)
-	con, emu = red("Offline"), red("Shutdown")
-
-	if m.connectionStatus != 0 {
-		con = green("Online")
-	}
-	if m.bluestcksPid != 0 {
-
-		emu = green("Running")
-	}
-	if m.connectionStatus != 0 && m.bluestcksPid != 0 {
-		statusStyle.BorderForeground(brightGreen)
-	}
-
-	t := f("Device --> [%v] \n"+
-		"Profile --> \n\t[Game: %v]\n\t[User: %v]"+
-		"\nConnection status: %v \n Bluestacks: %v",
-		m.usersettings[connection], m.usersettings[game], m.usersettings[account], con, emu)
-	m.statusInfo = statusStyle.Render(t)
 }
 
 func (m *menuModel) isSet(property string) bool {

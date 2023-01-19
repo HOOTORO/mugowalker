@@ -27,21 +27,23 @@ const (
 var (
 	ErrWorkDirFail        = errors.New("working dirictories wasn't created. Exit")
 	ErrRequiredProgram404 = errors.New("missing some of required soft")
+	ErrLoadInitConf       = errors.New("load sysvars")
 )
 
 var (
-	log        *logrus.Logger
-	activeUser *Profile
-	sysvars    *SystemVars
-	red, green func(...interface{}) string
+	log              *logrus.Logger
+	activeUser       *Profile
+	sysvars          *SystemVars
+	red, green, cyan func(...interface{}) string
 )
 var f = fmt.Sprintf
 
 func init() {
 	red = color.New(color.FgHiRed).SprintFunc()
 	green = color.New(color.FgHiGreen).SprintFunc()
+	cyan = color.New(color.FgHiCyan).SprintFunc()
 	log = Logger()
-	sysvars = loadSysconf()
+	sysvars, _ = loadSysconf()
 
 	f, e := os.OpenFile(sysvars.Logfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if e == nil {
@@ -217,18 +219,18 @@ func ToInt(s string) int {
 	return num
 }
 
-func loadSysconf() *SystemVars {
-	sys := &SystemVars{}
-	e := loadParties(sys)
-	if e != nil {
-		log.Errorf("Load parties mailfunc: %v", e)
-	}
+func loadSysconf() (sys *SystemVars, e error) {
+	sys = &SystemVars{}
+	// e := loadParties(sys)
+	// if e != nil {
+	// 	log.Errorf("Load parties mailfunc: %v", e)
+	// }
 	sys.Db, sys.Userhome, sys.App, sys.Temp, e = createDirStructure()
 	if e != nil {
 		log.Errorf("Create app folders mailfunc: %v", e)
 	}
 	sys.Logfile = logfile
-	return sys
+	return
 }
 
 func loadUser() *Profile {
@@ -262,16 +264,16 @@ func defaultUser() *Profile {
 	return settings
 }
 
-func loadParties(sys *SystemVars) error {
-	for _, s := range thirdparty() {
-		if pt := LookupPath(s); pt != "" {
-			sys.parties = append(sys.parties, &RunableExe{name: s, path: pt})
-		} else {
-			return ErrRequiredProgram404
-		}
-	}
-	return nil
-}
+// func loadParties(sys *SystemVars) error {
+// 	for _, s := range thirdparty() {
+// 		if pt := LookupPath(s.String()); pt != "" {
+// 			sys.parties = append(sys.parties, &RunableExe{name: s, path: pt})
+// 		} else {
+// 			return ErrRequiredProgram404
+// 		}
+// 	}
+// 	return nil
+// }
 
 func lookupLastConfig(dirs ...string) string {
 	last := time.Time{}
@@ -279,7 +281,7 @@ func lookupLastConfig(dirs ...string) string {
 	for _, d := range dirs {
 		dir, e := os.ReadDir(d)
 		if e != nil {
-			fmt.Printf("\nerr:%v\nduring run:%v", e, "lookout")
+			log.Errorf("\nerr:%v\nduring run:%v", e, "lookout")
 		}
 		for _, entry := range dir {
 			if !entry.IsDir() && filepath.Ext(entry.Name()) == ".yaml" {

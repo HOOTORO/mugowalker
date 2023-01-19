@@ -2,17 +2,19 @@ package cfg
 
 // Required 3rd-party software
 const (
-	adbp       = "adb"
-	magic      = "magick"
-	tesseract  = "tesseract"
-	bluestacks = "HD-Player"
+	AdbExe        Executable = "adb"
+	MagicExe                 = "magick"
+	TessExe                  = "tesseract"
+	BluestacksExe            = "HD-Player"
 )
 
-func thirdparty() []string {
-	return []string{adbp, magic, tesseract, bluestacks}
+type Executable string
+
+func (e Executable) String() string {
+	return string(e)
 }
 
-// required sys events
+// required sys envs
 const (
 	appdataEnv  = "APPDATA"
 	programData = "ProgramData"
@@ -23,9 +25,4 @@ const (
 const (
 	programRootDir = ".afkworker"
 	logfile        = "app.log"
-	// tempImg = "work_images"
-	// sqDB =  "db"
-	// gameConf =  "cfg"
-	// testData: _test
-
 )

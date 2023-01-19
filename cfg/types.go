@@ -9,13 +9,13 @@ type Profile struct {
 
 	User *User `yaml:"userprofile"`
 	//  Recognition settings (cmd args for 'Imagick' and 'Tesseract')
-	Imagick       []string `yaml:"imagick"`
-	AltImagick    []string `yaml:"alt_imagick"`
-	Tesseract     []string `yaml:"tesseract"`
-	AltTesseract  []string `yaml:"alt_tesseract"`
-	Bluestacks    []string `yaml:"bluestacks"`
-	UseAltImagick bool     `yaml:"use_alt_imagick"`
-	UseAltTess    bool     `yaml:"use_alt_tess"`
+	Imagick       []string    `yaml:"imagick"`
+	AltImagick    []string    `yaml:"alt_imagick"`
+	Tesseract     []string    `yaml:"tesseract"`
+	AltTesseract  []string    `yaml:"alt_tesseract"`
+	Bluestacks    *Bluestacks `yaml:"bluestacks"`
+	UseAltImagick bool        `yaml:"use_alt_imagick"`
+	UseAltTess    bool        `yaml:"use_alt_tess"`
 
 	// Dict short word exceptions (>= 3)
 	Exceptions []string `yaml:"dict_shrt_except"`
@@ -27,7 +27,7 @@ type Profile struct {
 type SystemVars struct {
 	Logfile                 string `yaml:"logfile"`
 	UserConfPath            string
-	parties                 []*RunableExe
+	parties                 []*Executable
 	App, Userhome, Temp, Db string
 }
 
@@ -61,6 +61,7 @@ func isStr(str string) func(...interface{}) string {
 	}
 }
 
+// User profile
 type User struct {
 	Account     string   `yaml:"account"`
 	Game        string   `yaml:"game"`
@@ -68,18 +69,37 @@ type User struct {
 }
 
 func (up *User) String() string {
-	return fmt.Sprint(isStr(up.Game)("\n -> Game: "+up.Game+"\n ") +
-		isStr(up.Account)("     Account: "+up.Account+"\n "))
+	return f("\n	-> Game: %v\n\t   Account: %v", green(up.Game), green(up.Account))
 }
 
+// New user profile
 func New(accname, game string, taskcfgpath []string) *User {
 	return &User{Account: accname, Game: game, TaskConfigs: taskcfgpath}
 }
 
+// Bluestacks vm settings
+type Bluestacks struct {
+	Instance string `yaml:"instance"`
+	Package  string `yaml:"package"`
+}
+
+func (bs *Bluestacks) String() string {
+	return f((isStr(bs.Instance)("\n -> VM: "+bs.Instance+"\n ") +
+		isStr(bs.Package)("     App: "+bs.Package)))
+}
+
+// Args upack in same order as packed? Will see
+func (bs *Bluestacks) Args() []string {
+	return []string{"--instance", bs.Instance, "--cmd", "launchApp", "--package", bs.Package}
+}
+
+// ReactiveAlto version of task
 type ReactiveAlto struct {
 	Name      string      `yaml:"name"`
 	Taptarget []Areaction `yaml:"reactions"`
 }
+
+// Areaction alto version of reaction
 type Areaction struct {
 	If string   `yaml:"if"`
 	Do []string `yaml:"do"`
@@ -107,7 +127,7 @@ type Location struct {
 }
 
 func (l *Location) String() string {
-	return fmt.Sprintf("Location key: %v", l.Key)
+	return f("Key: %v | hitwords: %v", green(l.Key), cyan(l.Keywords))
 }
 
 var defUser = &Profile{
@@ -134,7 +154,7 @@ var defUser = &Profile{
 		"quiet",
 	},
 	AltTesseract: []string{"--psm", "3", "hoot", "quiet"},
-	Bluestacks:   []string{"--instance", "Rvc64", "--cmd", "launchApp", "--package", "com.lilithgames.hgame.gp.id"},
+	Bluestacks:   &Bluestacks{Instance: "Rvc64", Package: "com.lilithgames.hgame.gp.id"},
 	Exceptions:   []string{"Go", "Up ", "In", "Tap"},
 	Loglevel:     "FATAL",
 	DrawStep:     false,

@@ -9,10 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"worker/cfg"
-
 	"github.com/fatih/color"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
+
+	"worker/cfg"
 )
 
 type AltoResult struct {
@@ -20,12 +21,25 @@ type AltoResult struct {
 	X, Y      int
 }
 
+var (
+	tesser string
+	user   *cfg.Profile
+
+	altoargs = []string{"--psm", "3", "-c", "tessedit_create_alto=1", "quiet"}
+	log      *logrus.Logger
+)
+
 var send func(string, string)
 
 func (a AltoResult) String() string {
-	return fmt.Sprintf("%vx%v | |> %v <|", a.X, a.Y, a.Linechars)
+	return fmt.Sprintf("[_| %vx%v	<| %-20s	|_]", a.X, a.Y, a.Linechars)
 }
-
+func init() {
+	// Fallback to searching on PATH.
+	tesser = cfg.LookupPath("tesseract")
+	user = cfg.ActiveUser()
+	log = cfg.Logger()
+}
 func TextExtractAlto(img string) []AltoResult {
 	// defer  timeTrack(time.Now(), "AltOcr")
 	imgPrep := AltOptimize(img)

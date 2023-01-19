@@ -11,6 +11,8 @@ import (
 
 	"golang.org/x/sys/windows"
 
+	"worker/adb"
+	"worker/bot"
 	"worker/ui"
 
 	"github.com/sirupsen/logrus"
@@ -26,13 +28,54 @@ import (
 )
 
 var (
-	log  *logrus.Logger
-	user *cfg.Profile
+	log                        *logrus.Logger
+	user                       *cfg.Profile
+	red, green, cyan, ylw, mgt func(...interface{}) string
 )
 
 func init() {
 	user = cfg.ActiveUser()
+	red = color.New(color.FgHiRed).SprintFunc()
+	green = color.New(color.FgHiGreen).SprintFunc()
+	cyan = color.New(color.FgHiCyan).SprintFunc()
+	ylw = color.New(color.FgHiYellow).SprintFunc()
+	mgt = color.New(color.FgHiMagenta).SprintFunc()
 }
+
+func main() {
+	log = cfg.Logger()
+	log.SetLevel(logrus.InfoLevel)
+	log.Warnf(red("RUN BEGIN : %v"), time.Now())
+
+	fn := func(a string, b string) {
+		log.Warnf("%v |>\n %v", mgt(a), b)
+	}
+
+	if len(os.Args) > 1 && os.Args[1] == "-t" {
+		color.HiRed("%v", "TEST RUN")
+
+		d, e := adb.Connect("127.0.0.1:5555")
+		if e != nil {
+			log.Errorf(red("%v"), e)
+			blueprc := cfg.RunProc(cfg.BluestacksExe, user.Bluestacks.Args()...)
+			log.Infof("Bluestacks started: %v, args: %v", blueprc.Process.Pid, user.Bluestacks)
+		}
+		gw := afk.New(user.User)
+		bb := bot.New(d, fn)
+		bot := afk.NewArenaBot(bb, gw)
+
+		bot.AltoRun("quests", fn)
+		return
+	}
+
+	conf := ui.CfgDto(user)
+
+	err := ui.RunMainMenu(conf)
+	if err != nil {
+		log.Errorf("ERROROR: %v", err)
+	}
+}
+
 func run() (err error) {
 	con, err := windows.GetStdHandle(windows.STD_INPUT_HANDLE)
 	if err != nil {
@@ -105,33 +148,6 @@ func testWinEvents() {
 
 		os.Exit(1)
 	}
-}
-
-func main() {
-	log = cfg.Logger()
-	if len(os.Args) > 1 && os.Args[1] == "-t" {
-		color.HiRed("%v", "TEST RUN")
-		// user := cfg.User{Account: "ss", Game: "aa"}
-		ocrtest()
-		return
-	}
-
-	// log.Error("knock knock")
-	// ocrtest()
-	log.Warnf(color.RedString("RUN BEGIN : %v"), time.Now())
-
-	testselect()
-}
-
-func testselect() {
-	conf := ui.CfgDto(user)
-
-	err := ui.RunMainMenu(conf)
-	if err != nil {
-		log.Errorf("ERROROR: %v", err)
-	}
-
-	//	ui.SoloStrInput()
 }
 
 func ocrtest() {
@@ -259,7 +275,7 @@ func highlight(k, s []string, fn func(s string, a ...interface{}) string) []stri
 func runcnd() {
 
 	// hoho, e := cfg.StartProc("HD-Player", cfg.ActiveUser().Bluestacks...)
-	cmd := exec.Command("HD-Player", cfg.ActiveUser().Bluestacks...)
+	cmd := exec.Command("HD-Player", cfg.ActiveUser().Bluestacks.Args()...)
 	log.Debugf("run cmd: %v\n", cmd.String())
 	cmd.Stdout = os.Stdout
 	e1 := cmd.Start()

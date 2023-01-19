@@ -78,6 +78,8 @@ github.com/vitali-fedulov/images/v2 v2.1.5 h1:zhAss4mN/3JzpPYxsvw9RL0AQPZqQ3keFw
 github.com/vitali-fedulov/images/v2 v2.1.5/go.mod h1:Uf6xw8bNfbWjRE/qS0kDNvSTchTwohLBZR0AKhmfNWM=
 golang.org/x/exp v0.0.0-20230116083435-1de6713980de h1:DBWn//IJw30uYCgERoxCg84hWtA97F4wMiKOIh00Uf0=
 golang.org/x/exp v0.0.0-20230116083435-1de6713980de/go.mod h1:CxIveKay+FTh1D0yPZemJVgC/95VzuuOLq5Qi4xnoYc=
+golang.org/x/exp v0.0.0-20230118134722-a68e582fa157 h1:fiNkyhJPUvxbRPbCqY/D9qdjmPzfHcpK3P4bM4gioSY=
+golang.org/x/exp v0.0.0-20230118134722-a68e582fa157/go.mod h1:CxIveKay+FTh1D0yPZemJVgC/95VzuuOLq5Qi4xnoYc=
 golang.org/x/sys v0.0.0-20200116001909-b77594299b42/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
