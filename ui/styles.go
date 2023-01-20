@@ -27,11 +27,6 @@ var (
 	/// LEFT /////
 	// Panel ////
 	////////////
-	// headerStyle = blackStyle.Copy().
-	// 		Border(lipgloss.ThickBorder()).
-	// 		BorderBackground(purple).Background(purple).
-	// 		Align(lipgloss.Center).
-	// 		Bold(true)
 
 	// Title
 	tStyle = lipgloss.NewStyle().
@@ -64,9 +59,10 @@ var (
 			MarginLeft(1).
 			Border(lipgloss.RoundedBorder()).
 			Bold(true).
-			Width(35).
+			Width(50).
 			PaddingLeft(3).
-			Align(lipgloss.Left).
+			PaddingRight(5).
+			Align(lipgloss.Right).
 			BorderForeground(bloodRed)
 
 	spinnerStyle = lipgloss.NewStyle().
@@ -75,13 +71,13 @@ var (
 	runnunTaskStyle = statusStyle.Copy().
 			MarginTop(2).
 			UnsetPaddingLeft().
-			UnsetWidth().
+			Width(55).
 			UnsetBorderStyle()
 
 	//	happyClr = colorful.FastHappyColor()
 	helpStyle = lipgloss.NewStyle().
 			MarginLeft(1).
-			Align(lipgloss.Center)
+			Align(lipgloss.Bottom)
 
 	quitStyle = lipgloss.NewStyle().
 			Bold(true).

@@ -9,6 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+var outFn func(string, string)
 var red, green, cyan, ylw, mgt func(...interface{}) string
 
 type Location interface {
@@ -16,7 +17,7 @@ type Location interface {
 	Keywords() []string
 }
 
-func GuessLocByKeywords(a []ocr.AltoResult, locations []cfg.Location) (locname string) {
+func GuessLocation(a []ocr.AltoResult, locations []cfg.Location) (locname string) {
 	maxh := 1
 	var resloc string
 	for _, loc := range locations {
@@ -24,6 +25,9 @@ func GuessLocByKeywords(a []ocr.AltoResult, locations []cfg.Location) (locname s
 		if len(hit) >= loc.Threshold && len(hit) >= maxh {
 			maxh = len(hit)
 			// log.Debugf(ylw(f("hit: %v -> %v \n", loc.Key, hit)))
+
+			outFn(mgt("GUESSHI |> "), ylw(f("Location: -> %v", loc.Key)))
+
 			log.Warn(mgt("GUESSHI |> "), ylw(f("Location: %v -> %v \n\r", loc.Key, hit)))
 			resloc = loc.Key
 		}

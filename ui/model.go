@@ -13,7 +13,7 @@ import (
 	"github.com/muesli/reflow/indent"
 )
 
-const showLastTasks = 10
+const showLastTasks = 7
 
 type menuModel struct {
 	bluestcksPid     int
@@ -107,7 +107,7 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.inputChosen {
 		return updateInput(msg, m)
 	}
-	return updateMenu(msg, m) //m, tea.Quit
+	return updateMenu(msg, m)
 }
 
 ///////////////////////////////////
@@ -160,8 +160,8 @@ func (m *menuModel) isSet(property string) bool {
 
 }
 func shorterer(str string) string {
-	if len(str) > 50 {
-		return str[:47] + "..."
+	if len(str) > 60 {
+		return str[:57] + "..."
 	}
 	return str
 }

@@ -1,8 +1,6 @@
 # ranhorn
 # X point. begining of the end
 - name: ranhorn
-  grid: 1:18
-  delay: 1
   hits: 5
   keywords:
     - "%account"
@@ -32,8 +30,7 @@
     - Quests
 
 - name: campain
-  hits: 4
-  grid: 3:18
+  hits: 3
   keywords:
     - "%account"
     - Campaign
@@ -46,7 +43,7 @@
     - Camp
     - Quests
 
-- name: forrest
+- name: forrestpr
   hits: 5
   keywords:
     - "%account"
@@ -277,6 +274,8 @@
     - Completition
     - Rewards
     - ormavion
+    - Begin
+    - Formaton
 
 - name: fastrewards
   hits: 3
@@ -373,6 +372,7 @@
 # kingstower:
 - name: kt
   description: Screen afther click on Kings Tower in Dark Forrest
+  hits: 4
   keywords:
     - "%account"
     - Forsaken
@@ -390,6 +390,7 @@
 
 - name: king
   description: Inside tower, floors
+  hits: 4
   keywords:
     - Floor
     - Leaderboard
@@ -400,13 +401,9 @@
     - Kings's
     - Kings
 
-  actions:
-    - locid: back
 
 - name: fn
-  grid: 3:9
   hits: 5
-  delay: 1
   keywords:
     - Forsaken
     - Necropolis
@@ -418,9 +415,7 @@
     - Challendge
 
 - name: wt
-  grid: 3:9
   hits: 5
-  delay: 1
   keywords:
     - World
     - Tree
@@ -432,9 +427,7 @@
     - Challendge
 
 - name: tol
-  grid: 3:9
   hits: 5
-  delay: 1
   keywords:
     - Light
     - Floor
@@ -446,7 +439,6 @@
 
 - name: bc
   hits: 5
-  delay: 1
   keywords:
     - Brutal
     - Citadel
@@ -458,9 +450,7 @@
     - Challendge
 
 - name: cs
-  grid: 3:9
   hits: 5
-  delay: 1
   keywords:
     - Celestial
     - Sanctum
@@ -472,9 +462,7 @@
     - Challendge
 
 - name: if
-  grid: 3:9
   hits: 5
-  delay: 1
   keywords:
     - Infernal
     - Fortress
@@ -491,9 +479,7 @@
 
 # guild:
 - name: guildgrounds
-  grid: 3:3
   hits: 2
-  delay: 1
   keywords:
     - Guild
     - Hall
@@ -536,13 +522,6 @@
   keywords:
     - goods
     - barracks
-  actions:
-    - locid: buydust
-    - locid: buypoegold
-    - locid: buypoedia
-    - locid: buycoresy
-    - locid: reset
-    - locid: back
 
 - name: oak
   hits: 2

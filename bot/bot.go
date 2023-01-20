@@ -70,6 +70,7 @@ type BasicBot struct {
 
 // New Instance of bot
 func New(d *adb.Device, altout func(s1, s2 string)) *BasicBot {
+	outFn = altout
 	rand.Seed(time.Now().Unix())
 	return &BasicBot{
 		id:       rand.Uint32(),
@@ -148,8 +149,8 @@ func (b *BasicBot) ScanText() []ocr.AltoResult { // ocr.Result {
 		}
 		return s
 	}
-	// log.Tracef("ocred: %v", cyan(text))
-	b.outFn("ALTO OCR RESULT", f("%v", cyan(z(text))))
+	log.Tracef("ocred: %v", cyan(z(text)))
+	b.outFn("OCR-R", f("Words Onscr: %v lns: %d", cyan(len(text)), green(text[len(text)-1].LineNo)))
 	return text
 }
 

@@ -5,6 +5,8 @@ import (
 	"image"
 	"math/rand"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"worker/cfg"
@@ -99,19 +101,19 @@ func Concat(f string, topleft, bottomright image.Point) string {
 	return res
 }
 
-// func GridCrop(f string) (crpdImages []string) {
-// 	r, e := Magick(f, cfg.Imagick.Split...)
-// 	if e != nil {
-// 		log.Errorf("Grid Crop fail -> %v", e)
-// 	}
-// 	origName := strings.TrimRight(filepath.Base(f), filepath.Ext(f))
-// 	for _, file := range cfg.GetImages() {
-// 		if file != r && strings.Contains(file, origName) {
-// 			crpdImages = append(crpdImages, file)
-// 		}
-// 	}
-// 	return crpdImages
-// }
+func GridCrop(f string) (crpdImages []string) {
+	r, e := Magick(f, cfg.ActiveUser().Imagick...)
+	if e != nil {
+		log.Errorf("Grid Crop fail -> %v", e)
+	}
+	origName := strings.TrimRight(filepath.Base(f), filepath.Ext(f))
+	for _, file := range cfg.GetImages() {
+		if file != r && strings.Contains(file, origName) {
+			crpdImages = append(crpdImages, file)
+		}
+	}
+	return crpdImages
+}
 
 func MagickArgs() []string {
 	rand.Seed(time.Now().Unix())

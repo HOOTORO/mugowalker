@@ -23,10 +23,10 @@ type AltoResult struct {
 }
 
 var (
-	tesser string
-	user   *cfg.Profile
-
-	altoargs = []string{"--psm", "3", "-c", "tessedit_create_alto=1", "quiet"}
+	tesser   string
+	user     *cfg.Profile
+	psm      = []int{1, 3, 4, 6, 8, 11, 12}
+	altoargs = []string{"--psm", "3", "-c", "tessedit_create_alto=1", "hoot", "quiet"}
 	log      *logrus.Logger
 )
 
@@ -41,13 +41,20 @@ func init() {
 	user = cfg.ActiveUser()
 	log = cfg.Logger()
 }
+
 func TextExtractAlto(img string) []AltoResult {
 	// defer  timeTrack(time.Now(), "AltOcr")
+	resu := make([]AltoResult, 0)
 	imgPrep := AltOptimize(img)
-	f, _ := tmpFile()
-	tessAlto(imgPrep, f.Name())
-	s := UnmarshalAlto(f.Name())
-	return s.parse()
+	for _, v := range psm {
+
+		f, _ := tmpFile()
+		tessAlto(imgPrep, f.Name(), customPsm(v)...)
+		s := UnmarshalAlto(f.Name())
+		resu = append(resu, s.parse()...)
+	}
+
+	return resu
 }
 
 func (a Alto) parse() []AltoResult {

@@ -204,13 +204,3 @@ func IsAction(s string) (Action, bool) {
 	}
 	return 0, false
 }
-
-type Button string
-
-const (
-	Quests  Button = "Quests"
-	Bag            = "Bag"
-	Mail           = "Mail"
-	Go             = "Go"
-	Collect        = "Collect"
-)

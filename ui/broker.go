@@ -7,7 +7,7 @@ import (
 	"time"
 
 	a "worker/adb"
-	"worker/bot"
+	"worker/afk"
 	"worker/cfg"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -39,64 +39,12 @@ func runTask(m *menuModel) bool {
 	m.menulist.Styles.HelpStyle = noStyle
 	m.spinme.Style = noStyle
 	fn := func(s, d string) {
-		m.taskch <- notify(f("%v |>", s), d)
+		// m.taskch <- notify(f("%v", s), d)
+		m.taskch <- notify(f("%s", s), d)
 	}
-
-	dev, e := a.Connect(cf.DeviceSerial)
-	if e != nil {
-		log.Errorf("\ndeverr:%v", e)
-		return false
-	}
-	// fn := func(a string, b string) {
-	// 	log.Warnf("%v |>\n %v", mgt(a), b)
-	// }
-	gm := afk.New(cf.User)
-	d := bot.New(dev, fn)
-	b := afk.NewArenaBot(d, gm)
 	log.Warnf(yellow("\nCHOSEN RUNTASK >>> %v <<<"), m.choice)
-	switch m.choice {
-	case "Run all":
-		b.UpAll()
-	case "Do daily?":
-		go func() {
-			// m.strch <- "Hi< from DAILY routine"
-			b.AltoRun("quests", func(s, d string) {
-				m.taskch <- notify(f("%v |>", s), d)
-			})
-		}()
-	case "Push Campain?":
-		go func() {
-			t := b.Task(afk.DOPUSHCAMP)
-			b.React(t)
-		}()
-	case "Kings Tower":
-		go func() {
-			t := b.Task(afk.Kings)
-			b.React(t)
-		}()
-	case "Towers of Light":
-		go func() {
-			m.taskch <- taskinfo{Task: "TOL", Message: "Hi< from LIGHT routine"}
-			t := b.Task(afk.Light)
-			b.React(t)
-		}()
-	case "Brutal Citadel":
-		go func() {
-			// m.strch <- "Hi< from BRUTAL routine"
-			t := b.Task(afk.Mauler)
-			b.React(t)
-		}()
-	case "World Tree":
-		go func() {
-			t := b.Task(afk.Wilder)
-			b.React(t)
-		}()
-	case "Forsaken Necropolis":
-		go func() {
-			t := b.Task(afk.Graveborn)
-			b.React(t)
-		}()
-	}
+
+	afk.Push(cfg.PushCampain, cf, fn)
 	return true
 }
 

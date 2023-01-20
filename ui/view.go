@@ -70,26 +70,29 @@ func (m *menuModel) statuStr() string {
 		statusStyle.BorderForeground(brightGreen)
 	}
 
-	t := f("Device --> [%v] \n"+
-		"Profile --> \n\tGame |> %v\n\tUser |> %v"+
-		"\nConnection status: %v \nBluestacks: %v",
+	t := f("|> [%v] <|  Device	\n"+
+		"%% Profile %%			\n"+
+		"	|> %v <|	Game	\n"+
+		"	|> %v <|	User	\n"+
+		"|> %v <| 	ADB	\n"+
+		"|> %v <|  Bluestacks",
 		m.usersettings[connection], cyan(m.usersettings[game]),
 		cyan(m.usersettings[account]), con, emu)
 	return statusStyle.Render(t)
 }
 
 func (m *menuModel) runningTasksPanel() string {
-	log.Debugf("Upd status spanel....%v:%v", m.connectionStatus, m.bluestcksPid)
-	var s, rt string
-	s = m.statuStr()
-	rt = fmt.Sprintf("\n"+
+	log.Tracef("Upd status spanel....%v:%v", m.connectionStatus, m.bluestcksPid)
+	// var s, rt string
+	s := m.statuStr()
+	rt := fmt.Sprintf("\n"+
 		m.spinme.View()+" Runing task %s...\n\n", m.choice)
 
 	for _, res := range m.taskmsgs {
 		if res.Task == "" {
-			rt += "...................................\n"
+			rt += "...............................................\n"
 		} else {
-			rt += fmt.Sprintf("[%s]|>%s<|\n", res.Task, res.Message)
+			rt += fmt.Sprintf("[%-s]	%s\n", res.Task, res.Message)
 		}
 	}
 

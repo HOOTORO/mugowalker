@@ -1,10 +1,17 @@
 package ocr
 
-import "os/exec"
+import (
+	"fmt"
+	"os/exec"
+)
 
 func OptimizeForOCR(f string) string {
 	res, _ := Magick(f, user.Imagick...)
 	return res
+}
+
+func customPsm(n int) []string {
+	return []string{"--psm", fmt.Sprint(n), "-c", "tessedit_create_alto=1", "quiet"}
 }
 
 func AltOptimize(f string) string {
@@ -28,8 +35,8 @@ func runOcr(in string, out string) error {
 	return cmd.Run()
 }
 
-func tessAlto(in, out string) error {
-	args := append([]string{in, out}, altoargs...)
+func tessAlto(in, out string, args ...string) error {
+	args = append([]string{in, out}, args...)
 	cmd := exec.Command(tesser, args...)
 	log.Tracef("cmd tess : %v\n", cmd.String())
 

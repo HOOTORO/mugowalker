@@ -12,6 +12,7 @@ import (
 	"golang.org/x/sys/windows"
 
 	"worker/adb"
+	"worker/afk/activities"
 	"worker/bot"
 	"worker/ui"
 
@@ -55,19 +56,21 @@ func main() {
 
 		d, e := adb.Connect("127.0.0.1:5555")
 		if e != nil {
-			log.Errorf(red("%v"), e)
-			blueprc := cfg.RunProc(cfg.BluestacksExe, user.Bluestacks.Args()...)
-			log.Infof("Bluestacks started: %v, args: %v", blueprc.Process.Pid, user.Bluestacks)
+			// log.Errorf(red("%v"), e)
+			// blueprc := cfg.RunProc(cfg.BluestacksExe, user.Bluestacks.Args()...)
+			// log.Infof("Bluestacks started: %v, args: %v", blueprc.Process.Pid, user.Bluestacks)
 		}
 		gw := afk.New(user.User)
 		bb := bot.New(d, fn)
 		bot := afk.NewArenaBot(bb, gw)
 
-		bot.AltoRun("quests", fn)
+		activities.Push(bot, fn)
+
+		// bot.AltoRun("quests", fn)
 		return
 	}
 
-	log.SetLevel(logrus.TraceLevel)
+	// log.SetLevel(logrus.TraceLevel)
 	log.Warnf(red("RUN BEGIN : %v"), time.Now())
 
 	conf := ui.CfgDto(user)
