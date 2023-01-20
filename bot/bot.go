@@ -49,8 +49,8 @@ var (
 const (
 	startlocation       = "universe"
 	maxattempt    uint8 = 3
-	xgrid               = 5
-	ygrid               = 18
+	xgrid         int   = 5
+	ygrid         int   = 18
 )
 
 type Bot interface {
@@ -62,7 +62,7 @@ type Bot interface {
 
 type BasicBot struct {
 	id           uint32
-	xgrid, ygrid uint8
+	xgrid, ygrid int
 	location     string
 	outFn        func(string, string)
 	*adb.Device
@@ -76,6 +76,8 @@ func New(d *adb.Device, altout func(s1, s2 string)) *BasicBot {
 		location: startlocation,
 		Device:   d,
 		outFn:    altout,
+		xgrid:    xgrid,
+		ygrid:    ygrid,
 	}
 }
 func init() {
@@ -134,11 +136,14 @@ func (b *BasicBot) ScanText() []ocr.AltoResult { // ocr.Result {
 	text := ocr.TextExtractAlto(s)
 	z := func(arr []ocr.AltoResult) string {
 		var s string
-		for i, elem := range arr {
-			if i%2 == 0 {
-				s += f("	%-36s	", elem)
+		line := 0
+		for _, elem := range arr {
+
+			if elem.LineNo == line {
+				s += f("%s ", elem)
 			} else {
-				s += f("	%36s	\n", elem)
+				line = elem.LineNo
+				s += f("\n%s ", elem)
 			}
 		}
 		return s
@@ -162,22 +167,22 @@ func (b *BasicBot) Screenshot(name string) string {
 	return filepath.Join(p, newn)
 }
 
-// TapGO Grid x,y with y offset
+// Tap x,y with y offset
 func (b *BasicBot) Tap(gx, gy, off int) {
-	o := offset(off)
 	// Cell size
-	height := b.Resolution.Y / int(b.ygrid)
-	width := b.Resolution.X / int(b.xgrid)
+	// height := b.Resolution.Y / ygrid
+	// width := b.Resolution.X / xgrid
 
 	// Center point
-	px := gx*width - width/2
-	py := gy*height - int(o)*height/2
+	// px := gx*width - width/2
+	// py := gy*height - off*height/2
 	if user.DrawStep {
-		drawTap(px, py, b)
+		drawTap(gx, gx, b)
 	}
-	e := b.Device.Tap(fmt.Sprint(px), fmt.Sprint(py))
+	e := b.Device.Tap(fmt.Sprint(gx), fmt.Sprint(gy))
 	// fmt.Printf("Tap: Grid-> %v:%v, Point-> %vx%v px\n\r", gx, gy, px, py)
-	b.outFn("BOT", f(green("Tap: [Grid > %v:%v] Point-> %vx%v px\n\r", gx, gy, px, py)))
+	// b.outFn("BOT", green(f("Tap: [Grid > %v:%v] Point-> %vx%v px\n\r", gx, gy, px, py)))
+	b.outFn("BOT", green(f("Tap -> %vx%v px\n\r", gx, gy)))
 	if e != nil {
 		log.Warnf("Have an error during tap: %v", e.Error())
 	}

@@ -19,6 +19,7 @@ import (
 type AltoResult struct {
 	Linechars string
 	X, Y      int
+	LineNo    int
 }
 
 var (
@@ -32,7 +33,7 @@ var (
 var send func(string, string)
 
 func (a AltoResult) String() string {
-	return fmt.Sprintf("[_| %vx%v	<| %-20s	|_]", a.X, a.Y, a.Linechars)
+	return fmt.Sprintf("[%2d|%4dx%4d<| %-10s |", a.LineNo, a.X, a.Y, a.Linechars)
 }
 func init() {
 	// Fallback to searching on PATH.
@@ -54,10 +55,10 @@ func (a Alto) parse() []AltoResult {
 	res = make([]AltoResult, 0)
 	//    fmt.Printf("%v", pass("%v",))
 	tl := a.Layout.Page.PrintSpace.ComposedBlock.TextBlock.TextLine
-	for _, line := range tl {
+	for i, line := range tl {
 		for _, v := range line.String {
 			if len(v.CONTENT) > 3 || slices.Contains(user.Exceptions, v.CONTENT) {
-				res = append(res, AltoResult{Linechars: v.CONTENT, X: cfg.ToInt(v.HPOS), Y: cfg.ToInt(v.VPOS)})
+				res = append(res, AltoResult{Linechars: v.CONTENT, X: cfg.ToInt(v.HPOS), Y: cfg.ToInt(v.VPOS), LineNo: i})
 			}
 		}
 	}

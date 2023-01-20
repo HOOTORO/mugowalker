@@ -44,14 +44,13 @@ func init() {
 
 func main() {
 	log = cfg.Logger()
-	log.SetLevel(logrus.InfoLevel)
-	log.Warnf(red("RUN BEGIN : %v"), time.Now())
-
 	fn := func(a string, b string) {
 		log.Warnf("%v |>\n %v", mgt(a), b)
 	}
 
 	if len(os.Args) > 1 && os.Args[1] == "-t" {
+		log.SetLevel(logrus.InfoLevel)
+
 		color.HiRed("%v", "TEST RUN")
 
 		d, e := adb.Connect("127.0.0.1:5555")
@@ -67,6 +66,9 @@ func main() {
 		bot.AltoRun("quests", fn)
 		return
 	}
+
+	log.SetLevel(logrus.TraceLevel)
+	log.Warnf(red("RUN BEGIN : %v"), time.Now())
 
 	conf := ui.CfgDto(user)
 

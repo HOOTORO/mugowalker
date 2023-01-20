@@ -95,10 +95,10 @@ func ActiveUser() *Profile {
 func (rt ReactiveTask) React(trigger string) (image.Point, int) {
 	for _, v := range rt.Reactions {
 		if trigger == v.If {
-			return cutgrid(v.Do)
+			return Cutgrid(v.Do)
 		}
 	}
-	return cutgrid("1:18")
+	return Cutgrid("1:18")
 }
 
 func (rt ReactiveTask) Before(trigger string) string {
@@ -128,7 +128,7 @@ func Parse(s string, out interface{}) error {
 	if err != nil {
 		log.Fatalf("UNMARSHAL WASTED: %v", err)
 	}
-	log.Tracef("UNMARSHALLED: %v\n\n", out)
+	log.Tracef("\n\n\n\n\nUNMARSHALLED: %v\n\n", out)
 	return err
 }
 
@@ -297,7 +297,7 @@ func lookupLastConfig(dirs ...string) string {
 	return res
 }
 
-func cutgrid(str string) (p image.Point, off int) {
+func Cutgrid(str string) (p image.Point, off int) {
 	off = 1 // default
 	ords := strings.Split(str, ":")
 	p = image.Point{

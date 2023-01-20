@@ -94,6 +94,7 @@ func Connect(hostport string) (*Device, error) {
 
 	if out, err := cmd.Call(); err == nil && checkOut(out) {
 		dev := &Device{Serial: hostport, DevState: Online}
+		_ = resolution(dev)
 		Abi(dev)
 		log.Infof("--> %v", out)
 		return dev, nil

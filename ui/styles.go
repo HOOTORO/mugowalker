@@ -19,7 +19,7 @@ const (
 	bloodRed    = lipgloss.Color("#FF0000")
 	someG       = lipgloss.Color("#00FFa0")
 	someR       = lipgloss.Color("#FFa000")
-	sep         = " >>> "
+	sep         = "\n>>>"
 )
 
 var (
@@ -54,7 +54,7 @@ var (
 			ColorWhitespace(true).
 			Align(lipgloss.Left).
 			Margin(0, 0, 0, 2).
-			Width(39)
+			Width(50)
 
 	///////////////
 	/// RIGHT ////
@@ -104,9 +104,10 @@ var (
 var (
 	// Output Style selectlist
 	// MultiText Input
-	topInputStyle = lipgloss.NewStyle().
-			Margin(10, 0, 10, 10).
-			Width(60)
+	topInputStyle = menulistStyle.Copy().
+		// Margin(10, 0, 10, 2).
+		// Width(45)
+		MarginTop(10)
 	focusedStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("205"))
 	blurredStyle = lipgloss.NewStyle().
@@ -126,7 +127,11 @@ var (
 )
 
 var (
-	itemStyle         = lipgloss.NewStyle().PaddingLeft(1)
-	selectedItemStyle = lipgloss.NewStyle().PaddingLeft(2).
-				Foreground(lipgloss.Color("170"))
+	itemStyle = lipgloss.NewStyle().
+			PaddingLeft(1).
+			MarginLeft(1).
+			MarginBottom(3)
+	selectedItemStyle = lipgloss.NewStyle().
+		// PaddingLeft(2).
+		Foreground(lipgloss.Color("170"))
 )

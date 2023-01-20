@@ -7,11 +7,11 @@ import (
 	"time"
 
 	a "worker/adb"
-	"worker/afk"
 	"worker/bot"
 	"worker/cfg"
 
 	"github.com/charmbracelet/bubbles/list"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/fatih/color"
 )
 
@@ -25,7 +25,11 @@ func getDevices() []list.Item {
 	}
 	for _, v := range d {
 		descu := fmt.Sprintf("State: %s, T_Id: %v, WMsize: %v", v.DevState, v.TransportId, v.Resolution)
-		devs = append(devs, item{title: v.Serial, desc: descu, children: func(m *menuModel) {}})
+		devs = append(devs, item{title: v.Serial, desc: descu, children: func(m *menuModel) tea.Cmd {
+			return func() tea.Msg {
+				return adbConnect(m.usersettings[connection])
+			}
+		}})
 	}
 	return devs
 }
@@ -34,15 +38,18 @@ func runTask(m *menuModel) bool {
 	cf := DtoCfg(m.usersettings)
 	m.menulist.Styles.HelpStyle = noStyle
 	m.spinme.Style = noStyle
+	fn := func(s, d string) {
+		m.taskch <- notify(f("%v |>", s), d)
+	}
 
 	dev, e := a.Connect(cf.DeviceSerial)
 	if e != nil {
 		log.Errorf("\ndeverr:%v", e)
 		return false
 	}
-	fn := func(a string, b string) {
-		log.Warnf("%v |>\n %v", mgt(a), b)
-	}
+	// fn := func(a string, b string) {
+	// 	log.Warnf("%v |>\n %v", mgt(a), b)
+	// }
 	gm := afk.New(cf.User)
 	d := bot.New(dev, fn)
 	b := afk.NewArenaBot(d, gm)
@@ -94,9 +101,9 @@ func runTask(m *menuModel) bool {
 }
 
 func runBluestacks(m *menuModel) bool {
-	_ = DtoCfg(m.usersettings)
+	p := DtoCfg(m.usersettings)
 	// pid, e := cfg.StartProc(bluestacksexe, strings.Fields(m.opts[bluestacks])...)
-	cmd := cfg.RunProc(bluexe, strings.Fields(m.usersettings[blueInstance])...)
+	cmd := cfg.RunProc(bluexe, p.Bluestacks.Args()...)
 
 	m.bluestcksPid = cmd.Process.Pid
 	m.statuStr()
@@ -110,7 +117,7 @@ func runBluestacks(m *menuModel) bool {
 		m.taskch <- notify(bluexe, f("|> finished, pid: %v", m.bluestcksPid))
 		m.bluestcksPid = 0
 	}()
-	return true
+	return checkBlueStacks(m)
 }
 
 func CfgDto(conf *cfg.Profile) map[string]string {

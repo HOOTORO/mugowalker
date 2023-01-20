@@ -26,7 +26,7 @@ type menuModel struct {
 	menulist    list.Model
 	parents     []list.Model
 	choice      string
-	inpitChosen bool
+	inputChosen bool
 
 	focusIndex int
 	manyInputs []textinput.Model
@@ -41,7 +41,7 @@ type menuModel struct {
 
 func (m menuModel) String() string {
 	log.Tracef("[ options ]\n[ %v ]\n[ from yaml ]", m.usersettings)
-	return fmt.Sprintf(green("\n[DevStatus : %v]	[Quitting : %v]\n[Choice : %v]	[BluePid : %v]"), m.connectionStatus, m.quitting, m.choice, m.bluestcksPid)
+	return f(green("\n\t|> [DevStatus : %v]\t[Quitting : %v]\n\t|> [Choice : %v]\t[BluePid : %v]"), m.connectionStatus, m.quitting, m.choice, m.bluestcksPid)
 }
 
 // //////////////////////////
@@ -49,9 +49,9 @@ func (m menuModel) String() string {
 // init / update / view ///
 // ////////////////////////
 func (m menuModel) Init() tea.Cmd {
-	log.Warnf("\nInit model:  \n%s", m)
+	log.Warnf(red("\nInit model: %+v \n"), m)
 	return tea.Batch(
-		textinput.Blink,
+		// textinput.Blink,
 		checkVM,
 		activityListener(m.taskch), // wait for activity
 	)
@@ -61,9 +61,10 @@ func (m menuModel) Init() tea.Cmd {
 func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// always exit keysl
 	var cmd tea.Cmd
-	log.Debugf(mag("\nUPDATE INC. -> %+v [%T]"), msg, msg)
+	// log.Debugf(mag("\nUPDATE INC. -> %+v [%T]"), msg, msg)
 	switch k := msg.(type) {
 	case tea.KeyMsg:
+		log.Debugf(mag("(UPD) KEY INC. -> %+v [%T]"), msg, msg)
 
 		if k.String() == "ctrl+c" {
 			m.quitting = true
@@ -101,9 +102,9 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 
-	log.Debugf(yellow("\nPREUPD -> %v\n%v"), m)
+	log.Debugf(yellow("\nVIEW INC -> %v\n%v"), m)
 
-	if m.inpitChosen {
+	if m.inputChosen {
 		return updateInput(msg, m)
 	}
 	return updateMenu(msg, m) //m, tea.Quit
@@ -118,7 +119,7 @@ func (m menuModel) View() string {
 		return quitStyle.Render("\n  See you later, Space Cowboy!\n\n")
 	}
 
-	if m.inpitChosen {
+	if m.inputChosen {
 		res = inputFormView(m)
 	} else {
 		res = listView(m)
@@ -148,7 +149,7 @@ func initTextModel(placeholder string, focus bool, prom string) textinput.Model 
 		ti.PromptStyle = focusedStyle
 		ti.TextStyle = focusedStyle
 	}
-	// ti.Width = 20
+	ti.Width = 30
 	ti.PromptStyle.Underline(true)
 	ti.Prompt = prom + sep
 	return ti
@@ -213,6 +214,7 @@ type itemDelegate struct{}
 func (d itemDelegate) Height() int                               { return 1 }
 func (d itemDelegate) Spacing() int                              { return 0 }
 func (d itemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
+
 func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
 	i, ok := listItem.(menuItem)
 	if !ok {

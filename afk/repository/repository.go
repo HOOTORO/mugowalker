@@ -97,6 +97,32 @@ func GetUser(user string) *User {
 	}
 	return &usr
 }
+func (u *User) Id() uint {
+	return u.ID
+}
+func (u *User) Name() string {
+	return u.Username
+}
+
+func (u *User) Quests() uint8 {
+	var td *Daily
+	r := udb.Where("user_id = ? and created_at > ?", u.ID, StartOfDay(time.Now().UTC())).First(&td)
+	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
+		td = &Daily{Quests: 0, UserID: u.ID}
+		udb.Save(td)
+	}
+	return td.Quests
+}
+func (u *User) SetQuests(q uint8) {
+	var usrDaily *Daily
+	r := udb.Where("user_id = ? and created_at > ?", u.ID, StartOfDay(time.Now().UTC())).First(&usrDaily)
+	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
+		usrDaily = &Daily{Quests: q, UserID: u.ID}
+	} else {
+		usrDaily.Quests = q
+	}
+	udb.Save(usrDaily)
+}
 
 func (u *User) save() {
 	r := udb.Save(u)
@@ -111,25 +137,14 @@ func (u *User) AfterUpdate(tx *gorm.DB) (err error) {
 	return
 }
 
-func (u *User) DailyData() *Daily {
-	var td *Daily
-	r := udb.Where("user_id = ? and created_at > ?", u.ID, StartOfDay(time.Now().UTC())).First(&td)
-	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
-		td = &Daily{Quests: 0, UserID: u.ID}
-		udb.Save(td)
-	}
-
-	return td
-}
-
-func (u *Daily) Update(quest uint8) {
-	u.Quests = quest
-	r := udb.Save(u)
-	log.Errorf("\nudb: %v user updated", r.RowsAffected)
-	if r.Error != nil {
-		panic("DB ERROR : " + r.Error.Error())
-	}
-}
+// func (u *Daily) Update(quest uint8) {
+// 	u.Quests = quest
+// 	r := udb.Save(u)
+// 	log.Errorf("\nudb: %v user updated", r.RowsAffected)
+// 	if r.Error != nil {
+// 		panic("DB ERROR : " + r.Error.Error())
+// 	}
+// }
 
 func (u *Progress) Update(level uint) {
 	u.Level = level

@@ -1,47 +1,9 @@
 package afk
 
-import "math"
-
 type Location interface {
 	String() string
 	Id() uint
 }
-
-type DailyQuest uint8
-
-var QuestNames = []string{"loot", "fastrewards", "friends", "wrizz", "arena1x1", "oak", "QCamp", "QKT"}
-
-func QString(k DailyQuest) []string {
-	var result []string
-	for i := 0; i < len(QuestNames); i++ {
-		if k&(1<<uint(i)) != 0 {
-			result = append(result, QuestNames[i])
-		}
-	}
-	return result
-}
-
-func (dq DailyQuest) String() string {
-	idx := math.Log2(float64(dq))
-	return QuestNames[int(idx)]
-}
-
-func (dq DailyQuest) Id() uint8 {
-	return uint8(dq)
-}
-
-// 000000
-const (
-	Loot DailyQuest = 1 << iota
-	FastReward
-	Friendship
-	Wrizz
-	Arena1x1
-	Oak
-	QCamp
-	QKT
-	Dailies = Loot | FastReward | Friendship | Wrizz | Arena1x1 | Oak | QCamp | QKT
-)
 
 type UserField uint
 
@@ -242,3 +204,13 @@ func IsAction(s string) (Action, bool) {
 	}
 	return 0, false
 }
+
+type Button string
+
+const (
+	Quests  Button = "Quests"
+	Bag            = "Bag"
+	Mail           = "Mail"
+	Go             = "Go"
+	Collect        = "Collect"
+)

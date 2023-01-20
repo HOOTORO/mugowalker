@@ -35,7 +35,7 @@ func updateMenu(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 					m.menulist.SetItems(itm.NextLevel(m))
 
 				case func(m menuModel) []textinput.Model:
-					m.inpitChosen = true
+					m.inputChosen = true
 					m.manyInputs = chld(m)
 
 					return updateInput(msg, m)
@@ -100,7 +100,7 @@ func updateInput(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 			// If so, exit.
 			log.Warnf("Focus: %v  len(%v)", m.focusIndex, len(m.manyInputs))
 			if (s == "enter" && m.focusIndex == len(m.manyInputs)) || s == "esc" {
-				m.inpitChosen = false
+				m.inputChosen = false
 			}
 
 			// Cycle indexes

@@ -26,3 +26,13 @@ const (
 	programRootDir = ".afkworker"
 	logfile        = "app.log"
 )
+
+// Global afk activities
+
+type Mission int
+
+const (
+	PushCampain Mission = iota + 1
+	ClimbTower
+	GuildBosses
+)

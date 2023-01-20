@@ -1,10 +1,12 @@
 package afk
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
+	"worker/afk/activities"
 	"worker/bot"
 	"worker/cfg"
 	"worker/ocr"
@@ -86,7 +88,7 @@ func (dw *Daywalker) AltoRun(str string, fn func(string, string)) {
 	altos := dw.ScanText()
 	// Fnotify(alto, f("%+v", altos))
 	where := bot.GuessLocByKeywords(altos, dw.Locations)
-
+	dw.Daily()
 	for _, r := range taks.Taptarget {
 		if strings.Contains(where, r.If) {
 			for _, do := range r.Do {
@@ -102,11 +104,9 @@ func (dw *Daywalker) AltoRun(str string, fn func(string, string)) {
 }
 
 func (dw *Daywalker) UpAll() {
-	daily, err := dw.Daily()
-	if err != nil {
-		log.Errorf("Daily errr")
-	}
-	log.Infof("Daily done? %v", daily)
+	dw.Daily()
+
+	log.Infof("Daily done? %v")
 	for _, v := range dw.Tasks() {
 		if availiableToday(v.Avail) {
 			dw.React(&v)
@@ -141,24 +141,59 @@ func (dw *Daywalker) React(r *cfg.ReactiveTask) error {
 	return nil
 }
 
-func (dw *Daywalker) Daily() (bool, error) {
-	Fnotify("|>", red("\n--> DAILY <-- \nUndone:   %08b", dw.ActiveDailies()))
-	ignoredDailies := []DailyQuest{QCamp, QKT}
-	for _, daily := range dw.ActiveDailies() {
-		Fnotify("daily", red("--> RUN # [%s]", daily))
-		if slices.Contains(ignoredDailies, daily) {
-			Fnotify("daily", cyan("--> IGNORING # [%s]", daily))
-			dw.MarkDone(daily)
-			continue
-		}
-		task := dw.DailyTask(daily)
-		e := dw.React(task)
+func (dw *Daywalker) Daily() {
+	// qs := activities.ActiveDailies(dw.User)
+	// Fnotify("|>", red("\n--> DAILY <-- \nUndone:   %08b", qs))
+	Fnotify("|>", red("\n--> Go to Quests Tab"))
+	or := dw.ScanText()
+	x, y, e := LookForButton(or, Quests)
+	if e != nil {
+		dw.Back()
+		dw.Daily()
+	}
+	dw.Tap(x, y, 1)
+	or = dw.ScanText()
+	loc := bot.GuessLocByKeywords(or, dw.Locations)
+	if loc == QUESTS.String() {
+		x, y, e = LookForButton(or, Collect)
 		if e == nil {
-			dw.MarkDone(daily)
-			dw.ZeroPosition()
+			dw.Tap(x, y, 1)
+			or = dw.ScanText()
 		}
 	}
-	return true, nil
+	ls := Lines(or)
+	for k, v := range ls {
+		if v == Go {
+			if val, ok := ls[k-1]; ok {
+				q := activities.IsBoardQuest(val)
+				route := activities.Route(q)
+				g := GetLine(or, k)
+				x, y, e = LookForButton(g, Go)
+				dw.Tap(x, y, 1)
+				for _, v1 := range route {
+					if strings.ContainsAny(v1, ":") {
+						point, off := cfg.Cutgrid(v1)
+						dw.Tap(point.X, point.Y, off)
+					} else {
+						x, y, e = LookForButton(or, Button(v1))
+						if e == nil {
+							dw.Tap(x, y, 1)
+						}
+					}
+
+				}
+			}
+		}
+	}
+	// for _, daily := range qs {
+	// 	Fnotify("daily", red("--> RUN # [%s]", daily))
+	// 	task := dw.DailyTask(daily)
+	// 	e := dw.React(task)
+	// 	if e == nil {
+	// 		activities.MarkDone(dw.User, daily)
+	// 		dw.ZeroPosition()
+	// 	}
+	// }
 }
 
 func (dw *Daywalker) ZeroPosition() bool {
@@ -219,4 +254,35 @@ func (dw *Daywalker) RunAfter(action Action) {
 	case Deactivate:
 		dw.Reactive = false
 	}
+}
+func LookForButton(or []ocr.AltoResult, b Button) (x, y int, e error) {
+
+	for _, r := range or {
+		if strings.Contains(r.Linechars, string(b)) {
+			return r.X, r.Y, nil
+		}
+	}
+	return 0, 0, errors.New("btn not found here")
+}
+
+func GetLine(or []ocr.AltoResult, n int) []ocr.AltoResult {
+	var res []ocr.AltoResult
+	for _, v := range or {
+		if v.LineNo == n {
+			res = append(res, v)
+		}
+	}
+	return res
+}
+
+func Lines(or []ocr.AltoResult) map[int]string {
+	res := make(map[int]string, 0)
+	for _, v := range or {
+		if val, ok := res[v.LineNo]; ok {
+			res[v.LineNo] = strings.Join([]string{val, v.Linechars}, " ")
+		} else {
+			res[v.LineNo] = v.Linechars
+		}
+	}
+	return res
 }
