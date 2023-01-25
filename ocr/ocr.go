@@ -54,7 +54,7 @@ func TextExtractAlto(img string) []AltoResult {
 		resu = append(resu, s.parse()...)
 	}
 
-	return resu
+	return unique(resu)
 }
 
 func (a Alto) parse() []AltoResult {
@@ -64,7 +64,7 @@ func (a Alto) parse() []AltoResult {
 	tl := a.Layout.Page.PrintSpace.ComposedBlock.TextBlock.TextLine
 	for i, line := range tl {
 		for _, v := range line.String {
-			if len(v.CONTENT) > 3 || slices.Contains(user.Exceptions, v.CONTENT) {
+			if len(v.CONTENT) > 3 || slices.Contains(user.Exceptions, v.CONTENT) || strings.ContainsAny(v.CONTENT, "0123456789") {
 				res = append(res, AltoResult{Linechars: v.CONTENT, X: cfg.ToInt(v.HPOS), Y: cfg.ToInt(v.VPOS), LineNo: i})
 			}
 		}
@@ -173,4 +173,27 @@ func timeTrack(start time.Time, name string) string {
 	c := color.New(color.BgHiBlue, color.FgCyan, color.Underline, color.Bold).SprintfFunc()
 	elapsed := time.Since(start)
 	return fmt.Sprintf("%v\n\r", c("\r[%s] %s", name, elapsed.Round(time.Millisecond)))
+}
+
+func unique(sample []AltoResult) []AltoResult {
+	var unique []AltoResult
+	type key struct {
+		value1 string
+		val2   int
+	}
+	m := make(map[key]int)
+	for _, v := range sample {
+		k := key{v.Linechars, v.Y}
+		if i, ok := m[k]; ok {
+			// Overwrite previous value per requirement in
+			// question to keep last matching value.
+			unique[i] = v
+		} else {
+			// Unique key found. Record position and collect
+			// in result.
+			m[k] = len(unique)
+			unique = append(unique, v)
+		}
+	}
+	return unique
 }

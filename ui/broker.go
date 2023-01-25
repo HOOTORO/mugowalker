@@ -68,6 +68,13 @@ func runBluestacks(m *menuModel) bool {
 	return checkBlueStacks(m)
 }
 
+func userSettings(c *cfg.Profile) map[Option]string {
+	dto := make(map[Option]string, 0)
+	dto[AppId] = c.Bluestacks.Package
+	dto[VmName] = c.Bluestacks.Instance
+	return dto
+}
+
 func CfgDto(conf *cfg.Profile) map[string]string {
 	dto := make(map[string]string, 0)
 	dto[connection] = conf.DeviceSerial
@@ -133,3 +140,7 @@ func kill(pid int) bool {
 	}
 	return e == nil
 }
+
+// func loglevel(m *menuModel) {
+
+// }

@@ -19,6 +19,7 @@ const (
 	bloodRed    = lipgloss.Color("#FF0000")
 	someG       = lipgloss.Color("#00FFa0")
 	someR       = lipgloss.Color("#FFa000")
+	orange      = lipgloss.Color("#faa805")
 	sep         = "\n>>>"
 )
 
@@ -31,10 +32,8 @@ var (
 	// Title
 	tStyle = lipgloss.NewStyle().
 		Bold(true).
-		// Background(purple).
 		Foreground(white).
 		ColorWhitespace(true).
-		// PaddingLeft(2).
 		Align(lipgloss.Right)
 
 	// list Title Bar
@@ -43,7 +42,6 @@ var (
 		MarginBottom(1).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(hotPink)
-		// BorderBackground(purple)
 
 	menulistStyle = lipgloss.NewStyle().
 			ColorWhitespace(true).
@@ -62,7 +60,7 @@ var (
 			Width(50).
 			PaddingLeft(3).
 			PaddingRight(5).
-			Align(lipgloss.Right).
+			Align(lipgloss.Right, lipgloss.Top).
 			BorderForeground(bloodRed)
 
 	spinnerStyle = lipgloss.NewStyle().
@@ -72,12 +70,13 @@ var (
 			MarginTop(2).
 			UnsetPaddingLeft().
 			Width(55).
-			UnsetBorderStyle()
+			UnsetBorderStyle().Align(lipgloss.Left, lipgloss.Bottom)
 
 	//	happyClr = colorful.FastHappyColor()
 	helpStyle = lipgloss.NewStyle().
 			MarginLeft(1).
-			Align(lipgloss.Bottom)
+			Align(lipgloss.Bottom).
+			Foreground(darkGray)
 
 	quitStyle = lipgloss.NewStyle().
 			Bold(true).
@@ -85,12 +84,14 @@ var (
 			MarginBackground(lipgloss.Color("#00FF00")).
 			Margin(10)
 	// hz
-	execRespStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(hotPink).
-			Foreground(lipgloss.Color("#77DE77")).
-			Align(lipgloss.Bottom).
-			MarginLeft(30)
+	// execRespStyle = lipgloss.NewStyle().
+	// 		Border(lipgloss.RoundedBorder()).
+	// 		BorderForeground(hotPink).
+	// 		Foreground(lipgloss.Color("#77DE77")).
+	// 		Align(lipgloss.Bottom).
+	// 		MarginLeft(30)
+
+	taskName = lipgloss.NewStyle().Foreground(orange)
 )
 
 // ////////////////
@@ -98,8 +99,7 @@ var (
 // // input /////
 // /////////////
 var (
-	// Output Style selectlist
-	// MultiText Input
+	// MultiText Input Form
 	topInputStyle = menulistStyle.Copy().
 		// Margin(10, 0, 10, 2).
 		// Width(45)
@@ -128,6 +128,5 @@ var (
 			MarginLeft(1).
 			MarginBottom(3)
 	selectedItemStyle = lipgloss.NewStyle().
-		// PaddingLeft(2).
-		Foreground(lipgloss.Color("170"))
+				Foreground(lipgloss.Color("170"))
 )

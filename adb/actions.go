@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strconv"
 	"time"
-	"worker/emulator"
 )
 
 type AdbArgs interface {
@@ -82,11 +81,5 @@ func (d *Device) Home() {
 	e := d.Command(input, keyevent, home).Run()
 	if e != nil {
 		fmt.Printf("\nrun: %v err: %v", "scr", e.Error())
-	}
-}
-
-func keepAliveVM() {
-	if !emulator.IsOnline() {
-		emulator.Start()
 	}
 }

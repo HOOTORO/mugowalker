@@ -89,6 +89,15 @@ func Connect(hostport string) (*Device, error) {
 	if adb == "" {
 		return nil, ErrADBNotFound
 	}
+	//check existing connection
+	devs, e := Devices()
+	if e == nil {
+		for _, d := range devs {
+			if d.Serial == hostport {
+				return d, nil
+			}
+		}
+	}
 	// serial := fmt.Sprintf("%v:%v", host, port)
 	cmd := Cmd{Args: []string{"connect", hostport}}
 
@@ -99,7 +108,7 @@ func Connect(hostport string) (*Device, error) {
 		log.Infof("--> %v", out)
 		return dev, nil
 	} else {
-		return nil, ErrNoDevices
+		return nil, errors.New(out)
 	}
 }
 
@@ -114,7 +123,7 @@ func parseDevices(out string) ([]*Device, error) {
 	for _, line := range lines {
 		fields := strings.Fields(line)
 		switch len(fields) {
-		case 0:
+		case 0, 8:
 			continue
 		case 6:
 			tid, _ := strconv.Atoi(strings.Trim(fields[5], "transport_id:"))
@@ -169,7 +178,6 @@ func state(str string) DevState {
 }
 
 func checkOut(str string) bool {
-	log.Debugf("adbc out: %v", str)
 	return strings.Contains(str, "connected to") || strings.Contains(str, "already connected to")
 
 }

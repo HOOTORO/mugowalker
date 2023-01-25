@@ -44,7 +44,7 @@ func NewArenaBot(b *bot.BasicBot, g *Game) *Daywalker {
 }
 
 var f = fmt.Sprintf
-var Fnotify func(string, string)
+var outFn func(string, string)
 var red, green, cyan, ylw, mgt func(...interface{}) string
 
 func init() {
@@ -76,13 +76,13 @@ func (dw *Daywalker) TempScreenshot(name string) string {
 }
 
 func (dw *Daywalker) AltoRun(str string, fn func(string, string)) {
-	Fnotify = fn
+	outFn = fn
 	taks := dw.Reactivalto(str)
-	Fnotify(alto, red("TAPTARGET \n %s", taks))
+	outFn(alto, red("TAPTARGET \n %s", taks))
 	altos := dw.ScanText()
 	// Fnotify(alto, f("%+v", altos))
 	where := bot.GuessLocation(altos, dw.Locations)
-	dw.Daily()
+	// dw.Daily()
 	for _, r := range taks.Taptarget {
 		if strings.Contains(where, r.If) {
 			for _, do := range r.Do {
@@ -92,18 +92,6 @@ func (dw *Daywalker) AltoRun(str string, fn func(string, string)) {
 				}
 			}
 
-		}
-	}
-
-}
-
-func (dw *Daywalker) UpAll() {
-	dw.Daily()
-
-	log.Infof("Daily done? %v")
-	for _, v := range dw.Tasks() {
-		if availiableToday(v.Avail) {
-			dw.React(&v)
 		}
 	}
 }
@@ -135,53 +123,6 @@ func (dw *Daywalker) React(r *cfg.ReactiveTask) error {
 	return nil
 }
 
-func (dw *Daywalker) Daily() {
-	// qs := activities.ActiveDailies(dw.User)
-	// Fnotify("|>", red("\n--> DAILY <-- \nUndone:   %08b", qs))
-	Fnotify("|>", red("\n--> Go to Quests Tab"))
-	or := dw.ScanText()
-	x, y, e := LookForButton(or, activities.Quests)
-	if e != nil {
-		dw.Back()
-		dw.Daily()
-	}
-	dw.Tap(x, y, 1)
-	or = dw.ScanText()
-	loc := bot.GuessLocation(or, dw.Locations)
-	if loc == QUESTS.String() {
-		x, y, e = LookForButton(or, activities.Collect)
-		if e == nil {
-			dw.Tap(x, y, 1)
-			or = dw.ScanText()
-		}
-	}
-	ls := Lines(or)
-	for k, v := range ls {
-		if v == activities.Go {
-			if val, ok := ls[k-1]; ok {
-				q := activities.IsBoardQuest(val)
-				route := activities.Route(q)
-				g := GetLine(or, k)
-				x, y, e = LookForButton(g, activities.Go)
-				dw.Tap(x, y, 1)
-				for _, v1 := range route {
-					if strings.ContainsAny(v1, ":") {
-						point, off := cfg.Cutgrid(v1)
-						dw.Tap(point.X, point.Y, off)
-					} else {
-						x, y, e = LookForButton(or, activities.Button(v1))
-						if e == nil {
-							dw.Tap(x, y, 1)
-						}
-					}
-
-				}
-			}
-		}
-	}
-
-}
-
 func (dw *Daywalker) ZeroPosition() bool {
 	log.Tracef("Returning to Ranhorny...")
 	if dw.cnt > 5 {
@@ -205,60 +146,27 @@ func availiableToday(days string) bool {
 	return slices.Contains(d, weekday[:3])
 }
 
-// func (dw *Daywalker) RunBefore(action Action) {
-// 	switch action {
-// 	case UpdProgress:
-// 		loc := dw.CurrentLocation()
-// 		scr := dw.Screenshot(cfg.UserFile(f("%v", loc)))
-// 		t := ocr.TextExtract(scr)
-// 		dw.UpdateProgress(loc, t)
-// 		//        default:
-// 		//            ords := cfg.StrToGrid()
-// 		//            dw.TapGO(ords.X, ords.Y, ords.Offset)
-// 	case RepeatX:
-// 		task := dw.Task(dw.CurrentLocation())
-// 		point, off := task.React(dw.CurrentLocation().String())
-// 		for i := 0; i < 5; i++ {
-// 			dw.Tap(point.X, point.Y, off)
-// 			time.Sleep(time.Second)
-// 			dw.Tap(1, 18, off)
-// 		}
-
-// 	}
-// }
-
-//	func (dw *Daywalker) RunAfter(action Action) {
-//		switch action {
-//		case Gshot:
-//			time.Sleep(3 * time.Second)
-//			loc := dw.CurrentLocation()
-//			pr := dw.User.GetProgress(loc.Id())
-//			dw.Screenshot(cfg.UserFile(f("%v_heroinfo", pr.Level)))
-//			dw.Tap(1, 18, 1)
-//			time.Sleep(time.Second)
-//			dw.Tap(3, 17, 1)
-//		case Deactivate:
-//			dw.Reactive = false
-//		}
-//	}
-func LookForButton(or []ocr.AltoResult, b activities.Button) (x, y int, e error) {
-
-	for _, r := range or {
-		if strings.Contains(r.Linechars, string(b)) {
-			return r.X, r.Y, nil
-		}
-	}
-	return 0, 0, errors.New("btn not found here")
-}
-
+// Press button, search for 'button's text in ocr results
 func (dw *Daywalker) Press(b activities.Button) bool {
 	or := dw.ScanText()
 	x, y, e := LookForButton(or, b)
 	if e != nil {
 		return false
 	}
+
+	dw.NotifyUI(cyan("BTN PRSD"), green(f("%vx%v %v %v", x, y, b)))
 	dw.Tap(x, y, 1)
 	return true
+}
+
+func LookForButton(or []ocr.AltoResult, b activities.Button) (x, y int, e error) {
+	for _, r := range or {
+		if strings.Contains(r.Linechars, b.String()) {
+			xo, yo := b.Offset()
+			return r.X + xo, r.Y + yo, nil
+		}
+	}
+	return 0, 0, errors.New("btn not found here")
 }
 
 func GetLine(or []ocr.AltoResult, n int) []ocr.AltoResult {

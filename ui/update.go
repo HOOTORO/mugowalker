@@ -57,8 +57,8 @@ func updateMenu(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 		// log.Debugf(red("FOCUS # %v"), m.menulist.SelectedItem().FilterValue())
 		// May be... some day
 		// case tea.WindowSizeMsg:
-		// 	h, v := docStyle.GetFrameSize()
-		// 	m.menulist.SetSize(msg.Width-h, msg.Height-v)
+		// 	m.menulist.SetSize(msg.Width/2, msg.Height)
+		// m.statusInfo =
 	}
 	// 	// updateDto(m.opts)
 	// 	m.updateStatus()

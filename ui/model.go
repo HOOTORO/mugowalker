@@ -3,7 +3,6 @@ package ui
 import (
 	"fmt"
 	"io"
-	"time"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -32,16 +31,18 @@ type menuModel struct {
 	manyInputs []textinput.Model
 	cursorMode textinput.CursorMode
 
-	spinme       spinner.Model
-	quitting     bool
-	usersettings map[string]string
-	taskch       chan taskinfo
-	taskmsgs     []taskinfo
+	spinme         spinner.Model
+	quitting       bool
+	usersettings   map[string]string
+	usersettingsv2 map[Option]string
+	taskch         chan taskinfo
+	taskmsgs       []taskinfo
+	winx, winy     int
 }
 
 func (m menuModel) String() string {
 	log.Tracef("[ options ]\n[ %v ]\n[ from yaml ]", m.usersettings)
-	return f(green("\n\t|> [DevStatus : %v]\t[Quitting : %v]\n\t|> [Choice : %v]\t[BluePid : %v]"), m.connectionStatus, m.quitting, m.choice, m.bluestcksPid)
+	return f(green("\n\t|> [DevStatus : %v]\t[Quitting : %v]\n\t|> [Choice : %v]\t[BluePid : %v]\n\t|> userSettings --> %+v\n\t|> userSettingsv2 --> %+v"), m.connectionStatus, m.quitting, m.choice, m.bluestcksPid, m.usersettings, m.usersettingsv2)
 }
 
 // //////////////////////////
@@ -51,7 +52,8 @@ func (m menuModel) String() string {
 func (m menuModel) Init() tea.Cmd {
 	log.Warnf(red("\nInit model: %+v \n"), m)
 	return tea.Batch(
-		// textinput.Blink,
+		textinput.Blink,
+		// spinner.Tick,
 		checkVM,
 		activityListener(m.taskch), // wait for activity
 	)
@@ -59,13 +61,11 @@ func (m menuModel) Init() tea.Cmd {
 
 // ////////////////////////
 func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	// always exit keysl
 	var cmd tea.Cmd
-	// log.Debugf(mag("\nUPDATE INC. -> %+v [%T]"), msg, msg)
 	switch k := msg.(type) {
 	case tea.KeyMsg:
 		log.Debugf(mag("(UPD) KEY INC. -> %+v [%T]"), msg, msg)
-
+		// always exit keysl
 		if k.String() == "ctrl+c" {
 			m.quitting = true
 			return m, tea.Quit
@@ -75,18 +75,50 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.showmore = !m.showmore
 		}
 
-		if k.String() == "ctrl+k" {
+		if k.String() == "ctrl+up" {
 			var cmd tea.Cmd
-			rt := taskinfo{Task: "eureka", Message: "Some sh! happened, ctrl-l pressed", Duration: time.Now()}
-			m.taskch <- rt
+			m.taskch <- notify("MenuList Size |>", f("%vx%v", m.winx, m.winy))
+			m.winy++
+			m.menulist.SetSize(m.winx, m.winy)
 			return m, cmd
 		}
+		if k.String() == "ctrl+down" {
+			var cmd tea.Cmd
+			m.taskch <- notify("MenuList Size |>", f("%vx%v", m.winx, m.winy))
+			m.winy--
+			m.menulist.SetSize(m.winx, m.winy)
+			return m, cmd
+		}
+		if k.String() == "ctrl+left" {
+			var cmd tea.Cmd
+			m.taskch <- notify("MenuList Size |>", f("%vx%v", m.winx, m.winy))
+			m.winx--
+			m.menulist.SetSize(m.winx, m.winy)
+
+			return m, cmd
+		}
+		if k.String() == "ctrl+right" {
+			var cmd tea.Cmd
+			m.taskch <- notify("MenuList Size |>", f("%vx%v", m.winx, m.winy))
+			m.winx++
+			m.menulist.SetSize(m.winx, m.winy)
+			return m, cmd
+		}
+		// if k.String() == "ctrl+up" {
+		// 	var cmd tea.Cmd
+		// 	// w, h := menulistStyle.GetFrameSize()
+
+		// 	m.taskch <- notify("WinSize |>", f("%vx%v", m.winx, m.winy))
+		// 	m.winy += 1
+		// 	m.menulist.SetSize(m.winx, m.winy)
+		// 	// rt := taskinfo{Task: "eureka", Message: "Some sh! happened, ctrl-l pressed"}
+		// 	// m.taskch <- rt
+		// 	return m, cmd
+		// }
 
 	case taskinfo:
 		k.Message = shorterer(k.Message)
 		m.taskmsgs = append(m.taskmsgs[1:], k)
-		// m.updateStatus()
-		// m.Update(msg)
 		return m, activityListener(m.taskch)
 
 	case spinner.TickMsg:
@@ -100,6 +132,12 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case connectionMsg:
 		m.connectionStatus = int(k)
 		return m, cmd
+	case tea.WindowSizeMsg:
+		// w, h := menulistStyle.GetFrameSize()
+		m.winx = k.Width
+		m.winy = k.Height
+		m.taskch <- notify("WinSize |>", f("%vx%v", k.Width, k.Height))
+		m.menulist.SetSize(k.Width, k.Height)
 	}
 
 	log.Debugf(yellow("\nVIEW INC -> %v\n%v"), m)

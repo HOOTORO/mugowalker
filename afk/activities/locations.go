@@ -1,20 +1,37 @@
 package activities
 
-type Button string
+type Button interface {
+	String() string
+	Offset() (x, y int)
+}
 
-const (
-	Quests          Button = "Quests"
-	Bag                    = "Bag"
-	Mail                   = "Mail"
-	Go                     = "Go"
-	Collect                = "Collect"
-	Begin                  = "Begin"
-	CampainBotPanel        = "Campain"
-	BattleBtn              = "Battle"
-	TryAgain               = "Again"
-	Next                   = "Next"
-	Continue               = "Continue"
+type afkbtn struct {
+	name         string
+	x, y, xo, yo int
+}
+
+var (
+	Quests          = afkbtn{name: "Quests"}
+	Bag             = afkbtn{name: "Bag"}
+	MailBtn         = afkbtn{name: "Mail"}
+	Go              = afkbtn{name: "Go"}
+	Collect         = afkbtn{name: "Collect"}
+	Begin           = afkbtn{name: "Begin"}
+	CampainBotPanel = afkbtn{name: "Campain"}
+	BattleBtn       = afkbtn{name: "Battle"}
+	TryAgain        = afkbtn{name: "Again"}
+	Next            = afkbtn{name: "Next"}
+	Continue        = afkbtn{name: "Continue"}
+	Challenge       = afkbtn{name: "Challenge"}
+	King            = afkbtn{name: "King's"}
 )
+
+func (b afkbtn) String() string {
+	return b.name
+}
+func (b afkbtn) Offset() (x, y int) {
+	return b.xo, b.yo
+}
 
 type Location struct {
 	ID       string
@@ -94,300 +111,149 @@ var (
 		Keywords: []string{"Enemy", "Formation", "Stage", "Stage:", "Completition", "Rewards", "ormavion"},
 		Hit:      3,
 	}
+	Mail = &Location{
+		ID:       "mail",
+		Keywords: []string{"collect", "all", "delete"},
+		Hit:      3,
+	}
+
+	PopoutExtra = &Location{
+		ID:       "popextra",
+		Keywords: []string{"extra", "Customize", "Bundle", "Disappears", "Purchase", "Anywhere", "1999", "Customizs", "Congratulations", "bundle"},
+		Hit:      6,
+	}
+	FastRewards = &Location{
+		ID:       "fastrewards",
+		Keywords: []string{"Collect", "Close", "Rewards", "Fast"},
+		Hit:      3,
+	}
+	Loot = &Location{
+		ID:       "loot",
+		Keywords: []string{"Tap", "the", "blank", "area", "claim", "AFK", "Rewards", "Timer", "Collect", "Close"},
+		Hit:      4,
+	}
+	Arena = &Location{
+		ID:       "arena",
+		Keywords: []string{"Season", "Ends", "CHALLENGER", "TOURNAMENT", "Rank", "Wins", "TREASURE", "LEGENDS:", "Division", "Starts", "championship", "starts", "gladiator", "Gladiator", "Coins", "Rating", "Required"},
+		Hit:      6,
+	}
+	Soloarena = &Location{
+		ID:       "soloarena",
+		Keywords: []string{"challendge", "Formation", "Record", "Arena", "Heroes", "Ladder", "Season", "Ranking", "Ends"},
+		Hit:      3,
+	}
+	OpponentList = &Location{
+		ID:       "opponent",
+		Keywords: []string{"Challenge", "Refresh", "Seregi", "Mpory"},
+		Hit:      2,
+	}
+	KTentrance = &Location{
+		ID:       "kt",
+		Keywords: []string{"Forsaken", "Necropolis", "Kings", "Tower", "Light", "Floors", "Stage", "Wed/Sat/Sun", "Mon/Fri/Sun", "Thu/Sat/Sun", "Mon/FriiSun"},
+		Hit:      3,
+	}
+	KTinside = &Location{
+		ID:       "king",
+		Keywords: []string{"Floor", "Leaderboard", "Stage", "Info", "Cleared", "Challendge", "Kings's", "Kings"},
+		Hit:      5,
+	}
+	Graveborn = &Location{
+		ID:       "fn",
+		Keywords: []string{"Forsaken", "Necropolis", "Floor", "Leaderboard", "Stage", "Info", "Cleared", "Challendge"},
+		Hit:      5,
+	}
+	Wilder = &Location{
+		ID:       "wt",
+		Keywords: []string{"World", "Tree", "Floor", "Leaderboard", "Stage", "Info", "Cleared", "Challendge"},
+		Hit:      5,
+	}
+	Light = &Location{
+		ID:       "tol",
+		Keywords: []string{"Light", "Floor", "Leaderboard", "Stage", "Info", "Cleared", "Challendge"},
+		Hit:      5,
+	}
+	Nauler = &Location{
+		ID:       "bc",
+		Keywords: []string{"Brutal", "Citadel", "Floor", "Leaderboard", "Stage", "Info", "Cleared", "Challendge"},
+		Hit:      5,
+	}
+	Hypo = &Location{
+		ID:       "if",
+		Keywords: []string{"Infernal", "Fortress", "Floor", "Leaderboard", "Stage", "Info", "Cleared", "Challendge"},
+		Hit:      5,
+	}
+	Celestial = &Location{
+		ID:       "cs",
+		Keywords: []string{"Celestial", "Sanctum", "Fortress", "Floor", "Leaderboard", "Stage", "Info", "Cleared", "Challendge"},
+		Hit:      5,
+	}
+	guildgrounds = &Location{
+		ID:       "guildgrounds",
+		Keywords: []string{"Guild", "Hall", "Hellscape", "Grounds", "Hunting"},
+		Hit:      2,
+	}
+	guildchest = &Location{
+		ID:       "gichest",
+		Keywords: []string{"FORTUNE", "CHESTS", "Realm", "Fabled", "brave", "guildmate", "share", "with", "everyone"},
+		Hit:      3,
+	}
+	wrizz = &Location{
+		ID:       "wrizz",
+		Keywords: []string{"Wrizz", "Challenge"},
+		Hit:      2,
+	}
+	skipF = &Location{
+		ID:       "skipf",
+		Keywords: []string{"Quick", "Battle", "Sweep", "most", "recent"},
+		Hit:      3,
+	}
+	oak = &Location{
+		ID:       "oak",
+		Keywords: []string{"Workshop", "Tasks", "Smart", "Selections", "Manage"},
+		Hit:      2,
+	}
 )
 
 /*
 
-, "name: friends
-  hits: 2
-  keywords:
-
-
-, "name: mail
-  grid: 4:3
-  keywords:
-    , "collect
-    , "all
-    , "delete
-  transfers:
-    , "locid: mailcollect
-    , "locid: back
-
-, "name: popextra
-  grid: 1:18
-  hits: 6
-  keywords:
-    , "extra
-    , "Customize
-    , "Bundle
-    , "Disappears
-    , "Purchase
-    , "Anywhere
-    , "1999
-    , "Customizs
-    , "Congratulations
-    , "bundle
+	sample = &Location{
+		ID:       "smplsId",
+		Keywords: []string{""},
+		Hit:      3,
+	}
 
 #######################################################################
 ##################### CAMPAIN CHILD LOCATIONS #########################
 #######################################################################
 
-, "name: bossnode
-  hits: 3
 
-  keywords:
 
-, "name: fastrewards
-  hits: 3
-  keywords:
-    , "Collect
-    , "Close
-    , "Rewards
-    , "Fast
-
-, "name: loot
-  grid: 3:12
-  hits: 4
-  delay: 1
-  keywords:
-    , "Tap
-    , "the
-    , "blank
-    , "area
-    , "claim
-    , "AFK
-    , "Rewards
-    , "Timer
-    , "Collect
-    , "Close
 
 #######################################################################
 ##################### DARK FOREST CHILD LOCATIONS #####################
 #######################################################################
 
-# arena:
-, "name: arena
-  grid: 4:8
-  hits: 6
-  delay: 1
-  keywords:
-    , "Season
-    , "Ends
-    , "CHALLENGER
-    , "TOURNAMENT
-    , "Rank
-    , "Wins
-    , "TREASURE
-    , ""LEGENDS:"
-    , "Division
-    , "Starts
-    , "championship
-    , "starts
-    , "gladiator
-    , "Gladiator
-    , "Coins
-    , "Rating
-    , "Required
-  actions:
-    , "locid: oneonone
-    , "locid: 3team
-    , "locid: back
 
-, "name: soloarena
-  grid: 4:8
-  hits: 3
-  delay: 1
-  keywords:
-    , "challendge
-    , "Formation
-    , "Record
-    , "Arena
-    , "Heroes
-    , "Ladder
-    , "Season
-    , "Ranking
-    , "Ends
-  actions:
-    , "locid: oneonone
-    , "locid: 3team
-    , "locid: back
 
-, "name: opponent
-  grid: 4:8
-  hits: 2
-  delay: 1
-  keywords:
-    , "Challenge
-    , "Refresh
-    , "Seregi
-    , "Mpory
-
-# , "name: arenafight
-#   grid: 4:8
-#   hits: 1
-#   delay: 1
-#   keywords:
-#     , "Battle
 
 # kingstower:
 , "name: kt
   description: Screen afther click on Kings Tower in Dark Forrest
   keywords:
-    , ""%account"
-    , "Forsaken
-    , "Necropolis
-    , "Kings
-    , "Tower
-    , "Light
-    , "Floors
-    , "Stage
-    , "Wed/Sat/Sun
-    , "Mon/Fri/Sun
-    , "Thu/Sat/Sun
-    , "Mon/FriiSun
+
 
 
 , "name: king
   description: Inside tower, floors
   keywords:
-    , "Floor
-    , "Leaderboard
-    , "Stage
-    , "Info
-    , "Cleared
-    , "Challendge
-    , "Kings's
-    , "Kings
 
-  actions:
-    , "locid: back
 
-, "name: fn
-  grid: 3:9
-  hits: 5
-  delay: 1
-  keywords:
-    , "Forsaken
-    , "Necropolis
-    , "Floor
-    , "Leaderboard
-    , "Stage
-    , "Info
-    , "Cleared
-    , "Challendge
 
-, "name: wt
-  grid: 3:9
-  hits: 5
-  delay: 1
-  keywords:
-    , "World
-    , "Tree
-    , "Floor
-    , "Leaderboard
-    , "Stage
-    , "Info
-    , "Cleared
-    , "Challendge
-
-, "name: tol
-  grid: 3:9
-  hits: 5
-  delay: 1
-  keywords:
-    , "Light
-    , "Floor
-    , "Leaderboard
-    , "Stage
-    , "Info
-    , "Cleared
-    , "Challendge
-
-, "name: bc
-  hits: 5
-  delay: 1
-  keywords:
-    , "Brutal
-    , "Citadel
-    , "Floor
-    , "Leaderboard
-    , "Stage
-    , "Info
-    , "Cleared
-    , "Challendge
-
-, "name: cs
-  grid: 3:9
-  hits: 5
-  delay: 1
-  keywords:
-    , "Celestial
-    , "Sanctum
-    , "Floor
-    , "Leaderboard
-    , "Stage
-    , "Info
-    , "Cleared
-    , "Challendge
-
-, "name: if
-  grid: 3:9
-  hits: 5
-  delay: 1
-  keywords:
-    , "Infernal
-    , "Fortress
-    , "Floor
-    , "Leaderboard
-    , "Stage
-    , "Info
-    , "Cleared
-    , "Challendge
 
 #######################################################################
 ####################### RANHORNY TAB CHILD LOCATIONS ##################
 #######################################################################
 
-# guild:
-, "name: guildgrounds
-  grid: 3:3
-  hits: 2
-  delay: 1
-  keywords:
-    , "Guild
-    , "Hall
-    , "Hellscape
-    , "Grounds
-    , "Hunting
-
-, "name: gichest
-  hits: 3
-  keywords:
-    , "FORTUNE
-    , "CHESTS
-    , "Realm
-    , "Fabled
-    , "brave
-    , "guildmate
-    , "share
-    , "with
-    , "everyone
-
-# wrizz:
-, "name: wrizz
-  hits: 2
-  keywords:
-    , "Wrizz
-    , "Challenge
-
-, "name: skipf
-  hits: 3
-  keywords:
-    , "Quick
-    , "Battle
-    , "Sweep
-    , "most
-    , "recent
 
 # shop:
 , "name: shop
@@ -395,22 +261,15 @@ var (
   keywords:
     , "goods
     , "barracks
-  actions:
-    , "locid: buydust
-    , "locid: buypoegold
-    , "locid: buypoedia
-    , "locid: buycoresy
-    , "locid: reset
-    , "locid: back
+
 
 , "name: oak
   hits: 2
   keywords:
-    , "Workshop
-    , "Tasks
-    , "Smart
-    , "Selections
-    , "Manage
+
+
+
+
 # <location>:
 #   , "name:
 #     hits:

@@ -49,7 +49,7 @@ type Progress struct {
 type Daily struct {
 	UserID uint
 	gorm.Model
-	Quests uint8 `gorm:"default:0"`
+	Quests uint `gorm:"default:0"`
 }
 
 func DbInit(fn func(string) string) {
@@ -104,7 +104,7 @@ func (u *User) Name() string {
 	return u.Username
 }
 
-func (u *User) Quests() uint8 {
+func (u *User) Quests() uint {
 	var td *Daily
 	r := udb.Where("user_id = ? and created_at > ?", u.ID, StartOfDay(time.Now().UTC())).First(&td)
 	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
@@ -113,7 +113,7 @@ func (u *User) Quests() uint8 {
 	}
 	return td.Quests
 }
-func (u *User) SetQuests(q uint8) {
+func (u *User) SetQuests(q uint) {
 	var usrDaily *Daily
 	r := udb.Where("user_id = ? and created_at > ?", u.ID, StartOfDay(time.Now().UTC())).First(&usrDaily)
 	if errors.Is(r.Error, gorm.ErrRecordNotFound) {

@@ -26,9 +26,9 @@ func GuessLocation(a []ocr.AltoResult, locations []cfg.Location) (locname string
 			maxh = len(hit)
 			// log.Debugf(ylw(f("hit: %v -> %v \n", loc.Key, hit)))
 
-			outFn(mgt("GUESSHI |> "), ylw(f("Location: -> %v", loc.Key)))
+			outFn(mgt("GUESSHI |>"), ylw(f("Location: -> %v", loc.Key)))
 
-			log.Warn(mgt("GUESSHI |> "), ylw(f("Location: %v -> %v \n\r", loc.Key, hit)))
+			log.Warn(mgt("GUESSHI |>"), ylw(f("Location: %v -> %v \n\r", loc.Key, hit)))
 			resloc = loc.Key
 		}
 	}

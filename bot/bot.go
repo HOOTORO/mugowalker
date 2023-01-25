@@ -90,6 +90,10 @@ func init() {
 	log = cfg.Logger()
 }
 
+func (b *BasicBot) NotifyUI(pref, msg string) {
+	b.outFn(pref, msg)
+}
+
 func (b *BasicBot) Location() (locname string) {
 	return b.location
 	// WaitForLoc:
@@ -138,19 +142,19 @@ func (b *BasicBot) ScanText() []ocr.AltoResult { // ocr.Result {
 	z := func(arr []ocr.AltoResult) string {
 		var s string
 		line := 0
-		for _, elem := range arr {
+		for i, elem := range arr {
 
 			if elem.LineNo == line {
-				s += f("%s ", elem)
+				s += f("{idx:%d}%s ", i, elem)
 			} else {
 				line = elem.LineNo
-				s += f("\n%s ", elem)
+				s += f("\n{idx:%d}%s ", i, elem)
 			}
 		}
 		return s
 	}
 	log.Tracef("ocred: %v", cyan(z(text)))
-	b.outFn("OCR-R", f("Words Onscr: %v lns: %d", cyan(len(text)), green(text[len(text)-1].LineNo)))
+	b.outFn(green("OCR-R"), f("Words Onscr: %v lns: %s", cyan(len(text)), green(text[len(text)-1].LineNo)))
 	return text
 }
 
@@ -170,20 +174,13 @@ func (b *BasicBot) Screenshot(name string) string {
 
 // Tap x,y with y offset
 func (b *BasicBot) Tap(gx, gy, off int) {
-	// Cell size
-	// height := b.Resolution.Y / ygrid
-	// width := b.Resolution.X / xgrid
+	// if user.DrawStep {
+	// 	drawTap(gx, gx, b)
+	// }
 
-	// Center point
-	// px := gx*width - width/2
-	// py := gy*height - off*height/2
-	if user.DrawStep {
-		drawTap(gx, gx, b)
-	}
 	e := b.Device.Tap(fmt.Sprint(gx), fmt.Sprint(gy))
-	// fmt.Printf("Tap: Grid-> %v:%v, Point-> %vx%v px\n\r", gx, gy, px, py)
-	// b.outFn("BOT", green(f("Tap: [Grid > %v:%v] Point-> %vx%v px\n\r", gx, gy, px, py)))
-	b.outFn("BOT", green(f("Tap -> %vx%v px\n\r", gx, gy)))
+	// outFn(mgt("BOT"), ylw(f("Tap -> %vx%v px", gx, gy)))
+	b.outFn(mgt("BOT"), green(f("Tap -> %vx%v px", gx, gy)))
 	if e != nil {
 		log.Warnf("Have an error during tap: %v", e.Error())
 	}
@@ -201,4 +198,8 @@ func drawTap(tx, ty int, bot Bot) {
 		log.Errorf("s:%v", e.Error())
 	}
 	os.Remove(s)
+}
+
+func (b *BasicBot) OcResult() []ocr.AltoResult {
+	return b.ScanText()
 }

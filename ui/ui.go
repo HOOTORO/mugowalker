@@ -31,9 +31,11 @@ func init() {
 	log = cfg.Logger()
 }
 
-func RunMainMenu(options map[string]string) error {
+func RunMainMenu(c *cfg.Profile) error {
 	log.Debug("entered UI")
-	m := InitialMenuModel(options)
+	options := CfgDto(c)
+	optionsv2 := userSettings(c)
+	m := InitialMenuModel(options, optionsv2)
 	// m.header = headerStyle.Render(header)
 	m.menulist.Title = header
 	m.menulist.SetSize(40, 30)
@@ -60,22 +62,22 @@ func NotifyUI(task, desc string) {
 
 }
 
-func InitialMenuModel(userOptions map[string]string) menuModel {
+func InitialMenuModel(userOptions map[string]string, optionsv2 map[Option]string) menuModel {
 	m := menuModel{
-		menulist:     list.New(availMenuItems(), list.NewDefaultDelegate(), 19, 0),
-		parents:      nil,
-		choice:       "",
-		focusIndex:   0,
-		manyInputs:   make([]textinput.Model, 0),
-		cursorMode:   textinput.CursorBlink,
-		quitting:     false,
-		usersettings: userOptions,
-		taskch:       make(chan taskinfo),
-		taskmsgs:     make([]taskinfo, showLastTasks),
-		spinme:       spinner.New(),
-		showmore:     true,
+		menulist:       list.New(availMenuItems(), list.NewDefaultDelegate(), 19, 0),
+		parents:        nil,
+		choice:         "",
+		focusIndex:     0,
+		manyInputs:     make([]textinput.Model, 0),
+		cursorMode:     textinput.CursorBlink,
+		quitting:       false,
+		usersettings:   userOptions,
+		usersettingsv2: optionsv2,
+		taskch:         make(chan taskinfo),
+		taskmsgs:       make([]taskinfo, showLastTasks),
+		spinme:         spinner.New(),
+		showmore:       true,
 	}
-
 	m.spinme.Spinner = spinner.Moon
 	m.spinme.Style = spinnerStyle
 	return m

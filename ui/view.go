@@ -86,19 +86,17 @@ func (m *menuModel) runningTasksPanel() string {
 	// var s, rt string
 	s := m.statuStr()
 	rt := fmt.Sprintf("\n"+
-		m.spinme.View()+" Runing task %s...\n\n", m.choice)
+		m.spinme.View()+" Runing task %s...\n\n", taskName.Render(m.choice))
 
 	for _, res := range m.taskmsgs {
 		if res.Task == "" {
 			rt += "...............................................\n"
 		} else {
-			rt += fmt.Sprintf("[%-s]	%s\n", res.Task, res.Message)
+			rt += fmt.Sprintf("[%s]	%s\n", res.Task, res.Message)
 		}
 	}
 
-	rt += helpStyle.Render("\nPress 'alt+s' to hide/show this panel\n")
-	//		x, y := helpStyle.GetFrameSize()
-	//		rt += hotStyle.Render(fmt.Sprintf("btw:\nw: %v, h:%v", x, y))
+	rt += indent.String(helpStyle.Render("\nPress 'alt+s' to hide/show this panel\n'Ctrl + <- ↑ ↓ ->' to change menu sizes"), 3)
 	rt = runnunTaskStyle.Render(rt)
 	return indent.String(lipgloss.JoinVertical(lipgloss.Top, s, rt), 5)
 }

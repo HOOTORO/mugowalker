@@ -11,7 +11,7 @@ func OptimizeForOCR(f string) string {
 }
 
 func customPsm(n int) []string {
-	return []string{"--psm", fmt.Sprint(n), "-c", "tessedit_create_alto=1", "quiet"}
+	return []string{"--psm", fmt.Sprint(n), "-c", "tessedit_create_alto=1", "hoot", "quiet"}
 }
 
 func AltOptimize(f string) string {
