@@ -41,7 +41,7 @@ func updateMenu(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 
 					//// Run something go to updateExec
 				case func(m *menuModel) tea.Cmd:
-					m.taskch <- notify(itm.title, "Launched!")
+					m.state.taskch <- notify(itm.title, "Launched!")
 					cmd = chld(&m)
 					m.menulist.Update(msg)
 					return m, cmd

@@ -1,8 +1,7 @@
 package ui
 
 import (
-	"fmt"
-	"io"
+	"time"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -13,12 +12,9 @@ import (
 )
 
 type menuModel struct {
-	bluestcksPid     int
-	connectionStatus int
-
-	statusInfo string
-	header     string
-	showmore   bool
+	state    *state
+	conf     *sessionConfiguration
+	showmore bool
 
 	menulist    list.Model
 	parents     []list.Model
@@ -29,25 +25,38 @@ type menuModel struct {
 	manyInputs []textinput.Model
 	cursorMode textinput.CursorMode
 
-	spinme       spinner.Model
-	quitting     bool
-	userSettings map[Option]string
-	taskch       chan taskinfo
-	taskmsgs     []taskinfo
-	winx, winy   int
-	ocr, magic   map[string]string
+	winx, winy int
 }
 
 func (m menuModel) String() string {
-	log.Tracef("[ options ]\n[ %v ]\n[ from yaml ]", m.userSettings)
+	log.Tracef("[ options ]\n[ %v ]\n[ from yaml ]", m.conf.userSettings)
 	return f(green("\n"+
-		"\t|> [DevStatus : %v]\t[Quitting : %v]\n"+
-		"\t|> [Choice : %v]\t[input : %v]\n"+
+		"\t|> [DevStatus : %v]\t\t [Choice : %v]\n"+
+		"\t[Is input chosen? : %v]\n"+
 		"\t|> [BluePid : %v]\n"+
 		"\t|> userSettings --> %+v\n"+
 		"\t|> Magick --> %+v\n"+
 		"\t|> Tess -> %v"),
-		m.connectionStatus, m.quitting, m.choice, m.inputChosen, m.bluestcksPid, m.userSettings, m.magic, m.ocr)
+		m.state.connectionStatus, m.choice, m.inputChosen, m.state.bluestcksPid, m.conf.userSettings, m.conf.magic, m.conf.ocr)
+}
+// SendTaskInfo to running tasks panel
+func (m *menuModel) SendTaskInfo(task, info string) {
+
+	m.state.taskch <- notify(f("%v |>", task), info)	
+}
+
+
+type state struct {
+	spinme           spinner.Model
+	bluestcksPid     int
+	connectionStatus int
+	taskch           chan taskinfo
+	taskmsgs         []taskinfo
+}
+
+type sessionConfiguration struct {
+	userSettings map[Option]string
+	ocr, magic   map[string]string
 }
 
 // //////////////////////////
@@ -60,7 +69,7 @@ func (m menuModel) Init() tea.Cmd {
 		// textinput.Blink,
 		// spinner.Tick,
 		checkVM,
-		activityListener(m.taskch), // wait for activity
+		activityListener(m.state.taskch), // wait for activity
 	)
 }
 
@@ -72,7 +81,6 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		// always exit keysl
 		if k.String() == "ctrl+c" {
-			m.quitting = true
 			return m, tea.Quit
 		}
 
@@ -82,21 +90,21 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if k.String() == "ctrl+up" {
 			var cmd tea.Cmd
-			m.taskch <- notify("MenuList Size |>", f("%vx%v", m.winx, m.winy))
+			m.state.taskch <- notify("MenuList Size |>", f("%vx%v", m.winx, m.winy))
 			m.winy++
 			m.menulist.SetSize(m.winx, m.winy)
 			return m, cmd
 		}
 		if k.String() == "ctrl+down" {
 			var cmd tea.Cmd
-			m.taskch <- notify("MenuList Size |>", f("%vx%v", m.winx, m.winy))
+			m.state.taskch <- notify("MenuList Size |>", f("%vx%v", m.winx, m.winy))
 			m.winy--
 			m.menulist.SetSize(m.winx, m.winy)
 			return m, cmd
 		}
 		if k.String() == "ctrl+left" {
 			var cmd tea.Cmd
-			m.taskch <- notify("MenuList Size |>", f("%vx%v", m.winx, m.winy))
+			m.state.taskch <- notify("MenuList Size |>", f("%vx%v", m.winx, m.winy))
 			m.winx--
 			m.menulist.SetSize(m.winx, m.winy)
 
@@ -104,7 +112,7 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if k.String() == "ctrl+right" {
 			var cmd tea.Cmd
-			m.taskch <- notify("MenuList Size |>", f("%vx%v", m.winx, m.winy))
+			m.state.taskch <- notify("MenuList Size |>", f("%vx%v", m.winx, m.winy))
 			m.winx++
 			m.menulist.SetSize(m.winx, m.winy)
 			return m, cmd
@@ -123,19 +131,19 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case taskinfo:
 		k.Message = shorterer(k.Message)
-		m.taskmsgs = append(m.taskmsgs[1:], k)
-		return m, activityListener(m.taskch)
+		m.state.taskmsgs = append(m.state.taskmsgs[1:], k)
+		return m, activityListener(m.state.taskch)
 
 	case spinner.TickMsg:
-		m.spinme, cmd = m.spinme.Update(msg)
+		m.state.spinme, cmd = m.state.spinme.Update(msg)
 		return m, cmd
 
 	case vmStatusMsg:
-		m.bluestcksPid = int(k)
+		m.state.bluestcksPid = int(k)
 		return m, cmd
 
 	case connectionMsg:
-		m.connectionStatus = int(k)
+		m.state.connectionStatus = int(k)
 		return m, cmd
 		// case tea.WindowSizeMsg:
 		// 	// w, h := menulistStyle.GetFrameSize()
@@ -157,10 +165,6 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m menuModel) View() string {
 	var srt, res string
-
-	if m.quitting {
-		return quitStyle.Render("\n  See you later, Space Cowboy!\n\n")
-	}
 
 	if m.inputChosen {
 		res = inputFormView(m)
@@ -200,7 +204,7 @@ func initTextModel(ci textinput.CursorMode, placeholder string, focus bool, prom
 }
 
 func (m *menuModel) isSet(property Option) bool {
-	return m.userSettings[property] != ""
+	return m.conf.userSettings[property] != ""
 
 }
 func shorterer(str string) string {
@@ -249,56 +253,44 @@ func (i item) NextLevel(m menuModel) []list.Item {
 	return nil
 }
 
-type menuItem string
-
-func (i menuItem) FilterValue() string { return string(i) }
-
-type itemDelegate struct{}
-
-func (d itemDelegate) Height() int  { return 1 }
-func (d itemDelegate) Spacing() int { return 0 }
-
-// func (d itemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
-
-func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
-	i, ok := listItem.(menuItem)
-	if !ok {
-		return
-	}
-
-	str := fmt.Sprintf("%d. %s", index+1, i)
-
-	fn := itemStyle.Render
-	if index == m.Index() {
-		fn = func(s string) string {
-			return selectedItemStyle.Render("> " + s)
-		}
-	}
-
-	fmt.Fprint(w, fn(str))
-}
-
 func InitialMenuModel(tess, magick map[string]string, options map[Option]string) menuModel {
 	const showLastTasks, x, y = 7, 100, 20
+
+	sessionConf := &sessionConfiguration{
+		userSettings: options,
+		ocr:          tess,
+		magic:        magick,
+	}
+
+	state := &state{
+		taskch:   make(chan taskinfo),
+		taskmsgs: make([]taskinfo, showLastTasks),
+		spinme:   spinner.New(),
+	}
+	state.spinme.Spinner = spinner.Moon
+	state.spinme.Style = spinnerStyle
+
 	m := menuModel{
 		menulist:   list.New(availMenuItems(), list.NewDefaultDelegate(), x/2, y),
 		parents:    nil,
 		choice:     "",
 		manyInputs: make([]textinput.Model, 0),
 		cursorMode: textinput.CursorStatic,
-		quitting:   false,
 
-		userSettings: options,
-		taskch:       make(chan taskinfo),
-		taskmsgs:     make([]taskinfo, showLastTasks),
-		spinme:       spinner.New(),
-		showmore:     true,
-		winx:         x,
-		winy:         y,
-		ocr:          tess,
-		magic:        magick,
+		showmore: false,
+
+		state: state,
+		conf:  sessionConf,
+
+		winx: x,
+		winy: y,
 	}
-	m.spinme.Spinner = spinner.Moon
-	m.spinme.Style = spinnerStyle
+
 	return m
+}
+
+
+
+func notify(ev, desc string) taskinfo {
+	return taskinfo{Task: ev, Message: desc, Duration: time.Now()}
 }

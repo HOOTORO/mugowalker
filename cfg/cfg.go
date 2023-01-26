@@ -148,27 +148,6 @@ func Save(name string, in interface{}) {
 	log.Tracef("MARSHALLED: %v\n\n", f)
 }
 
-//func Load(a *Profile) *adb.Device {
-//	devs, e := adb.Devices()
-//	if e != nil || len(devs) == 0 {
-//		d, e := adb.Connect(a.DeviceSerial)
-//		if e != nil {
-//			panic("dev err")
-//		}
-//		devs = append(devs, d)
-//
-//	}
-//	num := 0
-//	if len(devs) > 1 {
-//		var desc string = "Choose, which one will be used by bot\n"
-//		for i, dev := range devs {
-//			desc += fmt.Sprintf("%v: Serial-> %v,   id-> %v,    resolution-> %v\n", i, dev.Serial, dev.TransportId, dev.Resolution)
-//		}
-//		num, _ = strconv.Atoi(ui.UserInput(desc, "0"))
-//	}
-//	return devs[num]
-//}
-
 func LoadTask(up *User) (r []ReactiveTask) {
 	for _, t := range up.TaskConfigs {
 		reactiveTasks := make([]ReactiveTask, 0)
@@ -221,10 +200,7 @@ func ToInt(s string) int {
 
 func loadSysconf() (sys *SystemVars, e error) {
 	sys = &SystemVars{}
-	// e := loadParties(sys)
-	// if e != nil {
-	// 	log.Errorf("Load parties mailfunc: %v", e)
-	// }
+
 	sys.Db, sys.Userhome, sys.App, sys.Temp, e = createDirStructure()
 	if e != nil {
 		log.Errorf("Create app folders mailfunc: %v", e)
@@ -296,7 +272,7 @@ func lookupLastConfig(dirs ...string) string {
 	}
 	return res
 }
-
+// Cutgrid deprecated
 func Cutgrid(str string) (p image.Point, off int) {
 	off = 1 // default
 	ords := strings.Split(str, ":")

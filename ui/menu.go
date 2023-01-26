@@ -146,7 +146,7 @@ var (
 			desc:  "Connect via TCP/IP to emulator or remote device",
 			children: func(m *menuModel) tea.Cmd {
 				return func() tea.Msg {
-					return adbConnect(m.userSettings[ConnectStr])
+					return adbConnect(m.conf.userSettings[ConnectStr])
 				}
 			}})
 		items = append(items, item{
@@ -262,7 +262,7 @@ var (
 var (
 	imagickArgs = func(m *menuModel) (out []textinput.Model) {
 		var pairs []string
-		for k, v := range m.magic {
+		for k, v := range m.conf.magic {
 			pairs = append(pairs, k, v)
 		}
 		out = inputModels(m.cursorMode, pairs...)
@@ -270,7 +270,7 @@ var (
 	}
 	tessArgs = func(m *menuModel) (out []textinput.Model) {
 		var pairs []string
-		for k, v := range m.ocr {
+		for k, v := range m.conf.ocr {
 			pairs = append(pairs, k, v)
 		}
 		out = inputModels(m.cursorMode, pairs...)
@@ -278,14 +278,14 @@ var (
 	}
 	settings = func(m *menuModel) []textinput.Model {
 		var pairs []string
-		for k, v := range m.userSettings {
+		for k, v := range m.conf.userSettings {
 			pairs = append(pairs, k.String(), v)
 		}
 		return inputModels(m.cursorMode, pairs...)
 	}
 
 	blueArgs = func(m *menuModel) []textinput.Model {
-		return inputModels(m.cursorMode, VmName.String(), m.userSettings[VmName], AppId.String(), m.userSettings[AppId])
+		return inputModels(m.cursorMode, VmName.String(), m.conf.userSettings[VmName], AppId.String(), m.conf.userSettings[AppId])
 	}
 )
 

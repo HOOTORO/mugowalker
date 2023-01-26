@@ -54,14 +54,14 @@ func (m *menuModel) statuStr() string {
 
 	con, emu = red("Offline"), red("Shutdown")
 
-	if m.connectionStatus != 0 {
+	if m.state.connectionStatus != 0 {
 		con = green("Online")
 	}
-	if m.bluestcksPid != 0 {
+	if m.state.bluestcksPid != 0 {
 
 		emu = green("Running")
 	}
-	if m.connectionStatus != 0 && m.bluestcksPid != 0 {
+	if m.state.connectionStatus != 0 && m.state.bluestcksPid != 0 {
 		statusStyle.BorderForeground(brightGreen)
 	}
 
@@ -71,19 +71,19 @@ func (m *menuModel) statuStr() string {
 		"	|> %v <|	User	\n"+
 		"|> %v <| 	ADB	\n"+
 		"|> %v <|  Bluestacks",
-		m.userSettings[ConnectStr], cyan(m.userSettings[GameName]),
-		cyan(m.userSettings[AccountName]), con, emu)
+		m.conf.userSettings[ConnectStr], cyan(m.conf.userSettings[GameName]),
+		cyan(m.conf.userSettings[AccountName]), con, emu)
 	return statusStyle.Render(t)
 }
 
 func (m *menuModel) runningTasksPanel() string {
-	log.Tracef("Upd status spanel....%v:%v", m.connectionStatus, m.bluestcksPid)
+	log.Tracef("Upd status spanel....%v:%v", m.state.connectionStatus, m.state.bluestcksPid)
 	// var s, rt string
 	s := m.statuStr()
 	rt := fmt.Sprintf("\n"+
-		m.spinme.View()+" Runing task %s...\n\n", taskName.Render(m.choice))
+		m.state.spinme.View()+" Runing task %s...\n\n", taskName.Render(m.choice))
 
-	for _, res := range m.taskmsgs {
+	for _, res := range m.state.taskmsgs {
 		if res.Task == "" {
 			rt += "...............................................\n"
 		} else {

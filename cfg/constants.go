@@ -36,3 +36,53 @@ const (
 	ClimbTower
 	GuildBosses
 )
+
+var (
+	defUser = &Profile{
+		DeviceSerial: "",
+		User: &User{
+			Account:     "",
+			Game:        "AFK Arena",
+			TaskConfigs: []string{"cfg/reactions.yaml", "cfg/daily.yaml"},
+		},
+		Imagick: imgksArggs(),
+		AltImagick: []string{
+			"-colorspace", "Gray",
+			"-alpha", "off",
+			"-threshold", "75%",
+			"-edge", "2",
+			"-negate",
+			"-black-threshold", "90%",
+		},
+		Tesseract:    tssA(),
+		AltTesseract: []string{"--psm", "3", "hoot", "quiet"},
+		Bluestacks:   &Bluestacks{Instance: "Rvc64", Package: "com.lilithgames.hgame.gp.id"},
+		Exceptions:   []string{"Go", "Up ", "In", "Tap"},
+		Loglevel:     "FATAL",
+		DrawStep:     false,
+	}
+	//[]string{"-colorspace", "Gray", "-alpha", "off", "-threshold, ", "75%"}
+	imgksArggs = func() map[int]CmdArgs {
+		r := make(map[int]CmdArgs, 0)
+		r[1] = CmdArgs{Key: "-colorspace", Val: "Gray"}
+		r[2] = CmdArgs{Key: "-alpha", Val: "off"}
+		r[3] = CmdArgs{Key: "-threshold", Val: "75%"}
+
+		return r
+	}
+	//[]string{
+	// "--psm", "6",
+	// "-c", "tessedit_char_blacklist=[“€”\"’^#@™°&!~'‘|<$>«»,¢\\_;§®‘*~.°├⌐ÇöÑ{}",
+	// "-c", "tessedit_create_alto=1",
+	// "-c", "tessedit_create_txt=1",
+	// "quiet",
+	// }
+	tssA = func() map[int]CmdArgs {
+		r := make(map[int]CmdArgs, 0)
+		r[1] = CmdArgs{Key: "--psm", Val: "6"}
+		r[2] = CmdArgs{Key: "-c", Val: "tessedit_create_alto=1"}
+		r[3] = CmdArgs{Key: "hoot", Val: "quiet"}
+
+		return r
+	}
+)

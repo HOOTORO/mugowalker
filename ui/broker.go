@@ -26,7 +26,7 @@ func getDevices() []list.Item {
 		descu := fmt.Sprintf("State: %s, T_Id: %v, WMsize: %v", v.DevState, v.TransportId, v.Resolution)
 		devs = append(devs, item{title: v.Serial, desc: descu, children: func(m *menuModel) tea.Cmd {
 			return func() tea.Msg {
-				return adbConnect(m.userSettings[ConnectStr])
+				return adbConnect(m.conf.userSettings[ConnectStr])
 			}
 		}})
 	}
@@ -34,12 +34,12 @@ func getDevices() []list.Item {
 }
 
 func runTask(m *menuModel) bool {
-	cf := DtoCfg(m.userSettings)
+	cf := DtoCfg(m.conf.userSettings)
 	m.menulist.Styles.HelpStyle = noStyle
-	m.spinme.Style = noStyle
+	m.state.spinme.Style = noStyle
 	fn := func(s, d string) {
 		// m.taskch <- notify(f("%v", s), d)
-		m.taskch <- notify(f("%s", s), d)
+		m.state.taskch <- notify(f("%s", s), d)
 	}
 	log.Warnf(yellow("\nCHOSEN RUNTASK >>> %v <<<"), m.choice)
 
@@ -48,21 +48,21 @@ func runTask(m *menuModel) bool {
 }
 
 func runBluestacks(m *menuModel) bool {
-	p := DtoCfg(m.userSettings)
+	p := DtoCfg(m.conf.userSettings)
 	// pid, e := cfg.StartProc(bluestacksexe, strings.Fields(m.opts[bluestacks])...)
 	cmd := cfg.RunProc(bluexe, p.Bluestacks.Args()...)
 
-	m.bluestcksPid = cmd.Process.Pid
+	m.state.bluestcksPid = cmd.Process.Pid
 	m.statuStr()
 	log.Warnf("\nwait in another gourutine %v", cmd.Process.Pid)
 
 	go func() {
 		e := cmd.Wait()
 		if e != nil {
-			m.taskch <- notify(bluexe, f("|> error: %v, pid: %v", e, m.bluestcksPid))
+			m.state.taskch <- notify(bluexe, f("|> error: %v, pid: %v", e, m.state.bluestcksPid))
 		}
-		m.taskch <- notify(bluexe, f("|> finished, pid: %v", m.bluestcksPid))
-		m.bluestcksPid = 0
+		m.state.taskch <- notify(bluexe, f("|> finished, pid: %v", m.state.bluestcksPid))
+		m.state.bluestcksPid = 0
 	}()
 	return checkBlueStacks(m)
 }
@@ -133,19 +133,15 @@ func DtoCfg(m map[Option]string) *cfg.Profile {
 //////// helper func ///////
 ///////////////////////////
 
-func notify(ev, desc string) taskinfo {
-	return taskinfo{Task: ev, Message: desc, Duration: time.Now()}
-}
-
 func updateDto(v map[Option]string) {
 	o := DtoCfg(v)
 	cfg.Save(cfg.UserFile(o.User.Account+".yaml"), o)
 }
 
 func checkBlueStacks(m *menuModel) bool {
-	if m.bluestcksPid != 0 {
+	if m.state.bluestcksPid != 0 {
 
-		return cfg.ProcessInfo(m.bluestcksPid)
+		return cfg.ProcessInfo(m.state.bluestcksPid)
 	}
 	return false
 }
