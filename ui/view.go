@@ -33,7 +33,7 @@ func inputFormView(m menuModel) string {
 	if m.focusIndex == len(m.manyInputs) {
 		button = &focusedButton
 	}
-	_, err := fmt.Fprintf(&b, "\n\n%s\n\n", *button)
+	_, err := fmt.Fprintf(&b, "\n\n\t%s\n\n", *button)
 	if err != nil {
 		return ""
 	}
@@ -43,12 +43,7 @@ func inputFormView(m menuModel) string {
 	b.WriteString(helpStyle.Render(" (ctrl+r to change style)"))
 
 	return topInputStyle.Render(b.String())
-}
-
-func execView(m menuModel) string {
-
-	s := fmt.Sprintf("%v\n\n%v exec: %v", m.header, m.spinme.View(), m.choice)
-	return menulistStyle.Render(s)
+	// return indent.String(topInputStyle.Render(b.String()), 3)
 }
 
 // /////////////////////
@@ -76,8 +71,8 @@ func (m *menuModel) statuStr() string {
 		"	|> %v <|	User	\n"+
 		"|> %v <| 	ADB	\n"+
 		"|> %v <|  Bluestacks",
-		m.usersettings[connection], cyan(m.usersettings[game]),
-		cyan(m.usersettings[account]), con, emu)
+		m.userSettings[ConnectStr], cyan(m.userSettings[GameName]),
+		cyan(m.userSettings[AccountName]), con, emu)
 	return statusStyle.Render(t)
 }
 
@@ -98,5 +93,5 @@ func (m *menuModel) runningTasksPanel() string {
 
 	rt += indent.String(helpStyle.Render("\nPress 'alt+s' to hide/show this panel\n'Ctrl + <- ↑ ↓ ->' to change menu sizes"), 3)
 	rt = runnunTaskStyle.Render(rt)
-	return indent.String(lipgloss.JoinVertical(lipgloss.Top, s, rt), 5)
+	return lipgloss.JoinVertical(lipgloss.Top, s, rt)
 }

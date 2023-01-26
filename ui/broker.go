@@ -3,7 +3,6 @@ package ui
 import (
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	a "worker/adb"
@@ -27,7 +26,7 @@ func getDevices() []list.Item {
 		descu := fmt.Sprintf("State: %s, T_Id: %v, WMsize: %v", v.DevState, v.TransportId, v.Resolution)
 		devs = append(devs, item{title: v.Serial, desc: descu, children: func(m *menuModel) tea.Cmd {
 			return func() tea.Msg {
-				return adbConnect(m.usersettings[connection])
+				return adbConnect(m.userSettings[ConnectStr])
 			}
 		}})
 	}
@@ -35,7 +34,7 @@ func getDevices() []list.Item {
 }
 
 func runTask(m *menuModel) bool {
-	cf := DtoCfg(m.usersettings)
+	cf := DtoCfg(m.userSettings)
 	m.menulist.Styles.HelpStyle = noStyle
 	m.spinme.Style = noStyle
 	fn := func(s, d string) {
@@ -49,7 +48,7 @@ func runTask(m *menuModel) bool {
 }
 
 func runBluestacks(m *menuModel) bool {
-	p := DtoCfg(m.usersettings)
+	p := DtoCfg(m.userSettings)
 	// pid, e := cfg.StartProc(bluestacksexe, strings.Fields(m.opts[bluestacks])...)
 	cmd := cfg.RunProc(bluexe, p.Bluestacks.Args()...)
 
@@ -72,6 +71,23 @@ func userSettings(c *cfg.Profile) map[Option]string {
 	dto := make(map[Option]string, 0)
 	dto[AppId] = c.Bluestacks.Package
 	dto[VmName] = c.Bluestacks.Instance
+	dto[LogLvl] = c.Loglevel
+	dto[GameName] = c.User.Game
+	dto[AccountName] = c.User.Account
+	dto[ConnectStr] = c.DeviceSerial
+	return dto
+}
+
+func ocrSettings(c *cfg.Profile, e cfg.Executable) map[string]string {
+	dto := make(map[string]string, 0)
+	var currentkey string
+	for i, v := range c.CmdParams(e) {
+		if i%2 == 0 {
+			currentkey = v
+		} else {
+			dto[currentkey] = v
+		}
+	}
 	return dto
 }
 
@@ -80,8 +96,8 @@ func CfgDto(conf *cfg.Profile) map[string]string {
 	dto[connection] = conf.DeviceSerial
 	dto[account] = conf.User.Account
 	dto[game] = conf.User.Game
-	dto[imagick] = strings.Join(conf.Imagick, " ")
-	dto[tesseract] = strings.Join(conf.Tesseract, " ")
+	// dto[imagick] = strings.Join(conf.Imagick, " ")
+	// dto[tesseract] = strings.Join(conf.Tesseract, " ")
 	dto[blueInstance] = conf.Bluestacks.Instance
 	dto[bluePackage] = conf.Bluestacks.Package
 	// dto[] = conf.
@@ -89,24 +105,24 @@ func CfgDto(conf *cfg.Profile) map[string]string {
 	return dto
 }
 
-func DtoCfg(m map[string]string) *cfg.Profile {
+func DtoCfg(m map[Option]string) *cfg.Profile {
 	res := cfg.ActiveUser()
 
 	for k, v := range m {
 		switch k {
-		case connection:
+		case ConnectStr:
 			res.DeviceSerial = v
-		case account:
+		case AccountName:
 			res.User.Account = v
-		case game:
+		case GameName:
 			res.User.Game = v
-		case imagick:
-			res.Imagick = strings.Split(v, " ")
-		case tesseract:
-			res.Tesseract = strings.Split(v, " ")
-		case blueInstance:
+		// case imagick:
+		// 	res.Imagick = strings.Split(v, " ")
+		// case tesseract:
+		// 	res.Tesseract = strings.Split(v, " ")
+		case VmName:
 			res.Bluestacks.Instance = v
-		case bluePackage:
+		case AppId:
 			res.Bluestacks.Package = v
 		}
 	}
@@ -121,7 +137,7 @@ func notify(ev, desc string) taskinfo {
 	return taskinfo{Task: ev, Message: desc, Duration: time.Now()}
 }
 
-func updateDto(v map[string]string) {
+func updateDto(v map[Option]string) {
 	o := DtoCfg(v)
 	cfg.Save(cfg.UserFile(o.User.Account+".yaml"), o)
 }

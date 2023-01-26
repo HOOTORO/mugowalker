@@ -3,10 +3,6 @@ package ui
 import "github.com/charmbracelet/lipgloss"
 
 const (
-	listHeight   = 20
-	defaultWidth = 200
-)
-const (
 	header = "<|!|> AFK Worker v0.1 <|!|>"
 )
 const (
@@ -20,7 +16,7 @@ const (
 	someG       = lipgloss.Color("#00FFa0")
 	someR       = lipgloss.Color("#FFa000")
 	orange      = lipgloss.Color("#faa805")
-	sep         = "\n>>>"
+	sep         = "|>"
 )
 
 var (
@@ -33,21 +29,21 @@ var (
 	tStyle = lipgloss.NewStyle().
 		Bold(true).
 		Foreground(white).
-		ColorWhitespace(true).
+		// ColorWhitespace(true).
 		Align(lipgloss.Right)
 
 	// list Title Bar
 	tbStyle = lipgloss.NewStyle().
-		ColorWhitespace(true).
+		// ColorWhitespace(true).
 		MarginBottom(1).
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(hotPink)
 
 	menulistStyle = lipgloss.NewStyle().
-			ColorWhitespace(true).
-			Align(lipgloss.Left).
-			Margin(0, 0, 0, 2).
-			Width(50)
+		// ColorWhitespace(true).
+		Align(lipgloss.Left, lipgloss.Bottom).
+		Margin(0, 0, 0, 2)
+		// Width(50)
 
 	///////////////
 	/// RIGHT ////
@@ -70,7 +66,8 @@ var (
 			MarginTop(2).
 			UnsetPaddingLeft().
 			Width(55).
-			UnsetBorderStyle().Align(lipgloss.Left, lipgloss.Bottom)
+			UnsetBorderStyle().
+			Align(lipgloss.Left, lipgloss.Bottom)
 
 	//	happyClr = colorful.FastHappyColor()
 	helpStyle = lipgloss.NewStyle().
@@ -100,10 +97,11 @@ var (
 // /////////////
 var (
 	// MultiText Input Form
-	topInputStyle = menulistStyle.Copy().
-		// Margin(10, 0, 10, 2).
-		// Width(45)
-		MarginTop(10)
+	topInputStyle = lipgloss.NewStyle().
+		// Margin(0, 10)
+		PaddingLeft(30).PaddingTop(8)
+	// Width(45).
+	// MarginTop(10)
 	focusedStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("205"))
 	blurredStyle = lipgloss.NewStyle().

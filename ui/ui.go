@@ -5,12 +5,8 @@ import (
 	"os"
 	"worker/cfg"
 
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/spinner"
-
 	"github.com/sirupsen/logrus"
 
-	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/fatih/color"
 )
@@ -33,12 +29,14 @@ func init() {
 
 func RunMainMenu(c *cfg.Profile) error {
 	log.Debug("entered UI")
-	options := CfgDto(c)
+	// options := CfgDto(c)
 	optionsv2 := userSettings(c)
-	m := InitialMenuModel(options, optionsv2)
+	img := ocrSettings(c, cfg.MagicExe)
+	tess := ocrSettings(c, cfg.TessExe)
+	m := InitialMenuModel(tess, img, optionsv2)
 	// m.header = headerStyle.Render(header)
 	m.menulist.Title = header
-	m.menulist.SetSize(40, 30)
+	// m.menulist.SetSize(40, 10)
 	m.menulist.SetShowHelp(true)
 	m.menulist.SetShowPagination(true)
 	m.menulist.SetShowTitle(true)
@@ -60,25 +58,4 @@ func RunMainMenu(c *cfg.Profile) error {
 
 func NotifyUI(task, desc string) {
 
-}
-
-func InitialMenuModel(userOptions map[string]string, optionsv2 map[Option]string) menuModel {
-	m := menuModel{
-		menulist:       list.New(availMenuItems(), list.NewDefaultDelegate(), 19, 0),
-		parents:        nil,
-		choice:         "",
-		focusIndex:     0,
-		manyInputs:     make([]textinput.Model, 0),
-		cursorMode:     textinput.CursorBlink,
-		quitting:       false,
-		usersettings:   userOptions,
-		usersettingsv2: optionsv2,
-		taskch:         make(chan taskinfo),
-		taskmsgs:       make([]taskinfo, showLastTasks),
-		spinme:         spinner.New(),
-		showmore:       true,
-	}
-	m.spinme.Spinner = spinner.Moon
-	m.spinme.Style = spinnerStyle
-	return m
 }

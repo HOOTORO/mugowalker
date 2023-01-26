@@ -1,8 +1,6 @@
 package ui
 
 import (
-	"strings"
-
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 
@@ -34,16 +32,19 @@ func updateMenu(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 					m.parents = append(m.parents, m.menulist)
 					m.menulist.SetItems(itm.NextLevel(m))
 
-				case func(m menuModel) []textinput.Model:
+				case func(m *menuModel) []textinput.Model:
 					m.inputChosen = true
-					m.manyInputs = chld(m)
+					m.focusIndex = -1
+					m.manyInputs = chld(&m)
 
 					return updateInput(msg, m)
 
 					//// Run something go to updateExec
 				case func(m *menuModel) tea.Cmd:
 					m.taskch <- notify(itm.title, "Launched!")
-					return m, chld(&m)
+					cmd = chld(&m)
+					m.menulist.Update(msg)
+					return m, cmd
 				}
 			}
 
@@ -98,7 +99,7 @@ func updateInput(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 
 			// Did the user press enter while the submit button was focused?
 			// If so, exit.
-			log.Warnf("Focus: %v  len(%v)", m.focusIndex, len(m.manyInputs))
+			log.Warnf("Focus: %v  len(%v)", (&m).focusIndex, len(m.manyInputs))
 			if (s == "enter" && m.focusIndex == len(m.manyInputs)) || s == "esc" {
 				m.inputChosen = false
 			}
@@ -146,11 +147,11 @@ func (m menuModel) updatemanyInputs(msg tea.Msg) tea.Cmd {
 
 	// Only text manyInputs with Focus() set will respond, so it's safe to simply
 	// update all of them here without any further logic.
-	r := strings.NewReplacer(sep, "")
+	// r := strings.NewReplacer(sep, "")
 	for i := range m.manyInputs {
-		if m.manyInputs[i].Value() != "" {
-			m.usersettings[r.Replace(m.manyInputs[i].Prompt)] = m.manyInputs[i].Value()
-		}
+		// if m.manyInputs[i].Value() != "" {
+		// 	m.userSettings[r.Replace(m.manyInputs[i].Prompt)] = m.manyInputs[i].Value()
+		// }
 		m.manyInputs[i], cmds[i] = m.manyInputs[i].Update(msg)
 	}
 

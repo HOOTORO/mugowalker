@@ -12,8 +12,6 @@ import (
 	"github.com/muesli/reflow/indent"
 )
 
-const showLastTasks = 7
-
 type menuModel struct {
 	bluestcksPid     int
 	connectionStatus int
@@ -31,18 +29,25 @@ type menuModel struct {
 	manyInputs []textinput.Model
 	cursorMode textinput.CursorMode
 
-	spinme         spinner.Model
-	quitting       bool
-	usersettings   map[string]string
-	usersettingsv2 map[Option]string
-	taskch         chan taskinfo
-	taskmsgs       []taskinfo
-	winx, winy     int
+	spinme       spinner.Model
+	quitting     bool
+	userSettings map[Option]string
+	taskch       chan taskinfo
+	taskmsgs     []taskinfo
+	winx, winy   int
+	ocr, magic   map[string]string
 }
 
 func (m menuModel) String() string {
-	log.Tracef("[ options ]\n[ %v ]\n[ from yaml ]", m.usersettings)
-	return f(green("\n\t|> [DevStatus : %v]\t[Quitting : %v]\n\t|> [Choice : %v]\t[BluePid : %v]\n\t|> userSettings --> %+v\n\t|> userSettingsv2 --> %+v"), m.connectionStatus, m.quitting, m.choice, m.bluestcksPid, m.usersettings, m.usersettingsv2)
+	log.Tracef("[ options ]\n[ %v ]\n[ from yaml ]", m.userSettings)
+	return f(green("\n"+
+		"\t|> [DevStatus : %v]\t[Quitting : %v]\n"+
+		"\t|> [Choice : %v]\t[input : %v]\n"+
+		"\t|> [BluePid : %v]\n"+
+		"\t|> userSettings --> %+v\n"+
+		"\t|> Magick --> %+v\n"+
+		"\t|> Tess -> %v"),
+		m.connectionStatus, m.quitting, m.choice, m.inputChosen, m.bluestcksPid, m.userSettings, m.magic, m.ocr)
 }
 
 // //////////////////////////
@@ -52,7 +57,7 @@ func (m menuModel) String() string {
 func (m menuModel) Init() tea.Cmd {
 	log.Warnf(red("\nInit model: %+v \n"), m)
 	return tea.Batch(
-		textinput.Blink,
+		// textinput.Blink,
 		// spinner.Tick,
 		checkVM,
 		activityListener(m.taskch), // wait for activity
@@ -62,9 +67,9 @@ func (m menuModel) Init() tea.Cmd {
 // ////////////////////////
 func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+	log.Debugf(mag("(UPD) MSG INC. -> %+v [%T]"), msg, msg)
 	switch k := msg.(type) {
 	case tea.KeyMsg:
-		log.Debugf(mag("(UPD) KEY INC. -> %+v [%T]"), msg, msg)
 		// always exit keysl
 		if k.String() == "ctrl+c" {
 			m.quitting = true
@@ -132,15 +137,15 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case connectionMsg:
 		m.connectionStatus = int(k)
 		return m, cmd
-	case tea.WindowSizeMsg:
-		// w, h := menulistStyle.GetFrameSize()
-		m.winx = k.Width
-		m.winy = k.Height
-		m.taskch <- notify("WinSize |>", f("%vx%v", k.Width, k.Height))
-		m.menulist.SetSize(k.Width, k.Height)
+		// case tea.WindowSizeMsg:
+		// 	// w, h := menulistStyle.GetFrameSize()
+		// 	m.winx = k.Width
+		// 	m.winy = k.Height
+		// 	m.taskch <- notify("WinSize |>", f("%vx%v", k.Width, k.Height))
+		// 	m.menulist.SetSize(k.Width, k.Height)
 	}
 
-	log.Debugf(yellow("\nVIEW INC -> %v\n%v"), m)
+	log.Debugf(yellow("↓ VIEW INC ↓ \n%v"), m)
 
 	if m.inputChosen {
 		return updateInput(msg, m)
@@ -163,9 +168,9 @@ func (m menuModel) View() string {
 		res = listView(m)
 	}
 
-	if m.showmore {
+	if m.showmore && !m.inputChosen {
 		srt = m.runningTasksPanel()
-		res = lipgloss.JoinHorizontal(lipgloss.Top, res, srt)
+		res = lipgloss.JoinHorizontal(0, res, srt)
 	}
 
 	return indent.String("\n\n"+res+"\n\n", 2)
@@ -177,24 +182,25 @@ func (m menuModel) View() string {
 //// helper func  ////
 /////////////////////
 
-func initTextModel(placeholder string, focus bool, prom string) textinput.Model {
+func initTextModel(ci textinput.CursorMode, placeholder string, focus bool, prom string) textinput.Model {
 	ti := textinput.New()
 	ti.Placeholder = placeholder
+	ti.SetCursorMode(ci)
 	ti.CursorStyle = cursorStyle
-	ti.CharLimit = 156
+	ti.CharLimit = 0
 	if focus {
 		ti.Focus()
 		ti.PromptStyle = focusedStyle
 		ti.TextStyle = focusedStyle
 	}
-	ti.Width = 30
-	ti.PromptStyle.Underline(true)
-	ti.Prompt = prom + sep
+	// ti.Width = 30
+	ti.PromptStyle.Bold(true).AlignHorizontal(1)
+	ti.Prompt = f("%10s	%v ", prom, sep)
 	return ti
 }
 
-func (m *menuModel) isSet(property string) bool {
-	return m.usersettings[property] != ""
+func (m *menuModel) isSet(property Option) bool {
+	return m.userSettings[property] != ""
 
 }
 func shorterer(str string) string {
@@ -249,9 +255,10 @@ func (i menuItem) FilterValue() string { return string(i) }
 
 type itemDelegate struct{}
 
-func (d itemDelegate) Height() int                               { return 1 }
-func (d itemDelegate) Spacing() int                              { return 0 }
-func (d itemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
+func (d itemDelegate) Height() int  { return 1 }
+func (d itemDelegate) Spacing() int { return 0 }
+
+// func (d itemDelegate) Update(msg tea.Msg, m *list.Model) tea.Cmd { return nil }
 
 func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list.Item) {
 	i, ok := listItem.(menuItem)
@@ -269,4 +276,29 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	}
 
 	fmt.Fprint(w, fn(str))
+}
+
+func InitialMenuModel(tess, magick map[string]string, options map[Option]string) menuModel {
+	const showLastTasks, x, y = 7, 100, 20
+	m := menuModel{
+		menulist:   list.New(availMenuItems(), list.NewDefaultDelegate(), x/2, y),
+		parents:    nil,
+		choice:     "",
+		manyInputs: make([]textinput.Model, 0),
+		cursorMode: textinput.CursorStatic,
+		quitting:   false,
+
+		userSettings: options,
+		taskch:       make(chan taskinfo),
+		taskmsgs:     make([]taskinfo, showLastTasks),
+		spinme:       spinner.New(),
+		showmore:     true,
+		winx:         x,
+		winy:         y,
+		ocr:          tess,
+		magic:        magick,
+	}
+	m.spinme.Spinner = spinner.Moon
+	m.spinme.Style = spinnerStyle
+	return m
 }

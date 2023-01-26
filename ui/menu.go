@@ -26,13 +26,18 @@ const (
 )
 
 // usersettings v2
-var options = []string{"Application Id", "VM Name"}
+var options = []string{"Loglevel", "Application Id", "VM Name", "Game", "Account", "Connect"}
 
 type Option uint
 
 const (
-	AppId Option = iota + 1
+	LogLvl Option = iota + 1
+	AppId
 	VmName
+	GameName
+	AccountName
+	ConnectStr
+	// TessParams
 )
 
 func (o Option) String() string {
@@ -52,30 +57,11 @@ var (
 			desc:     "Setup platform where to run autotasks",
 			children: deviceSetup,
 		},
-		item{
-			title:    "Loglevel",
-			desc:     "Change app log level",
-			children: loglevel,
-		},
 
-		// item{
-		// 	title: "Connect to",
-		// 	desc:  "serial/ip set in 'Device'",
-		// 	children: func(m *menuModel) tea.Cmd {
-		// 		return func() tea.Msg {
-		// 			return adbConnect(m.usersettings[connection])
-		// 		}
-		// 	},
-		// },
 		item{
-			title:    "Availible devices",
-			desc:     "'adb devices -l'",
-			children: devices,
-		},
-		item{
-			title:    "Settings",
+			title:    "My Settings",
 			desc:     "Imagick, Tesseract and other",
-			children: settings,
+			children: mySettings,
 		},
 		item{
 			title: "Do daily?",
@@ -155,21 +141,44 @@ var (
 var (
 	deviceSetup = func(m menuModel) []list.Item {
 		var items []list.Item
-		items = append(items, item{title: "ADB Connect", desc: "Connect via TCP/IP to emulator or remote device",
+		items = append(items, item{
+			title: "ADB Connect",
+			desc:  "Connect via TCP/IP to emulator or remote device",
 			children: func(m *menuModel) tea.Cmd {
 				return func() tea.Msg {
-					return adbConnect(m.usersettings[connection])
+					return adbConnect(m.userSettings[ConnectStr])
 				}
 			}})
-
 		items = append(items, item{
 			title:    "Emulator",
 			desc:     "Setup bluestacks settings",
-			children: emulatorSettings(m),
+			children: emulatorSettings,
 		})
-		items = append(items, getDevices()...)
-
+		items = append(items, item{
+			title:    "Availible devices",
+			desc:     "'adb devices -l'",
+			children: devices,
+		})
+		// items = append(items, getDevices()...)
 		return items
+	}
+	mySettings = func(m menuModel) (out []list.Item) {
+		out = append(out, item{
+			title:    "Log Level",
+			desc:     f("Current lvl |> %v", cyan(log.GetLevel().String())),
+			children: loglevel,
+		})
+		out = append(out, item{
+			title:    "Tesseract",
+			desc:     "Parameters for OCR Engine",
+			children: tessArgs,
+		})
+		out = append(out, item{
+			title:    "Imagick",
+			desc:     "Optimizing image before OCR",
+			children: imagickArgs,
+		})
+		return
 	}
 
 	emulatorSettings = func(m menuModel) []list.Item {
@@ -189,25 +198,6 @@ var (
 			children: blueArgs,
 		})
 		return items
-	}
-	settings = func(m menuModel) []textinput.Model {
-		var items []textinput.Model
-		for k, v := range m.usersettings {
-			items = append(items, initTextModel(v, false, k))
-		}
-		if len(items) > 0 {
-			items[0].Focus()
-			items[0].PromptStyle = focusedStyle
-			items[0].TextStyle = focusedStyle
-		}
-		return items
-	}
-
-	blueArgs = func(m menuModel) []textinput.Model {
-		var input []textinput.Model
-		input = append(input, initTextModel(m.usersettingsv2[VmName], true, VmName.String()))
-		input = append(input, initTextModel(m.usersettingsv2[AppId], false, AppId.String()))
-		return input
 	}
 	devices = func(m menuModel) []list.Item {
 		var items []list.Item
@@ -246,14 +236,73 @@ var (
 			if lvl != current {
 				items = append(items, item{title: lvl.String(), children: func(m *menuModel) tea.Cmd {
 					return func() tea.Msg {
-						log.SetLevel(lvl)
+						chosenlvl, _ := logrus.ParseLevel(m.choice)
+						log.SetLevel(chosenlvl)
 						NotifyUI("LogLvl", "Changed to >"+lvl.String())
-						return log.GetLevel()
+						// var cmd tea.Cmd
+						// m.usersettingsv2[LogLvl] = chosenlvl.String()
+						// m.menulist.Select(m.menulist.Cursor())
+						// m.menulist.SetItems()
+						return m.menulist.Update
 					}
 
 				}})
+			} else {
+				items = append(items, item{
+					title: lvl.String(),
+					desc:  " ↑ Current level ",
+				})
 			}
 		}
 		return items
 	}
 )
+
+// Settings inputs
+var (
+	imagickArgs = func(m *menuModel) (out []textinput.Model) {
+		var pairs []string
+		for k, v := range m.magic {
+			pairs = append(pairs, k, v)
+		}
+		out = inputModels(m.cursorMode, pairs...)
+		return
+	}
+	tessArgs = func(m *menuModel) (out []textinput.Model) {
+		var pairs []string
+		for k, v := range m.ocr {
+			pairs = append(pairs, k, v)
+		}
+		out = inputModels(m.cursorMode, pairs...)
+		return
+	}
+	settings = func(m *menuModel) []textinput.Model {
+		var pairs []string
+		for k, v := range m.userSettings {
+			pairs = append(pairs, k.String(), v)
+		}
+		return inputModels(m.cursorMode, pairs...)
+	}
+
+	blueArgs = func(m *menuModel) []textinput.Model {
+		return inputModels(m.cursorMode, VmName.String(), m.userSettings[VmName], AppId.String(), m.userSettings[AppId])
+	}
+)
+
+//	input field[1]name, field[1]placeholder... fiend[n]name, field[n+1]placeholder
+//
+// threat odds as  fieldnames set in prompt, evens as placeholder text
+//
+//	fields should be even sized,
+func inputModels(cursorMode textinput.CursorMode, fields ...string) []textinput.Model {
+	log.Warnf("inmodels: %v", fields)
+	inputs := make([]textinput.Model, 0)
+	for i, v := range fields {
+		if i%2 == 0 {
+			inputs = append(inputs, initTextModel(cursorMode, "", i == 0, v))
+		} else {
+			inputs[len(inputs)-1].Placeholder = v
+		}
+	}
+	return inputs
+}

@@ -102,7 +102,7 @@ func Concat(f string, topleft, bottomright image.Point) string {
 }
 
 func GridCrop(f string) (crpdImages []string) {
-	r, e := Magick(f, cfg.ActiveUser().Imagick...)
+	r, e := Magick(f, cfg.ActiveUser().CmdParams(cfg.MagicExe)...)
 	if e != nil {
 		log.Errorf("Grid Crop fail -> %v", e)
 	}
