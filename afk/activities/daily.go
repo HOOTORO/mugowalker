@@ -18,6 +18,12 @@ type Gamer interface {
 	SetQuests(uint)
 }
 
+var log = cfg.Logger()
+
+//	type DailyQuest struct {
+//		ID          uint
+//		Description string
+//	}
 type DailyQuest uint
 
 var QuestNames = []string{"loot", "fastrewards", "friends", "wrizz", "arena1x1", "oak", "QCamp", "QKT", "Solo3Q", "LevelUp", "Enhance", "Summon"}
@@ -87,8 +93,6 @@ func markDone(u Gamer, q DailyQuest) {
 		u.SetQuests(q.Id())
 	}
 }
-
-type Routes map[DailyQuest]map[int]string
 
 // 000000
 const (
@@ -200,43 +204,6 @@ func wordUpperBlock(word ocr.AltoResult, or []ocr.AltoResult) []string {
 	return res
 
 }
-
-// func Route(q DailyQuest) map[int]string {
-// 	r := make(Routes)
-
-// 	r[LootQ] = make(map[int]string)
-// 	r[LootQ][1] = "3:16"
-// 	r[LootQ][2] = "Collect"
-// 	r[LootQ][3] = "Fast Rewards"
-// 	r[LootQ][4] = "Collect"
-// 	r[LootQ][5] = "Back"
-// 	r[LootQ][6] = "Collect"
-// 	r[LootQ][7] = "Back"
-
-// 	r[FastReward] = make(map[int]string)
-// 	r[FastReward][1] = "3:16"
-// 	r[FastReward][2] = "Collect"
-// 	r[FastReward][3] = "Fast Rewards"
-// 	r[FastReward][4] = "Collect"
-// 	r[FastReward][5] = "Back"
-// 	r[FastReward][6] = "Collect"
-// 	r[FastReward][7] = "Back"
-// 	r[Friendship] = make(map[int]string)
-// 	r[Friendship][1] = "Send Receive"
-// 	r[Friendship][2] = "Back"
-// 	r[Wrizz] = make(map[int]string)
-// 	r[Wrizz][1] = "Quick Battle"
-// 	r[Wrizz][2] = "Sweep"
-// 	r[Wrizz][3] = "Back"
-// 	r[Wrizz][4] = "Back"
-// 	r[Oak] = make(map[int]string)
-// 	r[Oak][1] = "GoOld"
-// 	r[Arena1x1] = make(map[int]string)
-// 	r[Arena1x1][1] = "GoOld"
-
-// 	return r[q]
-
-// }
 
 func set(p, flag DailyQuest) DailyQuest {
 	return p | flag

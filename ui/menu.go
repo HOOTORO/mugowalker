@@ -1,28 +1,12 @@
 package ui
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/sirupsen/logrus"
-)
-
-var f = fmt.Sprintf
-
-// keymapping
-const (
-	connection   = "connection"
-	account      = "account"
-	game         = "game"
-	taskconfigs  = "taskconfigs"
-	imagick      = "imagick"
-	tesseract    = "tesseract"
-	blueInstance = "bluestance"
-	bluePackage  = "bluepackage"
-	bluexe       = "HD-Player"
 )
 
 // usersettings v2
@@ -45,7 +29,6 @@ func (o Option) String() string {
 }
 
 func availMenuItems() []list.Item {
-	toplevelmenu = append(toplevelmenu, availTowers()...)
 	log.Debugf("Menu items: %v", toplevelmenu)
 	return toplevelmenu
 }
@@ -64,31 +47,9 @@ var (
 			children: mySettings,
 		},
 		item{
-			title: "Do daily?",
-			desc:  "Do quest till 100pts",
-			children: func(m *menuModel) tea.Cmd {
-				return func() tea.Msg {
-					return runTask(m)
-				}
-			},
-		},
-		item{
-			title: "Push Campain?",
-			desc:  "if you cant",
-			children: func(m *menuModel) tea.Cmd {
-				return func() tea.Msg {
-					return runTask(m)
-				}
-			},
-		},
-		item{
-			title: "Kings Tower",
-			desc:  "Not yours",
-			children: func(m *menuModel) tea.Cmd {
-				return func() tea.Msg {
-					return runTask(m)
-				}
-			},
+			title:    "My Tasks",
+			desc:     "Push, Daily etc...",
+			children: myTasks,
 		},
 	}
 
@@ -104,6 +65,7 @@ var (
 	towers = []list.Item{
 		item{
 			title: "Towers of Light",
+			desc:  "LIGHTBEARERs home",
 			children: func(m *menuModel) tea.Cmd {
 				return func() tea.Msg {
 					return runTask(m)
@@ -112,6 +74,7 @@ var (
 		},
 		item{
 			title: "Brutal Citadel",
+			desc:  "Maulers trainning center",
 			children: func(m *menuModel) tea.Cmd {
 				return func() tea.Msg {
 					return runTask(m)
@@ -120,6 +83,7 @@ var (
 		},
 		item{
 			title: "World Tree",
+			desc:  "Wilders birthplace",
 			children: func(m *menuModel) tea.Cmd {
 				return func() tea.Msg {
 					return runTask(m)
@@ -128,6 +92,25 @@ var (
 		},
 		item{
 			title: "Forsaken Necropolis",
+			desc:  "Dead man's belongs here",
+			children: func(m *menuModel) tea.Cmd {
+				return func() tea.Msg {
+					return runTask(m)
+				}
+			},
+		},
+		item{
+			title: "Infernal Fortress",
+			desc:  "Dead man's belongs here",
+			children: func(m *menuModel) tea.Cmd {
+				return func() tea.Msg {
+					return runTask(m)
+				}
+			},
+		},
+		item{
+			title: "Celestial Sanctum",
+			desc:  "Dead man's belongs here",
 			children: func(m *menuModel) tea.Cmd {
 				return func() tea.Msg {
 					return runTask(m)
@@ -142,22 +125,14 @@ var (
 	deviceSetup = func(m menuModel) []list.Item {
 		var items []list.Item
 		items = append(items, item{
-			title: "ADB Connect",
-			desc:  "Connect via TCP/IP to emulator or remote device",
-			children: func(m *menuModel) tea.Cmd {
-				return func() tea.Msg {
-					return adbConnect(m.conf.userSettings[ConnectStr])
-				}
-			}})
+			title:    "Availible devices",
+			desc:     "'adb devices -l'",
+			children: devices,
+		})
 		items = append(items, item{
 			title:    "Emulator",
 			desc:     "Setup bluestacks settings",
 			children: emulatorSettings,
-		})
-		items = append(items, item{
-			title:    "Availible devices",
-			desc:     "'adb devices -l'",
-			children: devices,
 		})
 		// items = append(items, getDevices()...)
 		return items
@@ -178,6 +153,39 @@ var (
 			desc:     "Optimizing image before OCR",
 			children: imagickArgs,
 		})
+		out = append(out, item{})
+		return
+	}
+
+	myTasks = func(m menuModel) (out []list.Item) {
+		out = append(out, item{
+			title: "Do daily?",
+			desc:  "Do quest till 100pts",
+			children: func(m *menuModel) tea.Cmd {
+				return func() tea.Msg {
+					return runTask(m)
+				}
+			},
+		},
+			item{
+				title: "Push Campain?",
+				desc:  "if you cant",
+				children: func(m *menuModel) tea.Cmd {
+					return func() tea.Msg {
+						return runTask(m)
+					}
+				},
+			},
+			item{
+				title: "Kings Tower",
+				desc:  "Not yours",
+				children: func(m *menuModel) tea.Cmd {
+					return func() tea.Msg {
+						return runTask(m)
+					}
+				},
+			})
+		out = append(out, availTowers()...)
 		return
 	}
 
@@ -201,7 +209,17 @@ var (
 	}
 	devices = func(m menuModel) []list.Item {
 		var items []list.Item
-		items = append(items, getDevices()...)
+		items = append(items, avalibleConnections(&m)...)
+		items = append(items, item{
+			title: "ADB Connect",
+			desc:  "Connect via TCP/IP to emulator or remote device",
+			children: func(m *menuModel) tea.Cmd {
+				return func() tea.Msg {
+					return initialMIModel(m)
+				}
+				// return inputModels(m.cursorMode, "HOST/IP", m.conf.userSettings[ConnectStr], "PORT", "5555")
+			},
+		})
 		return items
 	}
 
@@ -236,14 +254,7 @@ var (
 			if lvl != current {
 				items = append(items, item{title: lvl.String(), children: func(m *menuModel) tea.Cmd {
 					return func() tea.Msg {
-						chosenlvl, _ := logrus.ParseLevel(m.choice)
-						log.SetLevel(chosenlvl)
-						NotifyUI("LogLvl", "Changed to >"+lvl.String())
-						// var cmd tea.Cmd
-						// m.usersettingsv2[LogLvl] = chosenlvl.String()
-						// m.menulist.Select(m.menulist.Cursor())
-						// m.menulist.SetItems()
-						return m.menulist.Update
+						return setLoglevel(m.choice)
 					}
 
 				}})

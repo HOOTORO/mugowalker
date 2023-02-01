@@ -3,7 +3,6 @@ package bot
 
 import (
 	"strings"
-	"worker/cfg"
 	"worker/ocr"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -13,25 +12,30 @@ var outFn func(string, string)
 var red, green, cyan, ylw, mgt func(...interface{}) string
 
 type Location interface {
-	Id()
+	Id() string
 	Keywords() []string
+	HitThreshold() int
 }
 
-func GuessLocation(a []ocr.AltoResult, locations []cfg.Location) (locname string) {
+func GuessLocation(a []ocr.AltoResult, locations []any) (locname string) {
+
 	maxh := 1
 	var resloc string
+	var candidates []string
 	for _, loc := range locations {
-		hit := Intersect(a, loc.Keywords)
-		if len(hit) >= loc.Threshold && len(hit) >= maxh {
-			maxh = len(hit)
-			// log.Debugf(ylw(f("hit: %v -> %v \n", loc.Key, hit)))
-
-			outFn(mgt("GUESSHI |>"), ylw(f("Location: -> %v", loc.Key)))
-
-			log.Warn(mgt("GUESSHI |>"), ylw(f("Location: %v -> %v \n\r", loc.Key, hit)))
-			resloc = loc.Key
+		l, ok := loc.(Location)
+		if ok {
+			hit := Intersect(a, l.Keywords())
+			if len(hit) >= l.HitThreshold() && len(hit) >= maxh {
+				maxh = len(hit)
+				candidates = append(candidates, l.Id())
+				resloc = l.Id()
+			}
 		}
 	}
+	outFn(mgt("GUESSHI |>"), ylw(f("Location -> %v [hits:%v]", resloc, maxh)))
+
+	log.Debug(mgt("GUESSHI |> "), ylw(f(" ↓ Location ↓ \n\t -->  Winner|> %v  Hits|> %v]\n\t --> candidates: %v", resloc, maxh, candidates)))
 	return resloc
 }
 

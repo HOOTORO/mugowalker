@@ -27,10 +27,26 @@ type Daywalker struct {
 	cnt            uint8
 	ActiveTask     string
 	Reactive       bool
-	lastLoc        *cfg.Location
+	currentOcr     []ocr.AltoResult
 	fprefix        string
 	lastscreenshot string
 	maxocrtry      int
+	knownBtns      map[activities.Button]sessionBtn
+}
+
+type sessionBtn struct {
+	x, y int
+}
+
+func (s sessionBtn) String() string {
+	return "ssnBtn"
+}
+func (s sessionBtn) Offset() (x int, y int) {
+	return 0, 0
+}
+
+func (s sessionBtn) Position() (x int, y int) {
+	return s.x, s.y
 }
 
 func NewArenaBot(b *bot.BasicBot, g *Game) *Daywalker {
@@ -38,8 +54,8 @@ func NewArenaBot(b *bot.BasicBot, g *Game) *Daywalker {
 		BasicBot: b,
 		Game:     g,
 		fprefix:  time.Now().Format("2006_01"),
-		lastLoc:  g.GetLocation(Campain),
 		cnt:      0, maxocrtry: 2,
+		knownBtns: make(map[activities.Button]sessionBtn, 0),
 	}
 }
 
@@ -57,15 +73,15 @@ func init() {
 }
 
 func (dw *Daywalker) String() string {
-	return fmt.Sprintf("Bot status:\n   Game: %v\n ActiveTask: %v\n Last Location: %v", dw.Game, dw.ActiveTask, dw.lastLoc)
+	return fmt.Sprintf("Bot status:\n   Game: %v\n ActiveTask: %v", dw.Game, dw.ActiveTask)
 }
 
 /////////////////////////////////////////////////////////////
 
 // ///////////////////////////////////////////////////////////
 func (dw *Daywalker) Location() string {
-	txt := dw.ScanText()
-	return bot.GuessLocation(txt, dw.Locations)
+	dw.currentOcr = dw.ScanText()
+	return bot.GuessLocation(dw.currentOcr, dw.Locations)
 
 }
 func (dw *Daywalker) TempScreenshot(name string) string {
@@ -103,19 +119,8 @@ func (dw *Daywalker) React(r *cfg.ReactiveTask) error {
 		txt := dw.ScanText()
 		loc := bot.GuessLocation(txt, dw.Locations)
 		grid, off := r.React(loc)
-		// before, ok := IsAction(r.Before(loc))
-
-		// if ok {
-		// 	dw.RunBefore(before)
-		// }
-
 		dw.Tap(grid.X, grid.Y, off)
 
-		// after, ok := IsAction(r.After(loc))
-
-		// if ok {
-		// 	dw.RunAfter(after)
-		// }
 		if r.Limit > 0 && r.Criteria == loc {
 			cnt++
 		}
@@ -148,18 +153,30 @@ func availiableToday(days string) bool {
 
 // Press button, search for 'button's text in ocr results
 func (dw *Daywalker) Press(b activities.Button) bool {
-	or := dw.ScanText()
-	x, y, e := LookForButton(or, b)
+	// or := dw.ScanText()
+	log.Debugf("Known buttons: %+v", dw.knownBtns)
+	btn, ok := dw.knownBtns[b]
+	if ok {
+		dw.NotifyUI(cyan("BTN PRSD"), green(f("%v |> %vx%v", b.String(), btn.x, btn.y)))
+		dw.Tap(btn.x, btn.y, 1)
+		return true
+	}
+	x, y, e := LookForButton(dw.currentOcr, b)
 	if e != nil {
 		return false
 	}
-
-	dw.NotifyUI(cyan("BTN PRSD"), green(f("%vx%v %v %v", x, y, b)))
-	dw.Tap(x, y, 1)
+	dw.knownBtns[b] = sessionBtn{x: x, y: y}
+	dw.Press(b)
+	// Let location load
+	time.Sleep(3 * time.Second)
 	return true
 }
 
 func LookForButton(or []ocr.AltoResult, b activities.Button) (x, y int, e error) {
+	log.Debugf(red("Looking for BTN: %v"), b.String())
+	if b.String() == "" {
+		return 500, 100, nil
+	}
 	for _, r := range or {
 		if strings.Contains(r.Linechars, b.String()) {
 			xo, yo := b.Offset()

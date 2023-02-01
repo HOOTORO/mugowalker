@@ -4,6 +4,18 @@ import (
 	"fmt"
 )
 
+type AppUser interface {
+	Loglevel() string
+	Game() string
+	Acccount() string
+	DevicePath() string
+}
+
+type OcrConfig interface {
+	ImagickCfg() []string
+	TesseractCfg() []string
+}
+
 type Profile struct {
 	DeviceSerial string `yaml:"connection"`
 
@@ -34,11 +46,6 @@ type SystemVars struct {
 	UserConfPath            string
 	parties                 []*Executable
 	App, Userhome, Temp, Db string
-}
-
-type RunableExe struct {
-	name string
-	path string
 }
 
 func (ac *Profile) String() string {
@@ -128,21 +135,33 @@ type Reaction struct {
 type Location struct {
 	Key       string   `yaml:"name"`
 	Threshold int      `yaml:"hits"`
-	Keywords  []string `yaml:"keywords"`
+	HitKw     []string `yaml:"keywords"`
 }
 
 func (l *Location) String() string {
 	return f("Key: %v | hitwords: %v", green(l.Key), cyan(l.Keywords))
 }
+func (l *Location) Id() string {
+	return l.Key
+}
 
-func (p *Profile) CmdParams(e Executable) (args []string) {
-	var dest map[int]CmdArgs
-	if e == MagicExe {
-		dest = p.Imagick
-	} else {
-		dest = p.Tesseract
+func (l *Location) Keywords() []string {
+	return l.HitKw
+}
+
+func (l *Location) HitThreshold() int {
+	return l.Threshold
+}
+
+func (p *Profile) ImagickCfg() (args []string) {
+
+	for _, v := range p.Imagick {
+		args = append(args, v.Key, v.Val)
 	}
-	for _, v := range dest {
+	return
+}
+func (p *Profile) TesseractCfg() (args []string) {
+	for _, v := range p.Tesseract {
 		args = append(args, v.Key, v.Val)
 	}
 	return

@@ -18,10 +18,6 @@ const (
 var udb, lcdb *gorm.DB
 var log *logrus.Logger
 
-type Client interface {
-	GetDaily() map[string]bool
-	UpdateDaily() error
-}
 type RawLocation struct {
 	gorm.Model
 	Name string
@@ -42,8 +38,8 @@ type User struct {
 type Progress struct {
 	UserID uint
 	gorm.Model
-	Location uint
-	Level    uint
+	Mode  string
+	Level uint
 }
 
 type Daily struct {
@@ -137,38 +133,24 @@ func (u *User) AfterUpdate(tx *gorm.DB) (err error) {
 	return
 }
 
-// func (u *Daily) Update(quest uint8) {
-// 	u.Quests = quest
-// 	r := udb.Save(u)
-// 	log.Errorf("\nudb: %v user updated", r.RowsAffected)
-// 	if r.Error != nil {
-// 		panic("DB ERROR : " + r.Error.Error())
-// 	}
-// }
-
-func (u *Progress) Update(level uint) {
-	u.Level = level
-	r := udb.Save(u)
+func (p *Progress) Update(level uint) {
+	p.Level = level
+	r := udb.Save(p)
 	log.Errorf("\nudb: %v user updated", r.RowsAffected)
 	if r.Error != nil {
 		panic("DB ERROR : " + r.Error.Error())
 	}
 }
 
-func (u *User) GetProgress(loc uint) *Progress {
+func (u *User) GetProgress(loc string) *Progress {
 	var p *Progress
-	r := udb.Where("user_id = ? and location = ?", u.ID, loc).Order("created_at DESC").First(&p)
+	r := udb.Where("user_id = ? and location_type = ?", u.ID, loc).Order("created_at DESC").First(&p)
 	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
 		log.Error("No entries rn")
-		p = &Progress{Location: loc, Level: 0, UserID: u.ID}
+		p = &Progress{Mode: loc, Level: 0, UserID: u.ID}
 		udb.Save(p)
 	}
 	return p
-}
-
-func (u *User) LocLevel(loc, level uint) {
-	u.Locations = append(u.Locations, Progress{Location: loc, Level: level})
-	udb.Save(u)
 }
 
 func StartOfDay(t time.Time) time.Time {

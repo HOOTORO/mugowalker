@@ -41,10 +41,15 @@ func updateMenu(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 
 					//// Run something go to updateExec
 				case func(m *menuModel) tea.Cmd:
-					m.state.taskch <- notify(itm.title, "Launched!")
+					m.userstate.taskch <- notify(itm.title, "Launched!")
 					cmd = chld(&m)
 					m.menulist.Update(msg)
 					return m, cmd
+				case func() multiIputModel:
+					m.session = inputView
+					m.cnct = chld()
+					m.cnct.Update(msg)
+					return m.cnct, cmd
 				}
 			}
 
@@ -61,8 +66,6 @@ func updateMenu(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 		// 	m.menulist.SetSize(msg.Width/2, msg.Height)
 		// m.statusInfo =
 	}
-	// 	// updateDto(m.opts)
-	// 	m.updateStatus()
 
 	m.menulist, cmd = m.menulist.Update(msg)
 	return m, cmd
@@ -153,6 +156,7 @@ func (m menuModel) updatemanyInputs(msg tea.Msg) tea.Cmd {
 		// 	m.userSettings[r.Replace(m.manyInputs[i].Prompt)] = m.manyInputs[i].Value()
 		// }
 		m.manyInputs[i], cmds[i] = m.manyInputs[i].Update(msg)
+
 	}
 
 	return tea.Batch(cmds...)

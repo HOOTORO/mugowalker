@@ -58,6 +58,8 @@ type Bot interface {
 	Location() string
 	Screenshot(string) string
 	ScanText() []ocr.AltoResult
+	DiscoverDevices() []*adb.Device
+	Connect(*adb.Device)
 }
 
 type BasicBot struct {
@@ -69,16 +71,14 @@ type BasicBot struct {
 }
 
 // New Instance of bot
-func New(d *adb.Device, altout func(s1, s2 string)) *BasicBot {
+func New(altout func(s1, s2 string)) *BasicBot {
 	outFn = altout
 	rand.Seed(time.Now().Unix())
 	return &BasicBot{
-		id:       rand.Uint32(),
-		location: startlocation,
-		Device:   d,
-		outFn:    altout,
-		xgrid:    xgrid,
-		ygrid:    ygrid,
+		id:    rand.Uint32(),
+		outFn: altout,
+		xgrid: xgrid,
+		ygrid: ygrid,
 	}
 }
 func init() {
@@ -96,46 +96,8 @@ func (b *BasicBot) NotifyUI(pref, msg string) {
 
 func (b *BasicBot) Location() (locname string) {
 	return b.location
-	// WaitForLoc:
-	// 	for {
-	// 		if !dw.checkLoc(dw.ScanScreen()) {
-	// 			time.Sleep(8 * time.Second)
-	// 			if step >= dw.maxocrtry {
-	// 				Fnotify(ocrs, f(red("\rUsing improved ocr settings")))
-	// 				user.UseAltImagick = true
-	// 				user.Tesseract = simpletess
-	// 				Fnotify("ocr", f(cyan("\rMagick args --> %v\n\r", user.AltImagick)))
-	// 			}
-	// 			if step >= dw.maxocrtry+2 {
-	// 				Fnotify(ocrs, red("\rUsing RANDOM ocr settings xD "))
-	// 				user.AltImagick = ocr.MagickArgs()
-	// 				// dw.Back()
-	// 				Fnotify(mgc, cyan("\rMagick args --> %v\n\r", user.AltImagick))
-	// 				// log.Warnf("Magick args --> %v", user.AltImagick)
-	// 			}
-	// 			step++
-	// 			continue WaitForLoc
-	// 		} else {
-	// 			if step >= dw.maxocrtry {
-	// 				Fnotify(ocrs, cyan("Returnin ocr params"))
-	// 				user.UseAltImagick = false
-
-	// 			}
-	// 			step = 0
-	// 			break WaitForLoc
-
-	//		}
-	//	}
-	//
-	// Fnotify("GUESSLOC", ylw("\rBest match -> %v\n\r", dw.lastLoc))
-	// // fmt.Printf("My Location most likely -> %v\n\r", dw.lastLoc)
-	// return dw.lastLoc.Key
 }
 
-// func (dw *Daywalker) checkLoc(o []ocr.AltoResult) (ok bool) {
-
-//		return
-//	}
 func (b *BasicBot) ScanText() []ocr.AltoResult { // ocr.Result {
 	s := b.Screenshot(tempfile)
 	text := ocr.TextExtractAlto(s)
@@ -153,8 +115,8 @@ func (b *BasicBot) ScanText() []ocr.AltoResult { // ocr.Result {
 		}
 		return s
 	}
-	log.Tracef("ocred: %v", cyan(z(text)))
-	b.outFn(green("OCR-R"), f("Words Onscr: %v lns: %s", cyan(len(text)), green(text[len(text)-1].LineNo)))
+	// log.Trace(green("OCR-R"), f("Words Onscr: %v lns: %s\nocred: %v", cyan(len(text)), green(text[len(text)].LineNo), cyan(z(text))))
+	log.Trace(green("OCR-R"), f("Words Onscr: %v\nocred: %v", cyan(len(text)), cyan(z(text))))
 	return text
 }
 
@@ -174,16 +136,31 @@ func (b *BasicBot) Screenshot(name string) string {
 
 // Tap x,y with y offset
 func (b *BasicBot) Tap(gx, gy, off int) {
-	// if user.DrawStep {
-	// 	drawTap(gx, gx, b)
-	// }
 
 	e := b.Device.Tap(fmt.Sprint(gx), fmt.Sprint(gy))
-	// outFn(mgt("BOT"), ylw(f("Tap -> %vx%v px", gx, gy)))
-	b.outFn(mgt("BOT"), green(f("Tap -> %vx%v px", gx, gy)))
+	// b.outFn(mgt("BOT"), green(f("Tap -> %vx%v px", gx, gy)))
 	if e != nil {
 		log.Warnf("Have an error during tap: %v", e.Error())
 	}
+}
+
+func (b *BasicBot) DiscoverDevices() []*adb.Device {
+	devs, _ := adb.Devices()
+	// Try to connect Bluestacks standart host:port
+	bs, e := adb.Connect("localhost:5555")
+	if e == nil {
+		devs = append(devs, bs)
+	}
+	// Try to connect Nox standart host:port
+	nox, e := adb.Connect("localhost:62001")
+	if e == nil {
+		devs = append(devs, nox)
+	}
+	return devs
+}
+
+func (b *BasicBot) Connect(d *adb.Device) {
+	b.Device = d
 }
 
 func drawTap(tx, ty int, bot Bot) {

@@ -2,12 +2,12 @@ package ui
 
 import (
 	"strings"
-	"time"
 
 	a "worker/adb"
 	"worker/cfg"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/sirupsen/logrus"
 )
 
 type errMsg struct{ err error }
@@ -17,6 +17,7 @@ func (e errMsg) Error() string { return e.err.Error() }
 type (
 	vmStatusMsg   int
 	connectionMsg int
+	loglevelMsg   int
 )
 
 func checkVM() tea.Msg {
@@ -37,12 +38,21 @@ func adbConnect(serial string) tea.Msg {
 
 	return connectionMsg(dev.DevState)
 }
+func setLoglevel(lvl string) tea.Msg {
+	obj, e := logrus.ParseLevel(lvl)
+	if e != nil {
+		log.Error("Wrong LogLevel String")
+		return errMsg{e}
+	}
+	log.SetLevel(obj)
+	return loglevelMsg(obj)
+}
 
 // taskinfo is send when a pretend process completes.
 type taskinfo struct {
-	Task     string
-	Message  string
-	Duration time.Time
+	Task    string
+	Message string
+	// Duration time.Time
 }
 
 // A command that waits for the activity on a channel.
@@ -51,3 +61,6 @@ func activityListener(strch chan taskinfo) tea.Cmd {
 		return taskinfo(<-strch)
 	}
 }
+
+// ///////////////////////////////////////////////////////////////////////////////////////////////////
+// Validator functions to ensure valid input

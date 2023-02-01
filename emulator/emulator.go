@@ -25,7 +25,7 @@ const (
 var (
 	f             = fmt.Sprintf
 	blue          = color.New(color.FgHiBlue).SprintFunc()
-	defins        = "Rvc64"
+	defins        = "Pi"
 	defcmd        = "launchApp"
 	afktestclient = "com.lilithgames.hgame.gp.id"
 	afkglobal     = "com.lilithgames.hgame.gp"

@@ -1,30 +1,58 @@
 package afk
 
 import (
-	a "worker/adb"
 	"worker/afk/activities"
 	"worker/bot"
 	"worker/cfg"
 )
 
-var notifyUI func(a string, b string)
-
-func Push(miss cfg.Mission, userprofile *cfg.Profile, out func(a string, b string)) {
-	notifyUI = out
-	if miss == cfg.PushCampain {
-		ns := Nightstalker(userprofile)
-		activities.Push(ns, out)
-
+func (d *Daywalker) Run(chosen string) {
+	switch chosen {
+	case "Push Campain?":
+		doActivity(cfg.PushCampain, d)
+	case "Kings Tower":
+		doActivity(cfg.ClimbKings, d)
+	case "World Tree":
+		doActivity(cfg.ClimbWild, d)
+	case "Forsaken Necropolis":
+		doActivity(cfg.ClimbGrave, d)
+	case "Towers of Light":
+		doActivity(cfg.ClimbLight, d)
+	case "Brutal Citadel":
+		doActivity(cfg.ClimbMaul, d)
+	case "Celestial Sanctum":
+		doActivity(cfg.ClimbCelestial, d)
+	case "Infernal Fortress":
+		doActivity(cfg.ClimbInferno, d)
+	default:
+		d.NotifyUI("RUN", "Unknown Activity")
 	}
 }
 
-func Nightstalker(cf *cfg.Profile) *Daywalker {
-	dev, e := a.Connect(cf.DeviceSerial)
-	if e != nil {
-		log.Errorf("\ndeverr:%v", e)
+func doActivity(miss cfg.Mission, ns activities.Nightstalker) {
+	switch miss {
+	case cfg.PushCampain:
+		activities.Push(ns)
+	case cfg.ClimbKings:
+		activities.PushTower(ns, activities.KING)
+	case cfg.ClimbWild:
+		activities.PushTower(ns, activities.WILDER)
+	case cfg.ClimbGrave:
+		activities.PushTower(ns, activities.GRAVEBORN)
+	case cfg.ClimbLight:
+		activities.PushTower(ns, activities.LIGHTBEARER)
+	case cfg.ClimbMaul:
+		activities.PushTower(ns, activities.MAULER)
+	case cfg.ClimbCelestial:
+		activities.PushTower(ns, activities.CELESTIAL)
+	case cfg.ClimbInferno:
+		activities.PushTower(ns, activities.INFERNAL)
+	default:
+		outFn("RUN", "Unknown Activity")
 	}
-	gm := New(cf.User)
-	d := bot.New(dev, notifyUI)
+}
 
-	return NewArenaBot(d, gm)
+func Nightstalker(b *bot.BasicBot, cf *cfg.Profile) *Daywalker {
+	gm := New(cf.User)
+	return NewArenaBot(b, gm)
 }

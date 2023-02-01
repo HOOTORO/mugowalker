@@ -44,12 +44,12 @@ func main() {
 
 		color.HiRed("%v", "TEST RUN")
 
-		d, e := adb.Connect("127.0.0.1:5556")
+		_, e := adb.Connect("127.0.0.1:5556")
 		if e != nil {
 			log.Fatalf(red("%v"), e.Error())
 		}
 		gw := afk.New(user.User)
-		bb := bot.New(d, fn)
+		bb := bot.New(fn)
 		bot := afk.NewArenaBot(bb, gw)
 
 		a := bot.ScanText()

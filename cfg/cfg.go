@@ -51,13 +51,15 @@ func init() {
 		log.SetOutput(f)
 	}
 
-	activeUser = loadUser()
+	activeUser = LastLoaded()
 
-	loglvl, e := logrus.ParseLevel(activeUser.Loglevel)
-	if e != nil {
-		log.Errorf("logrus err: %v", e)
-	}
-	log.SetLevel(loglvl)
+	// activeUser = loadUser()
+
+	// loglvl, e := logrus.ParseLevel(activeUser.Loglevel)
+	// if e != nil {
+	// 	log.Errorf("logrus err: %v", e)
+	// }
+	log.SetLevel(logrus.ErrorLevel)
 	// log.SetReportCaller(true)
 
 	if e != nil {
@@ -89,7 +91,25 @@ func ActiveUser() *Profile {
 	if activeUser != nil {
 		return activeUser
 	}
-	return defUser
+	return userTemplate
+}
+func LastLoaded() *Profile {
+	conf := &Profile{}
+	lastcfg := mostRecentModifiedYAML(sysvars.Userhome, sysvars.Db)
+	if lastcfg != "" {
+		e := Parse(lastcfg, conf)
+		if e != nil {
+			log.Errorf("Err: %v", e)
+		}
+	}
+	return nil
+}
+
+func UpdateUserInfo(au AppUser){
+	activeUser.DeviceSerial = au.DevicePath()
+	activeUser.Loglevel = au.Loglevel()
+	activeUser.User.Account = au.Acccount()
+	activeUser.User.Game = au.Game()
 }
 
 func (rt ReactiveTask) React(trigger string) (image.Point, int) {
@@ -209,19 +229,6 @@ func loadSysconf() (sys *SystemVars, e error) {
 	return
 }
 
-func loadUser() *Profile {
-	conf := &Profile{}
-	lastcfg := lookupLastConfig(sysvars.Userhome, sysvars.Db)
-
-	e := Parse(lastcfg, conf)
-	if e != nil {
-		conf = defaultUser()
-	} else {
-		sysvars.UserConfPath = UserFile(lastcfg)
-	}
-	return conf
-}
-
 func safeEnv(n string) string {
 	str, ok := os.LookupEnv(n)
 	if ok {
@@ -232,7 +239,7 @@ func safeEnv(n string) string {
 }
 
 func defaultUser() *Profile {
-	settings := defUser
+	settings := userTemplate
 	cfgpath := UserFile(defaultcfg)
 	sysvars.UserConfPath = cfgpath
 	Save(defaultcfg, settings)
@@ -240,18 +247,7 @@ func defaultUser() *Profile {
 	return settings
 }
 
-// func loadParties(sys *SystemVars) error {
-// 	for _, s := range thirdparty() {
-// 		if pt := LookupPath(s.String()); pt != "" {
-// 			sys.parties = append(sys.parties, &RunableExe{name: s, path: pt})
-// 		} else {
-// 			return ErrRequiredProgram404
-// 		}
-// 	}
-// 	return nil
-// }
-
-func lookupLastConfig(dirs ...string) string {
+func mostRecentModifiedYAML(dirs ...string) string {
 	last := time.Time{}
 	res := ""
 	for _, d := range dirs {
@@ -272,6 +268,7 @@ func lookupLastConfig(dirs ...string) string {
 	}
 	return res
 }
+
 // Cutgrid deprecated
 func Cutgrid(str string) (p image.Point, off int) {
 	off = 1 // default

@@ -5,6 +5,7 @@ import (
 
 	"worker/afk/activities"
 	"worker/afk/repository"
+	"worker/bot"
 	"worker/cfg"
 
 	"github.com/sirupsen/logrus"
@@ -19,7 +20,7 @@ func init() {
 type Game struct {
 	Name          string
 	Active        bool
-	Locations     []cfg.Location
+	Locations     []any
 	User          *repository.User
 	profile       *cfg.User
 	tasks, dailys []cfg.ReactiveTask
@@ -33,7 +34,7 @@ func (g *Game) String() string {
 // New Game for a given User
 func New(up *cfg.User) *Game {
 	log.Infof("Launch %v", up)
-	locs := make([]cfg.Location, 1)
+	locs := make([]activities.Location, 1)
 	tasks := make([]cfg.ReactiveTask, 1)
 	dailys := make([]cfg.ReactiveTask, 1)
 	dailysTwo := make([]cfg.ReactiveAlto, 1)
@@ -42,13 +43,15 @@ func New(up *cfg.User) *Game {
 	cfg.Parse(reactionsCfg, &tasks)
 	cfg.Parse(dailyCfg, &dailys)
 	cfg.Parse(dailyCfgTwo, &dailysTwo)
+
+	anylocs := activities.AllLocations()
 	for _, l := range locs {
-		for i, kw := range l.Keywords {
+		for _, kw := range l.Keywords() {
 			if kw == "%account" {
-				l.Keywords[i] = up.Account
+				l.Kws = append(l.Kws, up.Account)
 			}
 		}
-
+		//anylocs = append(anylocs, l)
 	}
 
 	log.Infof("Locations: %v", locs)
@@ -58,7 +61,7 @@ func New(up *cfg.User) *Game {
 
 	return &Game{
 		Name:      up.Game,
-		Locations: locs,
+		Locations: anylocs,
 		Active:    true,
 		User:      user,
 		profile:   up,
@@ -89,10 +92,10 @@ hard to implement
 	|FRqty		|
 */
 
-func (g *Game) Task(loc Location) *cfg.ReactiveTask {
+func (g *Game) Task(loc bot.Location) *cfg.ReactiveTask {
 	var Task cfg.ReactiveTask
 	for _, v := range g.tasks {
-		if v.Name == loc.String() {
+		if v.Name == loc.Id() {
 			return &v
 		}
 	}

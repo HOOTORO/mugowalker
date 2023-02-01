@@ -33,16 +33,22 @@ type Mission int
 
 const (
 	PushCampain Mission = iota + 1
-	ClimbTower
+	ClimbKings
+	ClimbWild
+	ClimbGrave
+	ClimbInferno
+	ClimbMaul
+	ClimbLight
+	ClimbCelestial
 	GuildBosses
 )
 
 var (
-	defUser = &Profile{
+	userTemplate = &Profile{
 		DeviceSerial: "",
 		User: &User{
 			Account:     "",
-			Game:        "AFK Arena",
+			Game:        "",
 			TaskConfigs: []string{"cfg/reactions.yaml", "cfg/daily.yaml"},
 		},
 		Imagick: imgksArggs(),
@@ -61,7 +67,6 @@ var (
 		Loglevel:     "FATAL",
 		DrawStep:     false,
 	}
-	//[]string{"-colorspace", "Gray", "-alpha", "off", "-threshold, ", "75%"}
 	imgksArggs = func() map[int]CmdArgs {
 		r := make(map[int]CmdArgs, 0)
 		r[1] = CmdArgs{Key: "-colorspace", Val: "Gray"}
@@ -70,13 +75,6 @@ var (
 
 		return r
 	}
-	//[]string{
-	// "--psm", "6",
-	// "-c", "tessedit_char_blacklist=[“€”\"’^#@™°&!~'‘|<$>«»,¢\\_;§®‘*~.°├⌐ÇöÑ{}",
-	// "-c", "tessedit_create_alto=1",
-	// "-c", "tessedit_create_txt=1",
-	// "quiet",
-	// }
 	tssA = func() map[int]CmdArgs {
 		r := make(map[int]CmdArgs, 0)
 		r[1] = CmdArgs{Key: "--psm", Val: "6"}

@@ -1,10 +1,5 @@
 package afk
 
-type Location interface {
-	String() string
-	Id() uint
-}
-
 type UserField uint
 
 var strs = [...]string{"name", "account_id", "vip", "chapter", "stage", "diamonds", "gold"}
@@ -116,8 +111,14 @@ func LocLvl(s string) Level {
 	return 0
 }
 
-func (t Level) Id() uint {
-	return uint(t)
+func (t Level) Id() string {
+	return t.String()
+}
+func (t Level) Keywords() []string {
+	return []string{}
+}
+func (t Level) HitThreshold() int {
+	return 0
 }
 
 // Popout Popouts on locations

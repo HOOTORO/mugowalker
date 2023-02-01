@@ -3,6 +3,8 @@ package afk
 
 import (
 	"errors"
+	"worker/afk/activities"
+	"worker/bot"
 	"worker/cfg"
 	"worker/ocr"
 )
@@ -17,31 +19,32 @@ const (
 )
 
 type GameWorld interface {
-	Locations() []*cfg.Location
+	Locations() []bot.Location
 }
 
 var (
-	locations []*cfg.Location
+	locations []activities.Location
 	reactions []*cfg.Reaction
 )
 
 func init() {
 	if locations == nil {
 		cfg.Parse(locationsCfg, &locations)
+
 	}
 
 }
-func Locations() []*cfg.Location {
+func Locations() []activities.Location {
 	return locations
 }
 
-func LocationStruct(s string) (*cfg.Location, error) {
+func LocationStruct(s string) (activities.Location, error) {
 	for _, v := range locations {
-		if s == v.Key {
+		if s == v.Id() {
 			return v, nil
 		}
 	}
-	return nil, ErrLocNotFound
+	return activities.Location{}, ErrLocNotFound
 }
 
 func (g *Game) Reactivalto(str string) *cfg.ReactiveAlto {
@@ -53,16 +56,16 @@ func (g *Game) Reactivalto(str string) *cfg.ReactiveAlto {
 	return nil
 }
 
-func (g *Game) GetLocation(l Location) *cfg.Location {
+func (g *Game) GetLocation(l bot.Location) *activities.Location {
 	for _, loc := range g.Locations {
-		if loc.Key == l.String() {
-			return &loc
+		if lo, ok := loc.(activities.Location); ok && lo.Id() == l.Id() {
+			return &lo
 		}
 	}
 	return nil
 }
 
-func (g *Game) UpdateProgress(loc Location, or ocr.Result) {
+func (g *Game) UpdateProgress(loc bot.Location, or ocr.Result) {
 	u := g.User
 	towerEx := `.*[lis|del|ght|ess|um|wer|ree](?P<floor>\d{3}|d{4}) Floors`
 	stgchregex := `Stage:(?P<chapter>\d+)-(?P<stage>\d+)`

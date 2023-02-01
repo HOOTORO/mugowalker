@@ -12,25 +12,28 @@ type Nightstalker interface {
 	Press(Button) bool
 	Location() string
 	Back()
+	NotifyUI(string, string)
 }
 
 // Push Campain script (AFK Arena)
-func Push(ns Nightstalker, out func(s, s1 string)) {
+func Push(ns Nightstalker) {
 	for {
 		switch ns.Location() {
 		case Campain.ID:
-			out("NS", "Loook for begin")
+			ns.NotifyUI("NS", "Loook for begin")
 			ns.Press(Begin)
 		case Bossnode.ID:
-			ns.Press(Begin)
+			ns.Press(BeginB)
 		case Result.ID:
 			ns.Press(TryAgain)
 		case Win.ID:
-			ns.Press(Next)
+			ns.Press(Continue)
 		case Prepare.ID:
 			ns.Press(BattleBtn)
+		case RightBanner.ID:
+			ns.Press(Community)
 		default:
-			out("NS", "Unhandled location, wait...")
+			ns.NotifyUI("NS", "Unhandled location, wait...")
 			if isBaseLoc(ns.Location()) {
 				ns.Press(CampainBotPanel)
 			}

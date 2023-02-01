@@ -16,6 +16,10 @@ func listView(m menuModel) string {
 	return menulistStyle.Render(m.menulist.View())
 }
 
+func nlistView(m menuModel) string {
+	return m.cnct.View()
+}
+
 // /////////////////////////////////
 // /////// VIEW Input /////////////
 // ///////////////////////////////
@@ -54,14 +58,14 @@ func (m *menuModel) statuStr() string {
 
 	con, emu = red("Offline"), red("Shutdown")
 
-	if m.state.connectionStatus != 0 {
+	if m.userstate.connectionStatus != 0 {
 		con = green("Online")
 	}
-	if m.state.bluestcksPid != 0 {
+	if m.userstate.bluestcksPid != 0 {
 
 		emu = green("Running")
 	}
-	if m.state.connectionStatus != 0 && m.state.bluestcksPid != 0 {
+	if m.userstate.connectionStatus != 0 && m.userstate.bluestcksPid != 0 {
 		statusStyle.BorderForeground(brightGreen)
 	}
 
@@ -77,13 +81,13 @@ func (m *menuModel) statuStr() string {
 }
 
 func (m *menuModel) runningTasksPanel() string {
-	log.Tracef("Upd status spanel....%v:%v", m.state.connectionStatus, m.state.bluestcksPid)
+	log.Tracef("Upd status spanel....%v:%v", m.userstate.connectionStatus, m.userstate.bluestcksPid)
 	// var s, rt string
 	s := m.statuStr()
 	rt := fmt.Sprintf("\n"+
-		m.state.spinme.View()+" Runing task %s...\n\n", taskName.Render(m.choice))
+		m.userstate.spinme.View()+" Runing task %s...\n\n", taskName.Render(m.choice))
 
-	for _, res := range m.state.taskmsgs {
+	for _, res := range m.userstate.taskmsgs {
 		if res.Task == "" {
 			rt += "...............................................\n"
 		} else {

@@ -40,10 +40,10 @@ var (
 		BorderForeground(hotPink)
 
 	menulistStyle = lipgloss.NewStyle().
-		// ColorWhitespace(true).
-		Align(lipgloss.Left, lipgloss.Bottom).
-		Margin(0, 0, 0, 2)
-		// Width(50)
+			ColorWhitespace(true).
+			Align(lipgloss.Bottom, lipgloss.Left).
+			Margin(0, 0, 0, 2).
+			Width(50)
 
 	///////////////
 	/// RIGHT ////
@@ -56,7 +56,7 @@ var (
 			Width(50).
 			PaddingLeft(3).
 			PaddingRight(5).
-			Align(lipgloss.Right, lipgloss.Top).
+			Align(lipgloss.Top, lipgloss.Right).
 			BorderForeground(bloodRed)
 
 	spinnerStyle = lipgloss.NewStyle().
@@ -67,9 +67,8 @@ var (
 			UnsetPaddingLeft().
 			Width(55).
 			UnsetBorderStyle().
-			Align(lipgloss.Left, lipgloss.Bottom)
+			Align(lipgloss.Bottom, lipgloss.Left)
 
-	//	happyClr = colorful.FastHappyColor()
 	helpStyle = lipgloss.NewStyle().
 			MarginLeft(1).
 			Align(lipgloss.Bottom).
@@ -80,13 +79,6 @@ var (
 			Foreground(lipgloss.Color("#FF0000")).
 			MarginBackground(lipgloss.Color("#00FF00")).
 			Margin(10)
-	// hz
-	// execRespStyle = lipgloss.NewStyle().
-	// 		Border(lipgloss.RoundedBorder()).
-	// 		BorderForeground(hotPink).
-	// 		Foreground(lipgloss.Color("#77DE77")).
-	// 		Align(lipgloss.Bottom).
-	// 		MarginLeft(30)
 
 	taskName = lipgloss.NewStyle().Foreground(orange)
 )
@@ -127,4 +119,14 @@ var (
 			MarginBottom(3)
 	selectedItemStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("170"))
+)
+
+/////////////////////
+/////////host input/////
+////////////////
+const ()
+
+var (
+	inputStyle    = lipgloss.NewStyle().Foreground(hotPink)
+	continueStyle = lipgloss.NewStyle().Foreground(darkGray)
 )

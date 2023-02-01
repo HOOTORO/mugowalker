@@ -3,11 +3,10 @@ package ocr
 import (
 	"fmt"
 	"os/exec"
-	"worker/cfg"
 )
 
 func OptimizeForOCR(f string) string {
-	res, _ := Magick(f, user.CmdParams(cfg.MagicExe)...)
+	res, _ := Magick(f, user.ImagickCfg()...)
 	return res
 }
 
@@ -25,7 +24,7 @@ func runOcr(in string, out string) error {
 	if user.UseAltImagick {
 		tessAgrs = user.AltImagick
 	} else {
-		tessAgrs = user.CmdParams(cfg.TessExe)
+		tessAgrs = user.TesseractCfg()
 	}
 	args := append([]string{in, out}, tessAgrs...)
 	cmd := exec.Command(tesser, args...)
