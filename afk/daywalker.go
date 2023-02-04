@@ -91,60 +91,6 @@ func (dw *Daywalker) TempScreenshot(name string) string {
 	return pt
 }
 
-func (dw *Daywalker) AltoRun(str string, fn func(string, string)) {
-	outFn = fn
-	taks := dw.Reactivalto(str)
-	outFn(alto, red("TAPTARGET \n %s", taks))
-	altos := dw.ScanText()
-	// Fnotify(alto, f("%+v", altos))
-	where := bot.GuessLocation(altos, dw.Locations)
-	// dw.Daily()
-	for _, r := range taks.Taptarget {
-		if strings.Contains(where, r.If) {
-			for _, do := range r.Do {
-				x, y := bot.TextPosition(do, altos)
-				if x != 0 && y != 0 {
-					dw.Tap(x, y, 1)
-				}
-			}
-
-		}
-	}
-}
-
-func (dw *Daywalker) React(r *cfg.ReactiveTask) error {
-	dw.Reactive = true
-	cnt := 0
-	for dw.Reactive && r.Limit >= cnt {
-		txt := dw.ScanText()
-		loc := bot.GuessLocation(txt, dw.Locations)
-		grid, off := r.React(loc)
-		dw.Tap(grid.X, grid.Y, off)
-
-		if r.Limit > 0 && r.Criteria == loc {
-			cnt++
-		}
-	}
-	return nil
-}
-
-func (dw *Daywalker) ZeroPosition() bool {
-	log.Tracef("Returning to Ranhorny...")
-	if dw.cnt > 5 {
-		log.Errorf("Reach recursion limit, quitting....")
-		return false
-	}
-	if dw.Location() == RANHORNY.String() {
-		dw.cnt = 0
-		return true
-	} else {
-		dw.Tap(1, 18, 1)
-		dw.cnt++
-		dw.ZeroPosition()
-		return false
-	}
-}
-
 func availiableToday(days string) bool {
 	d := strings.Split(days, "/")
 	weekday := time.Now().Weekday().String()

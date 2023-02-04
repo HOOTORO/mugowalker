@@ -17,6 +17,7 @@ const (
 	someR       = lipgloss.Color("#FFa000")
 	orange      = lipgloss.Color("#faa805")
 	sep         = "|>"
+	cyanny      = lipgloss.Color("#000FFF")
 )
 
 var (
@@ -26,34 +27,32 @@ var (
 	////////////
 
 	// Title
-	tStyle = lipgloss.NewStyle().
-		Bold(true).
-		Foreground(white).
-		// ColorWhitespace(true).
-		Align(lipgloss.Right)
+	titleStl = lipgloss.NewStyle().
+			Bold(true).
+			Foreground(white).
+			Align(lipgloss.Right)
 
 	// list Title Bar
-	tbStyle = lipgloss.NewStyle().
-		// ColorWhitespace(true).
-		MarginBottom(1).
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(hotPink)
+	titbarStl = lipgloss.NewStyle().
+			MarginBottom(1).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(hotPink)
 
-	menulistStyle = lipgloss.NewStyle().
+	menulistStl = lipgloss.NewStyle().
 			ColorWhitespace(true).
 			Align(lipgloss.Bottom, lipgloss.Left).
-			Margin(0, 0, 0, 2).
+			Margin(0, 0, 0, 0).
 			Width(50)
 
 	///////////////
 	/// RIGHT ////
 	// Panel ////
 	////////////
-	statusStyle = lipgloss.NewStyle().
+	statusStl = lipgloss.NewStyle().
 			MarginLeft(1).
 			Border(lipgloss.RoundedBorder()).
 			Bold(true).
-			Width(50).
+			Width(52).
 			PaddingLeft(3).
 			PaddingRight(5).
 			Align(lipgloss.Top, lipgloss.Right).
@@ -62,12 +61,17 @@ var (
 	spinnerStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("69"))
 
-	runnunTaskStyle = statusStyle.Copy().
+	runnunTaskStyle = statusStl.Copy().
 			MarginTop(2).
 			UnsetPaddingLeft().
 			Width(55).
 			UnsetBorderStyle().
 			Align(lipgloss.Bottom, lipgloss.Left)
+
+	emuStatus = statusStl.Copy().
+			BorderForeground(cyanny).
+			Foreground(brightGreen).
+			Align(lipgloss.Center)
 
 	helpStyle = lipgloss.NewStyle().
 			MarginLeft(1).
@@ -90,12 +94,12 @@ var (
 var (
 	// MultiText Input Form
 	topInputStyle = lipgloss.NewStyle().
-		// Margin(0, 10)
-		PaddingLeft(30).PaddingTop(8)
-	// Width(45).
-	// MarginTop(10)
+			PaddingLeft(30).
+			PaddingTop(8)
+
 	focusedStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("205"))
+
 	blurredStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("240"))
 

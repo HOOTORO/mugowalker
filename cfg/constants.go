@@ -2,10 +2,11 @@ package cfg
 
 // Required 3rd-party software
 const (
-	AdbExe        Executable = "adb"
-	MagicExe                 = "magick"
-	TessExe                  = "tesseract"
-	BluestacksExe            = "HD-Player"
+	AdbExe   Executable = "adb"
+	MagicExe            = "magick"
+	TessExe             = "tesseract"
+	// dup in emulator
+	BluestacksExe = "HD-Player"
 )
 
 type Executable string

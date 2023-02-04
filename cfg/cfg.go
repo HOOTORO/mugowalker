@@ -3,12 +3,10 @@ package cfg
 import (
 	"errors"
 	"fmt"
-	"image"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/fatih/color"
@@ -53,23 +51,45 @@ func init() {
 
 	activeUser = LastLoaded()
 
-	// activeUser = loadUser()
-
-	// loglvl, e := logrus.ParseLevel(activeUser.Loglevel)
-	// if e != nil {
-	// 	log.Errorf("logrus err: %v", e)
-	// }
-	log.SetLevel(logrus.ErrorLevel)
+	ll, e := logrus.ParseLevel(activeUser.Loglevel)
 	// log.SetReportCaller(true)
 
 	if e != nil {
 		panic(e)
 	}
 
+	log.SetLevel(ll)
+
 	repository.DbInit(func(x string) string {
 		return filepath.Join(sysvars.Db, x)
 	})
 }
+
+type emum interface {
+	~uint
+	String() string
+	Values() []string
+}
+
+func Deserialize[T emum](raw T) []string {
+	var result []string
+	for i := 0; i < len(raw.Values()); i++ {
+		if d := T(1 << i); raw&(1<<uint(i)) != 0 {
+			result = append(result, d.String())
+		}
+	}
+	return result
+}
+
+// func Deserialize[T int, R string](raw T, opts []R) []T {
+// 	var result []T
+// 	for i := 0; i < len(opts); i++ {
+// 		if d := T(1 << i); raw&(1<<uint(i)) != 0 {
+// 			result = append(result, d)
+// 		}
+// 	}
+// 	return result
+// }
 
 func Logger() *logrus.Logger {
 	if log != nil {
@@ -102,41 +122,16 @@ func LastLoaded() *Profile {
 			log.Errorf("Err: %v", e)
 		}
 	}
-	return nil
+	return conf
 }
 
-func UpdateUserInfo(au AppUser){
+func UpdateUserInfo(au AppUser) {
 	activeUser.DeviceSerial = au.DevicePath()
 	activeUser.Loglevel = au.Loglevel()
 	activeUser.User.Account = au.Acccount()
 	activeUser.User.Game = au.Game()
-}
+	Save(UserFile(au.Acccount()+".yaml"), activeUser)
 
-func (rt ReactiveTask) React(trigger string) (image.Point, int) {
-	for _, v := range rt.Reactions {
-		if trigger == v.If {
-			return Cutgrid(v.Do)
-		}
-	}
-	return Cutgrid("1:18")
-}
-
-func (rt ReactiveTask) Before(trigger string) string {
-	for _, v := range rt.Reactions {
-		if trigger == v.If && v.Before != "" {
-			return v.Before
-		}
-	}
-	return ""
-}
-
-func (rt ReactiveTask) After(trigger string) string {
-	for _, v := range rt.Reactions {
-		if trigger == v.If && v.After != "" {
-			return v.After
-		}
-	}
-	return ""
 }
 
 func Parse(s string, out interface{}) error {
@@ -166,15 +161,6 @@ func Save(name string, in interface{}) {
 		log.Errorf("write yaml (e): %v", err)
 	}
 	log.Tracef("MARSHALLED: %v\n\n", f)
-}
-
-func LoadTask(up *User) (r []ReactiveTask) {
-	for _, t := range up.TaskConfigs {
-		reactiveTasks := make([]ReactiveTask, 0)
-		Parse(t, &reactiveTasks)
-		r = append(r, reactiveTasks...)
-	}
-	return
 }
 
 func GetImages() []string {
@@ -213,7 +199,7 @@ Helper func
 func ToInt(s string) int {
 	num, e := strconv.Atoi(s)
 	if e != nil {
-		log.Errorf("\nerr:%v\nduring run:%v", e, "intconv")
+		log.Warnf("Called f():%v\nError:%v", "cfg.ToInt", e)
 	}
 	return num
 }
@@ -269,20 +255,6 @@ func mostRecentModifiedYAML(dirs ...string) string {
 	return res
 }
 
-// Cutgrid deprecated
-func Cutgrid(str string) (p image.Point, off int) {
-	off = 1 // default
-	ords := strings.Split(str, ":")
-	p = image.Point{
-		X: ToInt(ords[0]),
-		Y: ToInt(ords[1]),
-	}
-	if len(ords) > 2 {
-		off = ToInt(ords[2])
-	}
-	return
-}
-
 func createDirStructure() (dbfolder, userfolder, appdata, tempfolder string, e error) {
 	dbfolder = makeEnvDir(appdataEnv, programRootDir)
 	userfolder = makeEnvDir(userhome, programRootDir)
@@ -314,8 +286,8 @@ func makeEnvDir(env, dir string) string {
 
 func truncateDir(d string) {
 	a, _ := filepath.Abs(d)
-	//    _ = os.RemoveAll(a)
-	fmt.Printf("DELETED %v\n", a)
+	_ = os.RemoveAll(a)
+	log.Warnf("DELETED %v\n", a)
 }
 
 func absJoin(d, f string) string {

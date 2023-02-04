@@ -48,7 +48,7 @@ func main() {
 		if e != nil {
 			log.Fatalf(red("%v"), e.Error())
 		}
-		gw := afk.New(user.User)
+		gw := afk.New(&ui.AppUser{})
 		bb := bot.New(fn)
 		bot := afk.NewArenaBot(bb, gw)
 

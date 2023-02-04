@@ -1,8 +1,7 @@
 package ui
 
 import (
-	"strings"
-
+	"errors"
 	a "worker/adb"
 	"worker/cfg"
 
@@ -15,9 +14,11 @@ type errMsg struct{ err error }
 func (e errMsg) Error() string { return e.err.Error() }
 
 type (
-	vmStatusMsg   int
-	connectionMsg int
-	loglevelMsg   int
+	vmStatusMsg    int
+	connectionMsg  int
+	loglevelMsg    int
+	prevousMenuMsg int
+	appOnlineMsg   int
 )
 
 func checkVM() tea.Msg {
@@ -25,8 +26,28 @@ func checkVM() tea.Msg {
 	if e != nil {
 		return errMsg{e}
 	}
-	r := strings.Fields(taskstr)
-	return vmStatusMsg(cfg.ToInt(r[1]))
+
+	return vmStatusMsg(taskstr[0].Pid)
+}
+
+func prevousMenu(m menuModel) tea.Cmd {
+	prevousState := len(m.parents) - 1
+	return func() tea.Msg {
+		return prevousMenuMsg(prevousState)
+	}
+}
+
+func runAfk(m *menuModel) tea.Msg {
+	if m.state.adbconn > 0 {
+		if runner.IsAppRunnin(m.conf.userSettings.AndroidGameID) > 0 {
+			return appOnlineMsg(1)
+		} else {
+			runner.StartApp(m.conf.userSettings.AndroidGameID)
+			return appOnlineMsg(1)
+		}
+	} else {
+		return errMsg{err: errors.New("Device offline")}
+	}
 }
 
 func adbConnect(serial string) tea.Msg {

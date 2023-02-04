@@ -105,18 +105,6 @@ func (bs *Bluestacks) Args() []string {
 	return []string{"--instance", bs.Instance, "--cmd", "launchApp", "--package", bs.Package}
 }
 
-// ReactiveAlto version of task
-type ReactiveAlto struct {
-	Name      string      `yaml:"name"`
-	Taptarget []Areaction `yaml:"reactions"`
-}
-
-// Areaction alto version of reaction
-type Areaction struct {
-	If string   `yaml:"if"`
-	Do []string `yaml:"do"`
-}
-
 type ReactiveTask struct {
 	Name      string     `yaml:"name"`
 	Limit     int        `yaml:"limit"`

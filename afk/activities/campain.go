@@ -23,7 +23,7 @@ func Push(ns Nightstalker) {
 			ns.NotifyUI("NS", "Loook for begin")
 			ns.Press(Begin)
 		case Bossnode.ID:
-			ns.Press(BeginB)
+			ns.Press(BeginBoss)
 		case Result.ID:
 			ns.Press(TryAgain)
 		case Win.ID:

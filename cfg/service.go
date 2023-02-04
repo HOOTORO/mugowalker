@@ -9,20 +9,25 @@ import (
 	"strings"
 )
 
-func StartProc(x Executable, args ...string) (int, error) {
-	cmd := exec.Command(x.String(), args...)
+type ProcessInfo struct {
+	Name string
+	Pid  int
+}
+
+func StartProc(x string, args ...string) (int, error) {
+	cmd := exec.Command(x, args...)
 	log.Tracef("start cmd: %v\n", cmd.String())
 	e := cmd.Start()
 	return cmd.Process.Pid, e
 }
-func RunProc(x Executable, args ...string) *exec.Cmd {
-	cmd := exec.Command(x.String(), args...)
+func RunProc(x string, args ...string) *exec.Cmd {
+	cmd := exec.Command(x, args...)
 	log.Tracef("run cmd: %v\n", cmd.String())
 	cmd.Start()
 	return cmd
 }
 
-func ProcessInfo(pid int) bool {
+func IsProcess(pid int) bool {
 	_, e := os.FindProcess(pid)
 	if e != nil {
 		log.Errorf("Process %v doesn't exist", pid)
@@ -32,7 +37,7 @@ func ProcessInfo(pid int) bool {
 	return true
 }
 
-func Tasklist(processname string) (string, error) {
+func Tasklist(processname string) ([]ProcessInfo, error) {
 	args := []string{"/fi", f("IMAGENAME eq %v*", processname), "/NH"}
 	cmd := exec.Command("tasklist", args...)
 	var buf bytes.Buffer
@@ -40,10 +45,10 @@ func Tasklist(processname string) (string, error) {
 	e := cmd.Run()
 	if e != nil {
 		log.Errorf("Tasklist err: %v", e)
-		return "", e
+		return nil, e
 	}
-
-	return buf.String(), nil
+	parseTasklist(buf.String())
+	return parseTasklist(buf.String()), nil
 }
 
 func Kill(pid int) bool {
@@ -81,4 +86,21 @@ func Regex(s, r string) (res []uint) {
 		}
 	}
 	return
+}
+
+func parseTasklist(s string) []ProcessInfo {
+
+	var res []ProcessInfo
+	fields := strings.Fields(s)
+	if len(fields) > 0 && fields[0] == "INFO:" {
+		return nil
+	}
+	for i, f := range fields {
+		if strings.HasSuffix(f, ".exe") {
+			res = append(res, ProcessInfo{Name: f[:len(f)-4], Pid: ToInt(fields[i+1])})
+		}
+	}
+	log.Debugf("PARSETASKS RES: %v |> %v", len(res), res)
+	return res
+
 }

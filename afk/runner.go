@@ -52,7 +52,7 @@ func doActivity(miss cfg.Mission, ns activities.Nightstalker) {
 	}
 }
 
-func Nightstalker(b *bot.BasicBot, cf *cfg.Profile) *Daywalker {
-	gm := New(cf.User)
+func Nightstalker(b *bot.BasicBot, user cfg.AppUser) *Daywalker {
+	gm := New(user)
 	return NewArenaBot(b, gm)
 }

@@ -20,13 +20,9 @@ type Gamer interface {
 
 var log = cfg.Logger()
 
-//	type DailyQuest struct {
-//		ID          uint
-//		Description string
-//	}
 type DailyQuest uint
 
-var QuestNames = []string{"loot", "fastrewards", "friends", "wrizz", "arena1x1", "oak", "QCamp", "QKT", "Solo3Q", "LevelUp", "Enhance", "Summon"}
+var questNames = []string{"loot", "fastrewards", "friends", "wrizz", "arena1x1", "oak", "QCamp", "QKT", "Solo3Q", "LevelUp", "Enhance", "Summon"}
 var BannedQuests = []DailyQuest{Solo3Q, LevelUp, Enhance, Summon}
 
 func DailyRun(ns Nightstalker, g Gamer) {
@@ -79,7 +75,7 @@ func ActiveDailies(u Gamer) []DailyQuest {
 
 func Deserialize(raw uint) []DailyQuest {
 	var result []DailyQuest
-	for i := 0; i < len(QuestNames); i++ {
+	for i := 0; i < len(questNames); i++ {
 		if d := DailyQuest(1 << i); raw&(1<<uint(i)) != 0 {
 			result = append(result, d)
 		}
@@ -113,7 +109,7 @@ const (
 
 func (dq DailyQuest) String() string {
 	idx := math.Log2(float64(dq))
-	return QuestNames[int(idx)]
+	return questNames[int(idx)]
 }
 
 func (dq DailyQuest) Id() uint {

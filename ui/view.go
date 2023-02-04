@@ -3,22 +3,31 @@ package ui
 import (
 	"fmt"
 	"strings"
+	"worker/cfg"
+	"worker/emulator"
 
 	"github.com/charmbracelet/lipgloss"
 
 	"github.com/muesli/reflow/indent"
 )
 
+const refresh = 10
+
+var (
+	rf       = 11
+	vmstatus = ""
+)
+
 // ////////////////////
 // /// Menu view /////
 // //////////////////
 func listView(m menuModel) string {
-	return menulistStyle.Render(m.menulist.View())
+	return menulistStl.Render(m.menulist.View())
 }
 
-func nlistView(m menuModel) string {
-	return m.cnct.View()
-}
+// func nlistView(m menuModel) string {
+// 	return m.cnct.View()
+// }
 
 // /////////////////////////////////
 // /////// VIEW Input /////////////
@@ -54,40 +63,20 @@ func inputFormView(m menuModel) string {
 // // ui elements /////
 // ///////////////////
 func (m *menuModel) statuStr() string {
-	var con, emu string
 
-	con, emu = red("Offline"), red("Shutdown")
+	// con, emu = red("Offline"), red("Shutdown")
 
-	if m.userstate.connectionStatus != 0 {
-		con = green("Online")
-	}
-	if m.userstate.bluestcksPid != 0 {
-
-		emu = green("Running")
-	}
-	if m.userstate.connectionStatus != 0 && m.userstate.bluestcksPid != 0 {
-		statusStyle.BorderForeground(brightGreen)
-	}
-
-	t := f("|> [%v] <|  Device	\n"+
-		"%% Profile %%			\n"+
-		"	|> %v <|	Game	\n"+
-		"	|> %v <|	User	\n"+
-		"|> %v <| 	ADB	\n"+
-		"|> %v <|  Bluestacks",
-		m.conf.userSettings[ConnectStr], cyan(m.conf.userSettings[GameName]),
-		cyan(m.conf.userSettings[AccountName]), con, emu)
-	return statusStyle.Render(t)
+	return statusStl.Render(m.IsAdbAvailible())
 }
 
 func (m *menuModel) runningTasksPanel() string {
-	log.Tracef("Upd status spanel....%v:%v", m.userstate.connectionStatus, m.userstate.bluestcksPid)
+	log.Tracef("Upd status spanel....%v:%v", m.state.adbconn, m.state.vmPid)
 	// var s, rt string
 	s := m.statuStr()
 	rt := fmt.Sprintf("\n"+
-		m.userstate.spinme.View()+" Runing task %s...\n\n", taskName.Render(m.choice))
+		m.state.spinme.View()+" Runing task %s...\n\n", taskName.Render(m.choice))
 
-	for _, res := range m.userstate.taskmsgs {
+	for _, res := range m.state.taskmsgs {
 		if res.Task == "" {
 			rt += "...............................................\n"
 		} else {
@@ -95,7 +84,48 @@ func (m *menuModel) runningTasksPanel() string {
 		}
 	}
 
-	rt += indent.String(helpStyle.Render("\nPress 'alt+s' to hide/show this panel\n'Ctrl + <- ↑ ↓ ->' to change menu sizes"), 3)
+	rt += indent.String(helpStyle.Render("\nPress 'alt+s' to hide/show this panel\n'Ctrl + <- ↑ ↓ ->' to change menu sizes"), 1)
 	rt = runnunTaskStyle.Render(rt)
 	return lipgloss.JoinVertical(lipgloss.Top, s, rt)
+}
+
+func (m *menuModel) runninVMs() string {
+	if rf < refresh {
+		return emuStatus.Render(vmstatus)
+	}
+	ems := cfg.Deserialize(emulator.AllVendors)
+	var vms []string
+	for _, v := range ems {
+		ps, e := cfg.Tasklist(v)
+		if e == nil && ps != nil {
+			vms = append(vms, f("%v:%v", ps[0].Name, ps[0].Pid))
+		}
+	}
+	r := "VMs |> "
+	if len(vms) == 0 {
+		r = "No running VMs"
+	} else {
+		r += strings.Join(vms, " | ")
+	}
+	vmstatus = r
+	rf = 0
+	return emuStatus.Render(r)
+}
+
+func (m *menuModel) IsAdbAvailible() string {
+	r := f("User		|> %v <|\n", cyan(m.conf.userSettings.Account))
+
+	connectionstatus := red("Disconnected")
+	if m.state.adbconn > 0 {
+		connectionstatus = green("Connected")
+		statusStl.BorderForeground(brightGreen)
+	}
+	r += f("Device |> %v | %v <|\n", m.conf.userSettings.Connection, connectionstatus)
+
+	g := red("Off")
+	if m.state.gameStatus > 0 {
+		g = green("On")
+	}
+	r += f("Game |> %v | %v <|\n", m.conf.userSettings.AndroidGameID, g)
+	return r
 }

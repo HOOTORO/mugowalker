@@ -33,10 +33,6 @@ func init() {
 	imagickSets = append(imagickSets, []string{"-alpha", "off", "-negate", "-threshold", "100", "-negate"})
 }
 
-type Cutter interface {
-	Concat(image.Image, int, int)
-}
-
 type TextScanner interface {
 	ImageText(image.Image) (string, error)
 }
@@ -66,20 +62,6 @@ func OpenImg(fname string) image.Image {
 	}
 	return imgA
 }
-
-// func PrepareImg(img string) string {
-// 	imagick.Initialize()
-// 	defer imagick.Terminate()
-// 	dest := "prcsd.png"
-// 	mw := imagick.NewMagickWand()
-// 	mw.ReadImage(img)
-// 	width, height := mw.GetImageWidth(), mw.GetImageHeight()
-// 	half := mw.GetImageRegion(0, height/2, int(width), int(height))
-// 	half.WriteImage(dest)
-// 	half.Destroy()
-// 	mw.Destroy()
-// 	return dest
-// }
 
 func Magick(img string, args ...string) (string, error) {
 	out := cfg.TempFile(img)

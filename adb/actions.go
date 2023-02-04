@@ -4,7 +4,7 @@ ADB Commands const
 package adb
 
 import (
-	"fmt"
+	"bytes"
 	"strconv"
 	"time"
 )
@@ -24,10 +24,12 @@ type Script struct {
 
 // device manipulation command arguments
 const (
-	shell, input, tap, swipe = "shell", "input", "tap", "swipe"
-	screencap, screenrecord  = "screencap", "screenrecord"
-	keyevent, backbtn, home  = "keyevent", "4", "3"
-	enter, backspace         = "66", "67"
+	input, tap, swipe       = "input", "tap", "swipe"
+	screencap, screenrecord = "screencap", "screenrecord"
+	keyevent, backbtn, home = "keyevent", "4", "3"
+	enter, backspace        = "66", "67"
+	am, start, kill         = "am", "start", "force-stop"
+	ps, pipe, grep          = "pidof", "|", "grep"
 )
 
 // "adb shell input tap x,y"
@@ -62,7 +64,7 @@ func (d *Device) Screencap(f string) {
 	// -p for png
 	e := d.Command(screencap, remotedir+f).Run()
 	if e != nil {
-		fmt.Printf("\nrun: %v err: %v", "scr", e.Error())
+		log.Errorf("\nrun: %v err: %v", "scr", e.Error())
 		// keepAliveVM()
 		time.Sleep(10 * time.Second)
 		d.Screencap(f)
@@ -73,13 +75,47 @@ func (d *Device) Screencap(f string) {
 func (d *Device) Back() {
 	e := d.Command(input, keyevent, backbtn).Run()
 	if e != nil {
-		fmt.Printf("\nrun: %v err: %v", "scr", e.Error())
+		log.Errorf("\nrun: %v err: %v", "scr", e.Error())
 	}
 }
 
 func (d *Device) Home() {
 	e := d.Command(input, keyevent, home).Run()
 	if e != nil {
-		fmt.Printf("\nrun: %v err: %v", "scr", e.Error())
+		log.Errorf("\nrun: %v err: %v", "scr", e.Error())
 	}
+}
+
+func (d *Device) PS(appname string) string {
+	// pss := fmt.Sprintf("shell '%v | %v %v'", ps, grep, appname)
+	cmd := d.Command(ps, appname)
+	var b bytes.Buffer
+	cmd.Stdout = &b
+	log.Tracef("remote sh args: %v", cmd.Args)
+	e := cmd.Run()
+	if e != nil {
+		log.Errorf("\nrun: %v err: %v\nargs: %+v", "ps", e.Error(), cmd)
+	}
+	log.Debugf("	↓ Remote PS ↓ \n%#v", b)
+	return b.String()
+}
+
+func (d *Device) StartApp(appname string) error {
+	cmd := d.Command(am, start, appname)
+
+	e := cmd.Run()
+	if e != nil {
+		log.Errorf("\nrun: %v err: %v\nargs: %v", "startapp", e.Error(), cmd.Args)
+	}
+	return e
+}
+
+func (d *Device) KillApp(appname string) error {
+	cmd := d.Command(am, kill, appname)
+
+	e := cmd.Run()
+	if e != nil {
+		log.Errorf("\nrun: %v err: %v\nargs: %v", "killapp", e.Error(), cmd.Args)
+	}
+	return e
 }

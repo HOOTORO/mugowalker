@@ -101,22 +101,8 @@ func (b *BasicBot) Location() (locname string) {
 func (b *BasicBot) ScanText() []ocr.AltoResult { // ocr.Result {
 	s := b.Screenshot(tempfile)
 	text := ocr.TextExtractAlto(s)
-	z := func(arr []ocr.AltoResult) string {
-		var s string
-		line := 0
-		for i, elem := range arr {
 
-			if elem.LineNo == line {
-				s += f("{idx:%d}%s ", i, elem)
-			} else {
-				line = elem.LineNo
-				s += f("\n{idx:%d}%s ", i, elem)
-			}
-		}
-		return s
-	}
 	// log.Trace(green("OCR-R"), f("Words Onscr: %v lns: %s\nocred: %v", cyan(len(text)), green(text[len(text)].LineNo), cyan(z(text))))
-	log.Trace(green("OCR-R"), f("Words Onscr: %v\nocred: %v", cyan(len(text)), cyan(z(text))))
 	return text
 }
 
@@ -161,6 +147,14 @@ func (b *BasicBot) DiscoverDevices() []*adb.Device {
 
 func (b *BasicBot) Connect(d *adb.Device) {
 	b.Device = d
+}
+
+func (b *BasicBot) IsAppRunnin(app string) int {
+	r := b.PS(app)
+	if len(r) > 0 {
+		return 1
+	}
+	return 0
 }
 
 func drawTap(tx, ty int, bot Bot) {

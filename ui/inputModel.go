@@ -2,9 +2,10 @@ package ui
 
 import (
 	"fmt"
-	tea "github.com/charmbracelet/bubbletea"
 	"strconv"
 	"strings"
+
+	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/charmbracelet/bubbles/textinput"
 )
@@ -43,29 +44,11 @@ type multiIputModel struct {
 	err     error
 }
 
-func initialMIModel(p *menuModel) multiIputModel {
-	var inputs = make([]textinput.Model, 2)
-	inputs[host] = textinput.New()
-	inputs[host].Placeholder = "127.0.0.1"
-	inputs[host].Focus()
-	inputs[host].CharLimit = 20
-	inputs[host].Width = 30
-	inputs[host].Prompt = ""
-	// inputs[host].Validate = hostValidator
-
-	inputs[port] = textinput.New()
-	inputs[port].Placeholder = "5555"
-	inputs[port].CharLimit = 5
-	inputs[port].Width = 5
-	inputs[port].Prompt = ""
-	// inputs[port].Validate = portValidator
-
-	return multiIputModel{
-		parent:  p,
-		inputs:  inputs,
-		focused: 0,
-		err:     nil,
-	}
+type inputField struct {
+	fieldname          string
+	placeholder, promt string
+	charlim, width     int
+	focus              bool
 }
 
 func (m multiIputModel) Init() tea.Cmd {
@@ -113,9 +96,9 @@ func (m multiIputModel) View() string {
 		` Please, enter
  %s
  %s
- %s  
  %s
- %s  
+ %s
+ %s
 `,
 		inputStyle.Width(30).Render("HOST"),
 		m.inputs[host].View(),
@@ -137,4 +120,31 @@ func (m *multiIputModel) prevInput() {
 	if m.focused < 0 {
 		m.focused = len(m.inputs) - 1
 	}
+}
+
+func initMultiModel(p *menuModel, fields []inputField) multiIputModel {
+	inpt := make([]textinput.Model, len(fields))
+	for i, v := range fields {
+		inpt[i] = newInput(v)
+
+	}
+	return multiIputModel{
+		parent:  p,
+		inputs:  inpt,
+		focused: 0,
+		err:     nil,
+	}
+}
+
+func newInput(field inputField) textinput.Model {
+	model := textinput.New()
+	if field.focus {
+		model.Focus()
+	}
+	model.Placeholder = field.placeholder
+	model.CharLimit = field.charlim
+	model.Width = field.width
+	model.Prompt = field.promt
+	log.Debugf("field: %v\n model: %v", field, model)
+	return model
 }

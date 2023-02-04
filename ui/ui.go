@@ -75,19 +75,19 @@ func RunMainMenu(c *cfg.Profile) error {
 	tess := ocrSettings(c, cfg.TessExe)
 	m := InitialMenuModel(tess, img, options)
 	m.menulist.Title = header
-	m.menulist.SetSize(120, 30)
+	m.menulist.SetSize(110, 28)
 	m.menulist.SetShowHelp(true)
 	m.menulist.SetShowPagination(true)
 	m.menulist.SetShowTitle(true)
 	m.menulist.SetShowStatusBar(false)
-	m.menulist.Styles.Title = tStyle
-	m.menulist.Styles.TitleBar = tbStyle
+	m.menulist.Styles.Title = titleStl
+	m.menulist.Styles.TitleBar = titbarStl
 
 	log.Debugf("Run p, w/ param %s", m)
-	p := tea.NewProgram(m) //, tea.WithAltScreen())
+	p := tea.NewProgram(m, tea.WithAltScreen())
 
 	if _, err := p.Run(); err != nil {
-		fmt.Printf("Error running program:%v", err)
+		log.Fatalf("Error running program:%v", err)
 		os.Exit(1)
 		return err
 	}

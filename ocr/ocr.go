@@ -20,6 +20,7 @@ type AltoResult struct {
 	Linechars string
 	X, Y      int
 	LineNo    int
+	// Psm       int
 }
 
 var (
@@ -30,47 +31,30 @@ var (
 	log      *logrus.Logger
 )
 
-var send func(string, string)
+var (
+	send             func(string, string)
+	red, green, cyan func(...interface{}) string
+	fo               = fmt.Sprintf
+	// green = f
+	z = func(arr []AltoResult, psm int) string {
+		var s string
+		s = red(fo("	↓	|> PSM %v <|	↓	\n", psm))
+		line := 0
 
-func (a AltoResult) String() string {
-	return fmt.Sprintf("[%2d|%4dx%4d<| %-10s |", a.LineNo, a.X, a.Y, a.Linechars)
-}
-func init() {
-	// Fallback to searching on PATH.
-	tesser = cfg.LookupPath("tesseract")
-	user = cfg.ActiveUser()
-	log = cfg.Logger()
-}
+		for i, elem := range arr {
 
-func TextExtractAlto(img string) []AltoResult {
-	// defer  timeTrack(time.Now(), "AltOcr")
-	resu := make([]AltoResult, 0)
-	imgPrep := AltOptimize(img)
-	for _, v := range psm {
-
-		f, _ := tmpFile()
-		tessAlto(imgPrep, f.Name(), customPsm(v)...)
-		s := UnmarshalAlto(f.Name())
-		resu = append(resu, s.parse()...)
-	}
-
-	return unique(resu)
-}
-
-func (a Alto) parse() []AltoResult {
-	var res []AltoResult
-	res = make([]AltoResult, 0)
-	//    fmt.Printf("%v", pass("%v",))
-	tl := a.Layout.Page.PrintSpace.ComposedBlock.TextBlock.TextLine
-	for i, line := range tl {
-		for _, v := range line.String {
-			if len(v.CONTENT) > 3 || slices.Contains(user.Exceptions, v.CONTENT) || strings.ContainsAny(v.CONTENT, "0123456789") {
-				res = append(res, AltoResult{Linechars: v.CONTENT, X: cfg.ToInt(v.HPOS), Y: cfg.ToInt(v.VPOS), LineNo: i})
+			if elem.LineNo == line {
+				s += cyan(fo("{idx:%d}%s ", i, elem))
+			} else {
+				line = elem.LineNo
+				s += cyan(fo("\n{idx:%d}%s ", i, elem))
 			}
 		}
+		s += "\n\n"
+
+		return s
 	}
-	return res
-}
+)
 
 type Result struct {
 	raw    string
@@ -103,6 +87,50 @@ func (or Result) Intersect(k []string) (r []string) {
 		}
 	}
 	return r
+}
+func (a AltoResult) String() string {
+	return fmt.Sprintf("[%2d|%4dx%4d <| %s|", a.LineNo, a.X, a.Y, a.Linechars)
+}
+func init() {
+	// Fallback to searching on PATH.
+	tesser = cfg.LookupPath("tesseract")
+	user = cfg.ActiveUser()
+	log = cfg.Logger()
+	red = color.New(color.FgHiRed).SprintFunc()
+	green = color.New(color.FgHiGreen).SprintFunc()
+	cyan = color.New(color.FgHiCyan).SprintFunc()
+}
+
+func TextExtractAlto(img string) []AltoResult {
+	// defer  timeTrack(time.Now(), "AltOcr")
+	resu := make([]AltoResult, 0)
+	imgPrep := AltOptimize(img)
+	for _, v := range psm {
+		f, _ := tmpFile()
+		tessAlto(imgPrep, f.Name(), customPsm(v)...)
+		s := UnmarshalAlto(f.Name()).parse()
+		resu = append(resu, s...)
+		// resu[v] = r
+
+		log.Debug(fo("Words Onscr: %v\n	Ocred: %v", cyan(len(s)), z(s, v)))
+
+	}
+
+	return unique(resu)
+}
+
+func (a Alto) parse() []AltoResult {
+	var res []AltoResult
+	res = make([]AltoResult, 0)
+	tl := a.Layout.Page.PrintSpace.ComposedBlock.TextBlock.TextLine
+	for i, line := range tl {
+		for _, v := range line.String {
+			if len(v.CONTENT) > 3 || slices.Contains(user.Exceptions, v.CONTENT) || strings.ContainsAny(v.CONTENT, "0123456789") {
+				res = append(res, AltoResult{Linechars: v.CONTENT, X: cfg.ToInt(v.HPOS), Y: cfg.ToInt(v.VPOS), LineNo: i})
+			}
+		}
+	}
+	return res
 }
 
 func RegionText(img string, topleft, size image.Point) Result {

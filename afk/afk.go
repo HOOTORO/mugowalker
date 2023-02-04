@@ -22,9 +22,8 @@ type Game struct {
 	Active        bool
 	Locations     []any
 	User          *repository.User
-	profile       *cfg.User
+	profile       cfg.AppUser
 	tasks, dailys []cfg.ReactiveTask
-	dailysTwo     []cfg.ReactiveAlto
 }
 
 func (g *Game) String() string {
@@ -32,42 +31,38 @@ func (g *Game) String() string {
 }
 
 // New Game for a given User
-func New(up *cfg.User) *Game {
+func New(up cfg.AppUser) *Game {
 	log.Infof("Launch %v", up)
 	locs := make([]activities.Location, 1)
 	tasks := make([]cfg.ReactiveTask, 1)
 	dailys := make([]cfg.ReactiveTask, 1)
-	dailysTwo := make([]cfg.ReactiveAlto, 1)
 
 	cfg.Parse(locationsCfg, &locs)
 	cfg.Parse(reactionsCfg, &tasks)
 	cfg.Parse(dailyCfg, &dailys)
-	cfg.Parse(dailyCfgTwo, &dailysTwo)
 
 	anylocs := activities.AllLocations()
 	for _, l := range locs {
 		for _, kw := range l.Keywords() {
 			if kw == "%account" {
-				l.Kws = append(l.Kws, up.Account)
+				l.Kws = append(l.Kws, up.Acccount())
 			}
 		}
 		//anylocs = append(anylocs, l)
 	}
 
 	log.Infof("Locations: %v", locs)
-	log.Warnf("NEW DAILY CONF %+v", dailysTwo)
 
-	user := repository.GetUser(up.Account)
+	user := repository.GetUser(up.Acccount())
 
 	return &Game{
-		Name:      up.Game,
+		Name:      up.Game(),
 		Locations: anylocs,
 		Active:    true,
 		User:      user,
 		profile:   up,
 		tasks:     tasks,
 		dailys:    dailys,
-		dailysTwo: dailysTwo,
 	}
 }
 

@@ -21,6 +21,7 @@ var (
 	Collect         = afkbtn{name: "Collect"}
 	Begin           = afkbtn{name: "Begin"}
 	BeginB          = afkbtn{name: "Stage", yo: 739}
+	BeginBoss       = afkbtn{name: "Begin", xo: 1}
 	CampainBotPanel = afkbtn{name: "Campain"}
 	ForrestBotPanel = afkbtn{name: "Forrest"}
 	BattleBtn       = afkbtn{name: "Battle"}
