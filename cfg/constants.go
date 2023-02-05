@@ -2,11 +2,8 @@ package cfg
 
 // Required 3rd-party software
 const (
-	AdbExe   Executable = "adb"
-	MagicExe            = "magick"
-	TessExe             = "tesseract"
-	// dup in emulator
-	BluestacksExe = "HD-Player"
+	MagicExe = "magick"
+	TessExe  = "tesseract"
 )
 
 type Executable string
@@ -28,8 +25,9 @@ const (
 	logfile        = "app.log"
 )
 
-// Global afk activities
-
+/////////////////////////////
+// Global afk activities ///
+///////////////////////////
 type Mission int
 
 const (

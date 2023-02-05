@@ -28,10 +28,8 @@ func userSettings(c *cfg.Profile) *AppUser {
 
 func avalibleConnections(m *menuModel) []list.Item {
 	var menuItems []list.Item
-	fn := func(s, d string) {
-		m.state.taskch <- notify(f("%s", s), d)
-	}
-	runner = bot.New(fn)
+
+	runner = bot.New(m.UserOutput)
 	d := runner.DiscoverDevices()
 
 	for _, v := range d {
@@ -50,6 +48,18 @@ func avalibleConnections(m *menuModel) []list.Item {
 func runBotTask(m *menuModel) bool {
 	m.menulist.Styles.HelpStyle = noStyle
 	m.state.spinme.Style = noStyle
+	s := m.state
+	switch {
+	case s.adbconn == 0:
+		log.Errorf(ErrNoAdb.Error())
+		m.UserOutput(m.choice, red(ErrNoAdb.Error()))
+		return false
+	case s.gameStatus == 0:
+		log.Errorf(red("Game is not running"))
+		m.UserOutput(m.conf.userSettings.AndroidGameID, red(ErrAppNotRunning.Error()))
+		return false
+
+	}
 
 	log.Warnf(yellow("\n	CHOSEN RUNTASK >>> %v <<<"), m.choice)
 	ns := afk.Nightstalker(runner, m.conf.userSettings)

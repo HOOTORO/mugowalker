@@ -1,12 +1,21 @@
 package ui
 
 import (
+	"errors"
+
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/sirupsen/logrus"
+)
+
+var (
+	// ErrNoAdb cant reach device via adb
+	ErrNoAdb = errors.New("no ADB, setup Device")
+	// ErrAppNotRunning returns when gameStatus = 0
+	ErrAppNotRunning = errors.New("app not running")
 )
 
 type sessionState uint
@@ -49,10 +58,10 @@ func (m menuModel) String() string {
 		m.state.adbconn, m.choice, m.inputChosen, m.state.vmPid, m.conf.userSettings, m.conf.magic, m.conf.ocr, len(m.manyInputs))
 }
 
-// SendTaskInfo to running tasks panel
-func (m menuModel) SendTaskInfo(task, info string) {
+// UserOutput to running tasks panel
+func (m menuModel) UserOutput(task, info string) {
 
-	m.state.taskch <- notify(f("%v |>", task), info)
+	m.state.taskch <- notify(f("%v", task), info)
 }
 
 type state struct {
@@ -101,21 +110,21 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if k.String() == "ctrl+up" {
 			var cmd tea.Cmd
-			m.state.taskch <- notify(f("%vx%v", m.winx, m.winy), " <| MenuList Size")
+			m.UserOutput(f("%vx%v", m.winx, m.winy), " <| MenuList Size")
 			m.winy++
 			m.menulist.SetSize(m.winx, m.winy)
 			return m, cmd
 		}
 		if k.String() == "ctrl+down" {
 			var cmd tea.Cmd
-			m.state.taskch <- notify(f("%vx%v", m.winx, m.winy), " <| MenuList Size")
+			m.UserOutput(f("%vx%v", m.winx, m.winy), " <| MenuList Size")
 			m.winy--
 			m.menulist.SetSize(m.winx, m.winy)
 			return m, cmd
 		}
 		if k.String() == "ctrl+left" {
 			var cmd tea.Cmd
-			m.state.taskch <- notify(f("%vx%v", m.winx, m.winy), " <| MenuList Size")
+			m.UserOutput(f("%vx%v", m.winx, m.winy), " <| MenuList Size")
 			m.winx--
 			m.menulist.SetSize(m.winx, m.winy)
 
@@ -123,7 +132,7 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if k.String() == "ctrl+right" {
 			var cmd tea.Cmd
-			m.state.taskch <- notify(f("%vx%v", m.winx, m.winy), " <| MenuList Size")
+			m.UserOutput(f("%vx%v", m.winx, m.winy), " <| MenuList Size")
 			m.winx++
 			m.menulist.SetSize(m.winx, m.winy)
 			return m, cmd
@@ -152,7 +161,7 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.conf.userSettings.Loglvl = log.GetLevel().String()
 		m.menulist.Title += f("\nShow output level |> %v", cyan(log.GetLevel().String()))
 		m.MenuEntry(msg)
-		m.SendTaskInfo("LOG", f("LVL UPDATED to -> %v", logrus.Level(k)))
+		m.UserOutput("LOG", f("LVL UPDATED to -> %v", logrus.Level(k)))
 
 		return m, cmd
 

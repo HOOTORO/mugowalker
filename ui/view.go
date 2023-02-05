@@ -80,7 +80,7 @@ func (m *menuModel) runningTasksPanel() string {
 		if res.Task == "" {
 			rt += "...............................................\n"
 		} else {
-			rt += fmt.Sprintf("[%s]	%s\n", res.Task, res.Message)
+			rt += fmt.Sprintf("[%s] %s %s\n", res.Task, cyan("|>"), res.Message)
 		}
 	}
 

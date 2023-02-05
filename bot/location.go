@@ -3,13 +3,13 @@ package bot
 
 import (
 	"strings"
+	c "worker/cfg"
 	"worker/ocr"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 var outFn func(string, string)
-var red, green, cyan, ylw, mgt func(...interface{}) string
 
 type Location interface {
 	Id() string
@@ -17,7 +17,7 @@ type Location interface {
 	HitThreshold() int
 }
 
-func GuessLocation(a []ocr.AltoResult, locations []any) (locname string) {
+func GuessLocation(a []ocr.AlmoResult, locations []any) (locname string) {
 
 	maxh := 1
 	var resloc string
@@ -33,13 +33,13 @@ func GuessLocation(a []ocr.AltoResult, locations []any) (locname string) {
 			}
 		}
 	}
-	outFn(mgt("GUESSHI |>"), ylw(f("Location -> %v [hits:%v]", resloc, maxh)))
+	outFn(c.Mgt("GUESSHI |>"), c.Ylw(f("Location -> %v [hits:%v]", resloc, maxh)))
 
-	log.Debug(mgt("GUESSHI |> "), ylw(f(" ↓ Location ↓ \n\t -->  Winner|> %v  Hits|> %v]\n\t --> candidates: %v", resloc, maxh, candidates)))
+	log.Debug(c.Mgt("GUESSHI |> "), c.Ylw(f(" ↓ Location ↓ \n\t -->  Winner|> %v  Hits|> %v]\n\t --> candidates: %v", resloc, maxh, candidates)))
 	return resloc
 }
 
-func TextPosition(str string, alto []ocr.AltoResult) (x, y int) {
+func TextPosition(str string, alto []ocr.AlmoResult) (x, y int) {
 	for _, v := range alto {
 		if strings.Contains(v.Linechars, str) {
 			return v.X, v.Y
@@ -49,7 +49,7 @@ func TextPosition(str string, alto []ocr.AltoResult) (x, y int) {
 	return 0, 0
 }
 
-func Intersect(or []ocr.AltoResult, k []string) (r []string) {
+func Intersect(or []ocr.AlmoResult, k []string) (r []string) {
 NextLine:
 	for _, v := range or {
 		for _, kw := range k {

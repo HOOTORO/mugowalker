@@ -1,44 +1,68 @@
 package ocr
 
 import (
+	"errors"
 	"fmt"
-	"os/exec"
+	c "worker/cfg"
 )
 
-func OptimizeForOCR(f string) string {
-	res, _ := Magick(f, user.ImagickCfg()...)
-	return res
+var (
+	ErrOptimizeImg = errors.New("error during handling optimize image proccess")
+)
+var (
+	psm      = []int{1, 3, 4, 6, 11, 12}
+	altoargs = []string{"--psm", "3", "-c", "tessedit_create_alto=1", "hoot", "quiet"}
+)
+
+const tessex = "tesseract"
+
+// Tesseract parameters to cfg.RunCmd
+type Tesseract struct {
+	path string
+	args []string
+	in   string
+	out  string
+}
+
+// Path implemetation Runnable
+func (t Tesseract) Path() string {
+	return t.path
+}
+
+// Args implemetation Runnable
+func (t Tesseract) Args() []string {
+	t.args = append([]string{t.in, t.out}, t.args...)
+	return t.args
+}
+
+var tessa = Tesseract{
+	path: tessex,
+	args: make([]string, 0),
+}
+
+func init() {
+	tessa.args = user.TesseractCfg()
+}
+
+// PrepareForRecognize alternative optimization
+func PrepareForRecognize(f *ImageProfile) string {
+	blaine.f = f.original
+	e := c.RunCmd(blaine)
+	if e != nil {
+		log.Error(ErrOptimizeImg, e)
+	}
+	f.prepArgs = blaine.args
+	f.prepared = blaine.out()
+	return blaine.out()
+}
+
+func ActivateTesseract(in, out string, args ...string) error {
+	tessa.in = in
+	tessa.out = out
+	tessa.args = args
+	return c.RunCmd(tessa)
 }
 
 func customPsm(n int) []string {
 	return []string{"--psm", fmt.Sprint(n), "-c", "tessedit_create_alto=1", "hoot", "quiet"}
-}
-
-func AltOptimize(f string) string {
-	res, _ := Magick(f, user.AltImagick...)
-	return res
-}
-
-func runOcr(in string, out string) error {
-	var tessAgrs []string
-	if user.UseAltImagick {
-		tessAgrs = user.AltImagick
-	} else {
-		tessAgrs = user.TesseractCfg()
-	}
-	args := append([]string{in, out}, tessAgrs...)
-	cmd := exec.Command(tesser, args...)
-	log.Tracef("cmd tess : %v\n", cmd.String())
-	// uncomment for ocr log
-	// cmd.Stdout = os.Stdout
-	// cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
-func tessAlto(in, out string, args ...string) error {
-	args = append([]string{in, out}, args...)
-	cmd := exec.Command(tesser, args...)
-	log.Tracef("cmd tess : %v\n", cmd.String())
-
-	return cmd.Run()
 }

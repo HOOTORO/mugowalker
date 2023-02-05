@@ -4,6 +4,7 @@ _*
 *.exe
 *.log
 *.db
+*.csv
 .github
 *.png
 *.ps1

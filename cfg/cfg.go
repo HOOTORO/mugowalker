@@ -14,7 +14,6 @@ import (
 	"worker/afk/repository"
 
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -22,24 +21,39 @@ const (
 	game       = "AFK Arena"
 )
 
+type Runnable interface {
+	Path() string
+	Args() []string
+}
+
 var (
 	ErrWorkDirFail        = errors.New("working dirictories wasn't created. Exit")
 	ErrRequiredProgram404 = errors.New("missing some of required soft")
 	ErrLoadInitConf       = errors.New("load sysvars")
 )
+var (
+	// F... format alias func(...interface{}) string
+	F = fmt.Sprintf
+	// Red coloring Sprint
+	Red = color.New(color.FgHiRed).SprintFunc()
+	// Green coloring Sprint
+	Green = color.New(color.FgHiGreen).SprintFunc()
+	// Cyan coloring Sprint
+	Cyan = color.New(color.FgHiCyan).SprintFunc()
+	// Blue coloring Sprint
+	Blue   = color.New(color.FgHiBlue).SprintFunc()
+	Ylw    = color.New(color.FgHiYellow).SprintFunc()
+	Mgt    = color.New(color.FgHiMagenta).SprintFunc()
+	TTrack = color.New(color.BgHiBlue, color.FgCyan, color.Underline, color.Bold).SprintfFunc()
+)
 
 var (
-	log              *logrus.Logger
-	activeUser       *Profile
-	sysvars          *SystemVars
-	red, green, cyan func(...interface{}) string
+	log        *logrus.Logger
+	activeUser *Profile
+	sysvars    *SystemVars
 )
-var f = fmt.Sprintf
 
 func init() {
-	red = color.New(color.FgHiRed).SprintFunc()
-	green = color.New(color.FgHiGreen).SprintFunc()
-	cyan = color.New(color.FgHiCyan).SprintFunc()
 	log = Logger()
 	sysvars, _ = loadSysconf()
 
@@ -71,6 +85,7 @@ type emum interface {
 	Values() []string
 }
 
+// Deserialize bits to string values
 func Deserialize[T emum](raw T) []string {
 	var result []string
 	for i := 0; i < len(raw.Values()); i++ {
@@ -81,16 +96,7 @@ func Deserialize[T emum](raw T) []string {
 	return result
 }
 
-// func Deserialize[T int, R string](raw T, opts []R) []T {
-// 	var result []T
-// 	for i := 0; i < len(opts); i++ {
-// 		if d := T(1 << i); raw&(1<<uint(i)) != 0 {
-// 			result = append(result, d)
-// 		}
-// 	}
-// 	return result
-// }
-
+// Logger for app to use
 func Logger() *logrus.Logger {
 	if log != nil {
 		return log
@@ -107,12 +113,15 @@ func Logger() *logrus.Logger {
 	}
 }
 
+// ActiveUser or template wwithout name, connect, gameID
 func ActiveUser() *Profile {
 	if activeUser != nil {
 		return activeUser
 	}
 	return userTemplate
 }
+
+// LastLoaded <userconf>.yaml
 func LastLoaded() *Profile {
 	conf := &Profile{}
 	lastcfg := mostRecentModifiedYAML(sysvars.Userhome, sysvars.Db)
@@ -125,6 +134,7 @@ func LastLoaded() *Profile {
 	return conf
 }
 
+// UpdateUserInfo saves to yaml into Userhome dir
 func UpdateUserInfo(au AppUser) {
 	activeUser.DeviceSerial = au.DevicePath()
 	activeUser.Loglevel = au.Loglevel()
@@ -134,35 +144,7 @@ func UpdateUserInfo(au AppUser) {
 
 }
 
-func Parse(s string, out interface{}) error {
-	f, err := os.ReadFile(s)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = yaml.Unmarshal(f, out)
-	if err != nil {
-		log.Fatalf("UNMARSHAL WASTED: %v", err)
-	}
-	log.Tracef("\n\n\n\n\nUNMARSHALLED: %v\n\n", out)
-	return err
-}
-
-func Save(name string, in interface{}) {
-	f, err := os.Create(name)
-	if err != nil {
-		log.Fatal(err)
-	}
-	b, err := yaml.Marshal(in)
-	if err != nil {
-		log.Fatalf("MARSHAL WASTED: %v", err)
-	}
-	_, err = f.Write(b)
-	if err != nil {
-		log.Errorf("write yaml (e): %v", err)
-	}
-	log.Tracef("MARSHALLED: %v\n\n", f)
-}
-
+// GetImages from temp/<appfolder>
 func GetImages() []string {
 	d, e := os.ReadDir(sysvars.Temp)
 	if e != nil {
@@ -175,14 +157,26 @@ func GetImages() []string {
 	return res
 }
 
+func RunCmd(r Runnable) error {
+	pt := LookupPath(r.Path())
+
+	log.Trace(Blue("RunCMD -> ", pt, r.Args()))
+	cmd := exec.Command(pt, r.Args()...)
+
+	return cmd.Run()
+}
+
+// TempFile in <temp>/<appfolder>/*
 func TempFile(f string) string {
 	return absJoin(sysvars.Temp, f)
 }
 
+// UserFile from $env:USERPROFILE
 func UserFile(f string) string {
 	return absJoin(sysvars.Userhome, f)
 }
 
+// LookupPath for exe s
 func LookupPath(name string) (path string) {
 	p, err := exec.LookPath(name)
 	if err == nil {
@@ -231,28 +225,6 @@ func defaultUser() *Profile {
 	Save(defaultcfg, settings)
 
 	return settings
-}
-
-func mostRecentModifiedYAML(dirs ...string) string {
-	last := time.Time{}
-	res := ""
-	for _, d := range dirs {
-		dir, e := os.ReadDir(d)
-		if e != nil {
-			log.Errorf("\nerr:%v\nduring run:%v", e, "lookout")
-		}
-		for _, entry := range dir {
-			if !entry.IsDir() && filepath.Ext(entry.Name()) == ".yaml" {
-				i, _ := entry.Info()
-				if i.ModTime().After(last) {
-					last = i.ModTime()
-					res = filepath.Join(d, i.Name())
-				}
-			}
-		}
-
-	}
-	return res
 }
 
 func createDirStructure() (dbfolder, userfolder, appdata, tempfolder string, e error) {

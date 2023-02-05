@@ -126,7 +126,7 @@ func parseDevices(out string) ([]*Device, error) {
 		case 0, 8:
 			continue
 		case 6:
-			tid, _ := strconv.Atoi(strings.Trim(fields[5], "transport_id:"))
+			tid, _ := strconv.Atoi(strings.Trim(fields[5], "transpo_id:"))
 			device := &Device{
 				Serial:      fields[0],
 				DevState:    state(fields[1]),

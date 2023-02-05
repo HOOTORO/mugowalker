@@ -38,7 +38,7 @@ func IsProcess(pid int) bool {
 }
 
 func Tasklist(processname string) ([]ProcessInfo, error) {
-	args := []string{"/fi", f("IMAGENAME eq %v*", processname), "/NH"}
+	args := []string{"/fi", F("IMAGENAME eq %v*", processname), "/NH"}
 	cmd := exec.Command("tasklist", args...)
 	var buf bytes.Buffer
 	cmd.Stdout = &buf

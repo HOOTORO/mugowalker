@@ -158,7 +158,7 @@ func (q BoardQuest) String() string {
 	return fmt.Sprintf("\n|> Btn[%s]Que[%v]Pos[%vx%v] - Desc: %s", q.Btn, q.Quest, q.X, q.Y, q.Desc)
 }
 
-func BoardsQuests(or []ocr.AltoResult) []BoardQuest {
+func BoardsQuests(or []ocr.AlmoResult) []BoardQuest {
 	var res []BoardQuest
 
 	for _, str := range or {
@@ -190,7 +190,7 @@ func isBoardQuest(s []string) DailyQuest {
 	return 0
 }
 
-func wordUpperBlock(word ocr.AltoResult, or []ocr.AltoResult) []string {
+func wordUpperBlock(word ocr.AlmoResult, or []ocr.AlmoResult) []string {
 	var res []string
 	for _, str := range or {
 		if diff := word.Y - str.Y; diff < 100 && diff > 40 {

@@ -50,27 +50,19 @@ type SystemVars struct {
 
 func (ac *Profile) String() string {
 	return fmt.Sprintf(
-		"%v"+
+		" -> Device: %v"+
 			"%s\n"+
 			"-> Args: \n"+
 			" Bluestacks: %v\n"+
 			" Magick: %v\n"+
 			" Tesseract: %v\n"+
 			"%v\n"+
-			isStr(ac.DeviceSerial)(" -> Device: "),
+			Green(ac.DeviceSerial),
 		ac.User,
 		ac.Bluestacks,
 		ac.Imagick,
 		ac.Tesseract,
 	)
-}
-
-func isStr(str string) func(...interface{}) string {
-	if str == "" {
-		return red
-	} else {
-		return green
-	}
 }
 
 // User profile
@@ -81,7 +73,7 @@ type User struct {
 }
 
 func (up *User) String() string {
-	return f("\n	-> Game: %v\n\t   Account: %v", green(up.Game), green(up.Account))
+	return F("\n	-> Game: %v\n\t   Account: %v", Green(up.Game), Green(up.Account))
 }
 
 // New user profile
@@ -96,8 +88,7 @@ type Bluestacks struct {
 }
 
 func (bs *Bluestacks) String() string {
-	return f((isStr(bs.Instance)("\n -> VM: "+bs.Instance+"\n ") +
-		isStr(bs.Package)("     App: "+bs.Package)))
+	return F("\n -> VM: %v\n     App: %v", bs.Instance, bs.Package)
 }
 
 // Args upack in same order as packed? Will see
@@ -127,7 +118,7 @@ type Location struct {
 }
 
 func (l *Location) String() string {
-	return f("Key: %v | hitwords: %v", green(l.Key), cyan(l.Keywords))
+	return F("Key: %v | hitwords: %v", Green(l.Key), Cyan(l.Keywords))
 }
 func (l *Location) Id() string {
 	return l.Key

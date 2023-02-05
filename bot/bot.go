@@ -10,10 +10,9 @@ import (
 	"time"
 
 	"worker/adb"
-	"worker/cfg"
+	c "worker/cfg"
 	"worker/ocr"
 
-	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
 )
 
@@ -31,7 +30,7 @@ const (
 )
 
 var (
-	user    = cfg.ActiveUser()
+	user    = c.ActiveUser()
 	origocr = user.Imagick
 )
 
@@ -57,7 +56,7 @@ type Bot interface {
 	Tap(x, y, off int)
 	Location() string
 	Screenshot(string) string
-	ScanText() []ocr.AltoResult
+	ScanText() []ocr.AlmoResult
 	DiscoverDevices() []*adb.Device
 	Connect(*adb.Device)
 }
@@ -82,12 +81,7 @@ func New(altout func(s1, s2 string)) *BasicBot {
 	}
 }
 func init() {
-	red = color.New(color.FgHiRed).SprintFunc()
-	green = color.New(color.FgHiGreen).SprintFunc()
-	cyan = color.New(color.FgHiCyan).SprintFunc()
-	ylw = color.New(color.FgHiYellow).SprintFunc()
-	mgt = color.New(color.FgHiMagenta).SprintFunc()
-	log = cfg.Logger()
+	log = c.Logger()
 }
 
 func (b *BasicBot) NotifyUI(pref, msg string) {
@@ -98,9 +92,9 @@ func (b *BasicBot) Location() (locname string) {
 	return b.location
 }
 
-func (b *BasicBot) ScanText() []ocr.AltoResult { // ocr.Result {
+func (b *BasicBot) ScanText() *ocr.ImageProfile { // ocr.Result {
 	s := b.Screenshot(tempfile)
-	text := ocr.TextExtractAlto(s)
+	text := ocr.ExtractText(s)
 
 	// log.Trace(green("OCR-R"), f("Words Onscr: %v lns: %s\nocred: %v", cyan(len(text)), green(text[len(text)].LineNo), cyan(z(text))))
 	return text
@@ -111,7 +105,7 @@ func (b *BasicBot) Screenshot(name string) string {
 	if filepath.IsAbs(name) {
 		p, n = filepath.Split(name)
 	} else {
-		p = cfg.UserFile("")
+		p = c.UserFile("")
 	}
 	newn := f("%v_%v.png", b.id, n)
 
@@ -162,7 +156,7 @@ func drawTap(tx, ty int, bot Bot) {
 	s := bot.Screenshot(f("%v", step))
 	circle := fmt.Sprintf("circle %v,%v %v,%v", tx, ty, tx+20, ty+20)
 	no := fmt.Sprintf("+%v+%v", tx-20, ty+20)
-	cmd := exec.Command("magick", s, "-fill", "red", "-draw", circle, "-fill", "black", "-pointsize", "60", "-annotate", no, f("%v", step), cfg.UserFile(""))
+	cmd := exec.Command("magick", s, "-fill", "red", "-draw", circle, "-fill", "black", "-pointsize", "60", "-annotate", no, f("%v", step), c.UserFile(""))
 	e := cmd.Run()
 
 	if e != nil {
@@ -171,6 +165,6 @@ func drawTap(tx, ty int, bot Bot) {
 	os.Remove(s)
 }
 
-func (b *BasicBot) OcResult() []ocr.AltoResult {
+func (b *BasicBot) OcResult() *ocr.ImageProfile {
 	return b.ScanText()
 }

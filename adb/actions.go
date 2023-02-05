@@ -5,6 +5,7 @@ package adb
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
 	"time"
 )
@@ -37,7 +38,6 @@ func (d *Device) Tap(x, y string) error {
 	e := d.Command(input, tap, x, y).Run()
 	if e != nil {
 		log.Errorf("\nerr:%v\nduring run:%v", e, "tap")
-		// keepAliveVM()
 		time.Sleep(10 * time.Second)
 		d.Tap(x, y)
 	}
@@ -47,11 +47,12 @@ func (d *Device) Tap(x, y string) error {
 
 // adb shell input swipe <x1> <y1> <x2> <y2> [duration(ms)]
 func (d *Device) Swipe(x, y, x1, y1, td int) error {
-	xPos := strconv.Itoa(x)
+	xPos := fmt.Sprint(x)
 	yPos := strconv.Itoa(y)
 	x1Pos := strconv.Itoa(x1)
 	y1Pos := strconv.Itoa(y1)
 	duration := strconv.Itoa(td)
+
 	e := d.Command(swipe, xPos, yPos, x1Pos, y1Pos, duration).Run()
 	if e != nil {
 		log.Errorf("\nerr:%vduring run:%v", e, "swipe")
