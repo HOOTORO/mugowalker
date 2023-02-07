@@ -44,7 +44,6 @@ type CmdArgs struct {
 type SystemVars struct {
 	Logfile                 string `yaml:"logfile"`
 	UserConfPath            string
-	parties                 []*Executable
 	App, Userhome, Temp, Db string
 }
 

@@ -24,7 +24,7 @@ type Daywalker struct {
 	cnt            uint8
 	ActiveTask     string
 	Reactive       bool
-	currentOcr     []ocr.AlmoResult
+	currentOcr     *ocr.ImageProfile
 	fprefix        string
 	lastscreenshot string
 	maxocrtry      int
@@ -108,12 +108,12 @@ func (dw *Daywalker) Press(b activities.Button) bool {
 	return true
 }
 
-func LookForButton(or []ocr.AlmoResult, b activities.Button) (x, y int, e error) {
+func LookForButton(or *ocr.ImageProfile, b activities.Button) (x, y int, e error) {
 	log.Debugf(c.Red("Looking for BTN: %v"), b.String())
 	if b.String() == "" {
 		return 500, 100, nil
 	}
-	for _, r := range or {
+	for _, r := range or.Result() {
 		if strings.Contains(r.Linechars, b.String()) {
 			xo, yo := b.Offset()
 			return r.X + xo, r.Y + yo, nil

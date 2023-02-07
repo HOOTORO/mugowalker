@@ -96,7 +96,7 @@ func (b *BasicBot) ScanText() *ocr.ImageProfile { // ocr.Result {
 	s := b.Screenshot(tempfile)
 	text := ocr.ExtractText(s)
 
-	// log.Trace(green("OCR-R"), f("Words Onscr: %v lns: %s\nocred: %v", cyan(len(text)), green(text[len(text)].LineNo), cyan(z(text))))
+	// log.Trace(c.Green("OCR-R"),c.F("Words Onscr: %v lns: %s\nocred: %v", c.Cyan(len(text)), c.Green(text[len(text)].LineNo), c.Cyan(z(text))))
 	return text
 }
 
@@ -107,7 +107,7 @@ func (b *BasicBot) Screenshot(name string) string {
 	} else {
 		p = c.UserFile("")
 	}
-	newn := f("%v_%v.png", b.id, n)
+	newn := c.F("%v_%v.png", b.id, n)
 
 	b.Screencap(newn)
 	b.Pull(newn, p)
@@ -118,7 +118,7 @@ func (b *BasicBot) Screenshot(name string) string {
 func (b *BasicBot) Tap(gx, gy, off int) {
 
 	e := b.Device.Tap(fmt.Sprint(gx), fmt.Sprint(gy))
-	// b.outFn(mgt("BOT"), green(f("Tap -> %vx%v px", gx, gy)))
+	// b.outFn(mgt("BOT"), c.Green(f("Tap -> %vx%v px", gx, gy)))
 	if e != nil {
 		log.Warnf("Have an error during tap: %v", e.Error())
 	}
@@ -156,7 +156,7 @@ func drawTap(tx, ty int, bot Bot) {
 	s := bot.Screenshot(f("%v", step))
 	circle := fmt.Sprintf("circle %v,%v %v,%v", tx, ty, tx+20, ty+20)
 	no := fmt.Sprintf("+%v+%v", tx-20, ty+20)
-	cmd := exec.Command("magick", s, "-fill", "red", "-draw", circle, "-fill", "black", "-pointsize", "60", "-annotate", no, f("%v", step), c.UserFile(""))
+	cmd := exec.Command("magick", s, "-fill", "red", "-draw", circle, "-fill", "black", "-pointsize", "60", "-annotate", no, c.F("%v", step), c.UserFile(""))
 	e := cmd.Run()
 
 	if e != nil {

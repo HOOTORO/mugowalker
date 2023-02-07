@@ -2,6 +2,7 @@ package activities
 
 import (
 	"time"
+	c "worker/cfg"
 )
 
 type Tower uint
@@ -39,7 +40,7 @@ func (t Tower) Id() uint {
 func PushTower(ns Nightstalker, t Tower) {
 	for {
 		where := ns.Location()
-		log.Trace("NS", f("Where am I? %v", where))
+		log.Trace("NS", c.F("Where am I? %v", where))
 		switch where {
 		case Campain.ID:
 			ns.Press(ForrestBotPanel)

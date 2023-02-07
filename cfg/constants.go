@@ -1,17 +1,5 @@
 package cfg
 
-// Required 3rd-party software
-const (
-	MagicExe = "magick"
-	TessExe  = "tesseract"
-)
-
-type Executable string
-
-func (e Executable) String() string {
-	return string(e)
-}
-
 // required sys envs
 const (
 	appdataEnv  = "APPDATA"
@@ -40,6 +28,7 @@ const (
 	ClimbLight
 	ClimbCelestial
 	GuildBosses
+	Daily
 )
 
 var (

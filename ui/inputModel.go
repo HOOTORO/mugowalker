@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	c "worker/cfg"
 
 	tea "github.com/charmbracelet/bubbletea"
 
@@ -56,7 +57,7 @@ func (m multiIputModel) Init() tea.Cmd {
 }
 
 func (m multiIputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	log.Debugf(mag("(mUPDA) incoming. -> %+v [%T]"), msg, msg)
+	log.Debugf(c.Mgt("(mUPDA) incoming. -> %+v [%T]"), msg, msg)
 	var cmds = make([]tea.Cmd, len(m.inputs))
 
 	switch msg := msg.(type) {
@@ -64,7 +65,7 @@ func (m multiIputModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.Type {
 		case tea.KeyEnter:
 			if m.focused == len(m.inputs)-1 {
-				return m.parent.Update(adbConnect(f("%v:%v", m.inputs[0].Value(), m.inputs[1].Value())))
+				return m.parent.Update(adbConnect(c.F("%v:%v", m.inputs[0].Value(), m.inputs[1].Value())))
 			}
 			m.nextInput()
 		case tea.KeyCtrlC, tea.KeyEsc:

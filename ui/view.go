@@ -3,7 +3,7 @@ package ui
 import (
 	"fmt"
 	"strings"
-	"worker/cfg"
+	c "worker/cfg"
 	"worker/emulator"
 
 	"github.com/charmbracelet/lipgloss"
@@ -64,7 +64,7 @@ func inputFormView(m menuModel) string {
 // ///////////////////
 func (m *menuModel) statuStr() string {
 
-	// con, emu = red("Offline"), red("Shutdown")
+	// con, emu = c.Red("Offline"), c.Red("Shutdown")
 
 	return statusStl.Render(m.IsAdbAvailible())
 }
@@ -80,7 +80,7 @@ func (m *menuModel) runningTasksPanel() string {
 		if res.Task == "" {
 			rt += "...............................................\n"
 		} else {
-			rt += fmt.Sprintf("[%s] %s %s\n", res.Task, cyan("|>"), res.Message)
+			rt += fmt.Sprintf("[%s] %s %s\n", res.Task, c.Cyan("|>"), res.Message)
 		}
 	}
 
@@ -93,12 +93,12 @@ func (m *menuModel) runninVMs() string {
 	if rf < refresh {
 		return emuStatus.Render(vmstatus)
 	}
-	ems := cfg.Deserialize(emulator.AllVendors)
+	ems := c.Deserialize(emulator.AllVendors)
 	var vms []string
 	for _, v := range ems {
-		ps, e := cfg.Tasklist(v)
+		ps, e := c.Tasklist(v)
 		if e == nil && ps != nil {
-			vms = append(vms, f("%v:%v", ps[0].Name, ps[0].Pid))
+			vms = append(vms, c.F("%v:%v", ps[0].Name, ps[0].Pid))
 		}
 	}
 	r := "VMs |> "
@@ -113,19 +113,19 @@ func (m *menuModel) runninVMs() string {
 }
 
 func (m *menuModel) IsAdbAvailible() string {
-	r := f("User		|> %v <|\n", cyan(m.conf.userSettings.Account))
+	r := c.F("User		|> %v <|\n", c.Cyan(m.conf.userSettings.Account))
 
-	connectionstatus := red("Disconnected")
+	connectionstatus := c.Red("Disconnected")
 	if m.state.adbconn > 0 {
-		connectionstatus = green("Connected")
+		connectionstatus = c.Green("Connected")
 		statusStl.BorderForeground(brightGreen)
 	}
-	r += f("Device |> %v | %v <|\n", m.conf.userSettings.Connection, connectionstatus)
+	r += c.F("Device |> %v | %v <|\n", m.conf.userSettings.Connection, connectionstatus)
 
-	g := red("Off")
+	g := c.Red("Off")
 	if m.state.gameStatus > 0 {
-		g = green("On")
+		g = c.Green("On")
 	}
-	r += f("Game |> %v | %v <|\n", m.conf.userSettings.AndroidGameID, g)
+	r += c.F("Game |> %v | %v <|\n", m.conf.userSettings.AndroidGameID, g)
 	return r
 }

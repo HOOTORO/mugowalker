@@ -63,8 +63,8 @@ func ExtractText(img string) *ImageProfile {
 
 	imgPrep := PrepareForRecognize(ip)
 	log.Debug(c.Red("Optimized img -> "), c.Cyan(imgPrep))
-	s := ip.Tesseract(1)
-	log.Debug(c.F("Words Onscr: %v\n	Ocred: %v", c.Cyan(len(s)), z(s, 1)))
+	// s := ip.Tesseract(1)
+	// log.Debug(c.F("Words Onscr: %v\n	Ocred: %v", c.Cyan(len(s)), z(s, 1)))
 
 	// }
 

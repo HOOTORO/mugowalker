@@ -17,7 +17,7 @@ type Location interface {
 	HitThreshold() int
 }
 
-func GuessLocation(a []ocr.AlmoResult, locations []any) (locname string) {
+func GuessLocation(a *ocr.ImageProfile, locations []any) (locname string) {
 
 	maxh := 1
 	var resloc string
@@ -25,7 +25,7 @@ func GuessLocation(a []ocr.AlmoResult, locations []any) (locname string) {
 	for _, loc := range locations {
 		l, ok := loc.(Location)
 		if ok {
-			hit := Intersect(a, l.Keywords())
+			hit := Intersect(a.Result(), l.Keywords())
 			if len(hit) >= l.HitThreshold() && len(hit) >= maxh {
 				maxh = len(hit)
 				candidates = append(candidates, l.Id())
@@ -33,7 +33,10 @@ func GuessLocation(a []ocr.AlmoResult, locations []any) (locname string) {
 			}
 		}
 	}
-	outFn(c.Mgt("GUESSHI |>"), c.Ylw(f("Location -> %v [hits:%v]", resloc, maxh)))
+	if maxh == 1 {
+		outFn(c.Mgt("GUESSHI |>"), c.Ylw(f("Bad recognition -> %v ", c.Red("retry"))))
+		a.Tesseract(0)
+	}
 
 	log.Debug(c.Mgt("GUESSHI |> "), c.Ylw(f(" ↓ Location ↓ \n\t -->  Winner|> %v  Hits|> %v]\n\t --> candidates: %v", resloc, maxh, candidates)))
 	return resloc

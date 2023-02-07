@@ -62,7 +62,7 @@ func updateMenu(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 			// go up to top using chain parents
 			return m, prevousMenu(m)
 		}
-		//log.Debugf(red("FOCUS # %v"), m.menulist.SelectedItem().FilterValue())
+		//log.Debugf(c.Red("FOCUS # %v"), m.menulist.SelectedItem().FilterValue())
 		// May be... some day
 		// case tea.WindowSizeMsg:
 		// 	m.menulist.SetSize(msg.Width/2, msg.Height)

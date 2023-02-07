@@ -7,29 +7,32 @@ import (
 )
 
 func (d *Daywalker) Run(chosen string) {
+	g := d.User
 	switch chosen {
 	case "Push Campain?":
-		doActivity(cfg.PushCampain, d)
+		doActivity(cfg.PushCampain, d, g)
 	case "Kings Tower":
-		doActivity(cfg.ClimbKings, d)
+		doActivity(cfg.ClimbKings, d, g)
 	case "World Tree":
-		doActivity(cfg.ClimbWild, d)
+		doActivity(cfg.ClimbWild, d, g)
 	case "Forsaken Necropolis":
-		doActivity(cfg.ClimbGrave, d)
+		doActivity(cfg.ClimbGrave, d, g)
 	case "Towers of Light":
-		doActivity(cfg.ClimbLight, d)
+		doActivity(cfg.ClimbLight, d, g)
 	case "Brutal Citadel":
-		doActivity(cfg.ClimbMaul, d)
+		doActivity(cfg.ClimbMaul, d, g)
 	case "Celestial Sanctum":
-		doActivity(cfg.ClimbCelestial, d)
+		doActivity(cfg.ClimbCelestial, d, g)
 	case "Infernal Fortress":
-		doActivity(cfg.ClimbInferno, d)
+		doActivity(cfg.ClimbInferno, d, g)
+	case "Do daily?":
+		doActivity(cfg.Daily, d, g)
 	default:
 		d.NotifyUI("RUN", "Unknown Activity")
 	}
 }
 
-func doActivity(miss cfg.Mission, ns activities.Nightstalker) {
+func doActivity(miss cfg.Mission, ns activities.Nightstalker, g activities.Gamer) {
 	switch miss {
 	case cfg.PushCampain:
 		activities.Push(ns)
@@ -47,6 +50,8 @@ func doActivity(miss cfg.Mission, ns activities.Nightstalker) {
 		activities.PushTower(ns, activities.CELESTIAL)
 	case cfg.ClimbInferno:
 		activities.PushTower(ns, activities.INFERNAL)
+	case cfg.Daily:
+		activities.DailyRun(ns, g)
 	default:
 		outFn("RUN", "Unknown Activity")
 	}

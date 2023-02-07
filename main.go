@@ -6,6 +6,7 @@ import (
 
 	"worker/adb"
 	"worker/afk/activities"
+
 	// "worker/afk/activities"
 	"worker/bot"
 	"worker/ui"
@@ -13,19 +14,19 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"worker/afk"
-	"worker/cfg"
+	c "worker/cfg"
 
 	"github.com/fatih/color"
 )
 
 var (
 	log                        *logrus.Logger
-	user                       *cfg.Profile
+	user                       *c.Profile
 	red, green, cyan, ylw, mgt func(...interface{}) string
 )
 
 func init() {
-	user = cfg.ActiveUser()
+	user = c.ActiveUser()
 	red = color.New(color.FgHiRed).SprintFunc()
 	green = color.New(color.FgHiGreen).SprintFunc()
 	cyan = color.New(color.FgHiCyan).SprintFunc()
@@ -34,7 +35,7 @@ func init() {
 }
 
 func main() {
-	log = cfg.Logger()
+	log = c.Logger()
 	fn := func(a string, b string) {
 		log.Warnf("%v |>\n %v", mgt(a), b)
 	}
@@ -46,7 +47,7 @@ func main() {
 
 		_, e := adb.Connect("127.0.0.1:5556")
 		if e != nil {
-			log.Fatalf(red("%v"), e.Error())
+			log.Fatalf(c.Red("%v"), e.Error())
 		}
 		gw := afk.New(&ui.AppUser{})
 		bb := bot.New(fn)
@@ -54,13 +55,13 @@ func main() {
 
 		a := bot.ScanText()
 		_ = a
-		b := activities.BoardsQuests(a)
-		log.Warnf(red(b))
+		b := activities.BoardsQuests(a.Result())
+		log.Warnf(c.Red(b))
 
 		return
 	}
 
-	log.Warnf(red("RUN BEGIN : %v"), time.Now())
+	log.Warnf(c.Red("RUN BEGIN : %v"), time.Now())
 
 	err := ui.RunMainMenu(user)
 	if err != nil {

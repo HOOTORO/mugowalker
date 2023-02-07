@@ -3,6 +3,8 @@ package ui
 import (
 	"time"
 
+	c "worker/cfg"
+
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -128,7 +130,7 @@ var (
 		})
 		items = append(items, item{
 			title:    "Start App",
-			desc:     f("Run app: %v", m.conf.userSettings.AndroidGameID),
+			desc:     c.F("Run app: %v", m.conf.userSettings.AndroidGameID),
 			children: runApp,
 		})
 		return items
@@ -136,7 +138,7 @@ var (
 	mySettings = func(m menuModel) (out []list.Item) {
 		out = append(out, item{
 			title:    "Log Level",
-			desc:     f("Current lvl |> %v", cyan(log.GetLevel().String())),
+			desc:     c.F("Current lvl |> %v", c.Cyan(log.GetLevel().String())),
 			children: loglevel,
 		})
 		out = append(out, item{

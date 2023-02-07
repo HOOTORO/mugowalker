@@ -1,25 +1,24 @@
 package ui
 
 import (
-	"fmt"
 	"os"
 	"worker/cfg"
+	"worker/ocr"
 
 	"github.com/sirupsen/logrus"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/fatih/color"
 )
 
-var red, green, cyan, yellow, mag func(...interface{}) string
+// var red, green, cyan, yellow, mag func(...interface{}) string
 
-func init() {
-	red = color.New(color.FgHiRed).SprintFunc()
-	green = color.New(color.FgHiGreen).SprintFunc()
-	cyan = color.New(color.FgHiCyan).SprintFunc()
-	yellow = color.New(color.FgHiYellow).SprintFunc()
-	mag = color.New(color.FgHiMagenta, color.BgHiWhite).SprintFunc()
-}
+// func init() {
+// 	red = color.New(color.FgHiRed).SprintFunc()
+// 	green = color.New(color.FgHiGreen).SprintFunc()
+// 	cyan = color.New(color.FgHiCyan).SprintFunc()
+// 	yellow = color.New(color.FgHiYellow).SprintFunc()
+// 	mag = color.New(color.FgHiMagenta, color.BgHiWhite).SprintFunc()
+// }
 
 type AppUser struct {
 	Connection    string
@@ -62,7 +61,6 @@ const (
 )
 
 var log *logrus.Logger
-var f = fmt.Sprintf
 
 func init() {
 	log = cfg.Logger()
@@ -71,8 +69,8 @@ func init() {
 func RunMainMenu(c *cfg.Profile) error {
 	log.Debug("entered UI")
 	options := userSettings(c)
-	img := ocrSettings(c, cfg.MagicExe)
-	tess := ocrSettings(c, cfg.TessExe)
+	img := ocrSettings(c, ocr.Magick{})
+	tess := ocrSettings(c, ocr.Tesseract{})
 	m := InitialMenuModel(tess, img, options)
 	m.menulist.Title = header
 	m.menulist.SetSize(110, 28)

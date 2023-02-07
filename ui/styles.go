@@ -1,6 +1,9 @@
 package ui
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"github.com/charmbracelet/lipgloss"
+	c "worker/cfg"
+)
 
 const (
 	header = "<|!|> AFK Worker v0.1 <|!|>"
@@ -113,7 +116,7 @@ var (
 	focusedButton = focusedStyle.Copy().
 			Render("[ Submit ]")
 
-	blurredButton = f("[ %s ]", blurredStyle.Render("Submit"))
+	blurredButton = c.F("[ %s ]", blurredStyle.Render("Submit"))
 )
 
 var (

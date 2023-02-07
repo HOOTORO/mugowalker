@@ -8,7 +8,7 @@ import (
 // Nightstalker can push, can climb, can daily.
 // Methods required for bots to do so
 type Nightstalker interface {
-	OcResult() []ocr.AlmoResult
+	OcResult() *ocr.ImageProfile
 	Press(Button) bool
 	Location() string
 	Back()

@@ -193,7 +193,7 @@ Helper func
 func ToInt(s string) int {
 	num, e := strconv.Atoi(s)
 	if e != nil {
-		log.Warnf("Called f():%v\nError:%v", "cfg.ToInt", e)
+		log.Warnf("Calledc.F():%v\nError:%v", "cfg.ToInt", e)
 	}
 	return num
 }

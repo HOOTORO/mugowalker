@@ -38,7 +38,7 @@ quests:
 		time.Sleep(2 * time.Second)
 		goto quests
 	}
-	bq := BoardsQuests(ns.OcResult())
+	bq := BoardsQuests(ns.OcResult().Tesseract(2))
 	ns.Press(Collect)
 
 	for _, q := range bq {

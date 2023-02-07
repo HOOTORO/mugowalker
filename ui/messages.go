@@ -3,7 +3,8 @@ package ui
 import (
 	"errors"
 	a "worker/adb"
-	"worker/cfg"
+	"worker/bot"
+	c "worker/cfg"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/sirupsen/logrus"
@@ -22,7 +23,7 @@ type (
 )
 
 func checkVM() tea.Msg {
-	taskstr, e := cfg.Tasklist(bluexe)
+	taskstr, e := c.Tasklist(bluexe)
 	if e != nil {
 		return errMsg{e}
 	}
@@ -50,6 +51,21 @@ func runAfk(m *menuModel) tea.Msg {
 	}
 }
 
+func initAfk(m *menuModel) tea.Cmd {
+	return func() tea.Msg {
+		log.Debugf("INIT AFK MAFAKA : %+v", c.Cyan(m))
+		if m.state.adbconn > 0 {
+			if runner.IsAppRunnin(m.conf.userSettings.AndroidGameID) > 0 {
+				return appOnlineMsg(1)
+			} else {
+				runner.StartApp(m.conf.userSettings.AndroidGameID)
+				return appOnlineMsg(1)
+			}
+		}
+		return appOnlineMsg(0)
+	}
+}
+
 func adbConnect(serial string) tea.Msg {
 	dev, e := a.Connect(serial)
 	if e != nil {
@@ -59,6 +75,28 @@ func adbConnect(serial string) tea.Msg {
 
 	return connectionMsg(dev.DevState)
 }
+
+func connectDevice(m menuModel) tea.Cmd {
+	runner = bot.New(m.UserOutput)
+	d := runner.DiscoverDevices()
+	dev := &a.Device{DevState: 0}
+	for _, v := range d {
+		// descu := c.F("State: %s, T_Id: %v, WMsize: %v", v.DevState, v.TransportId, v.Resolution)
+		if v.Serial == m.conf.userSettings.Connection {
+			dev = v
+		}
+	}
+	return func() tea.Msg {
+		if dev.DevState != 0 {
+			m.conf.userSettings.Connection = dev.Serial
+			runner.Connect(dev)
+		} else {
+			runner.Device = dev
+		}
+		return connectionMsg(runner.DevState)
+	}
+}
+
 func setLoglevel(lvl string) tea.Msg {
 	obj, e := logrus.ParseLevel(lvl)
 	if e != nil {

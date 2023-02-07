@@ -6,7 +6,8 @@ import (
 
 	"worker/afk"
 	"worker/bot"
-	"worker/cfg"
+	c "worker/cfg"
+	"worker/ocr"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -16,7 +17,7 @@ import (
 var runner *bot.BasicBot
 var mgt = color.New(color.FgHiMagenta, color.BgHiWhite).SprintFunc()
 
-func userSettings(c *cfg.Profile) *AppUser {
+func userSettings(c *c.Profile) *AppUser {
 	return &AppUser{
 		Connection:    c.DeviceSerial,
 		Account:       c.User.Account,
@@ -52,24 +53,24 @@ func runBotTask(m *menuModel) bool {
 	switch {
 	case s.adbconn == 0:
 		log.Errorf(ErrNoAdb.Error())
-		m.UserOutput(m.choice, red(ErrNoAdb.Error()))
+		m.UserOutput(m.choice, c.Red(ErrNoAdb.Error()))
 		return false
 	case s.gameStatus == 0:
-		log.Errorf(red("Game is not running"))
-		m.UserOutput(m.conf.userSettings.AndroidGameID, red(ErrAppNotRunning.Error()))
+		log.Errorf(c.Red("Game is not running"))
+		m.UserOutput(m.conf.userSettings.AndroidGameID, c.Red(ErrAppNotRunning.Error()))
 		return false
 
 	}
 
-	log.Warnf(yellow("\n	CHOSEN RUNTASK >>> %v <<<"), m.choice)
+	log.Warnf(c.Ylw("\n	CHOSEN RUNTASK >>> %v <<<"), m.choice)
 	ns := afk.Nightstalker(runner, m.conf.userSettings)
 	ns.Run(m.choice)
 	return true
 }
 
 func runBluestacks(m *menuModel) bool {
-	// pid, e := cfg.StartProc(bluestacksexe, strings.Fields(m.opts[bluestacks])...)
-	cmd := cfg.RunProc(bluexe, cfg.ActiveUser().Bluestacks.Args()...)
+	// pid, e := c.StartProc(bluestacksexe, strings.Fields(m.opts[bluestacks])...)
+	cmd := c.RunProc(bluexe, c.ActiveUser().Bluestacks.Args()...)
 
 	m.state.vmPid = cmd.Process.Pid
 	m.statuStr()
@@ -78,18 +79,18 @@ func runBluestacks(m *menuModel) bool {
 	go func() {
 		e := cmd.Wait()
 		if e != nil {
-			m.state.taskch <- notify(bluexe, f("|> error: %v, pid: %v", e, m.state.vmPid))
+			m.state.taskch <- notify(bluexe, c.F("|> error: %v, pid: %v", e, m.state.vmPid))
 		}
-		m.state.taskch <- notify(bluexe, f("|> finished, pid: %v", m.state.vmPid))
+		m.state.taskch <- notify(bluexe, c.F("|> finished, pid: %v", m.state.vmPid))
 		m.state.vmPid = 0
 	}()
 	return checkBlueStacks(m)
 }
 
-func ocrSettings(c *cfg.Profile, e cfg.Executable) map[string]string {
+func ocrSettings(c *c.Profile, e c.Runnable) map[string]string {
 	dto := make(map[string]string, 0)
 	var args []string
-	if e == cfg.MagicExe {
+	if _, ok := e.(ocr.Magick); ok {
 		args = c.ImagickCfg()
 	} else {
 		args = c.TesseractCfg()
@@ -105,8 +106,8 @@ func ocrSettings(c *cfg.Profile, e cfg.Executable) map[string]string {
 	return dto
 }
 
-func DtoCfg(m map[Option]string) *cfg.Profile {
-	res := cfg.ActiveUser()
+func DtoCfg(m map[Option]string) *c.Profile {
+	res := c.ActiveUser()
 
 	for k, v := range m {
 		switch k {
@@ -131,13 +132,13 @@ func DtoCfg(m map[Option]string) *cfg.Profile {
 
 func updateDto(v map[Option]string) {
 	o := DtoCfg(v)
-	cfg.Save(cfg.UserFile(o.User.Account+".yaml"), o)
+	c.Save(c.UserFile(o.User.Account+".yaml"), o)
 }
 
 func checkBlueStacks(m *menuModel) bool {
 	if m.state.vmPid != 0 {
 
-		return cfg.IsProcess(m.state.vmPid)
+		return c.IsProcess(m.state.vmPid)
 	}
 	return false
 }

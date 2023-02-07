@@ -3,6 +3,8 @@ package ui
 import (
 	"errors"
 
+	c "worker/cfg"
+
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -47,7 +49,7 @@ type menuModel struct {
 
 func (m menuModel) String() string {
 	log.Tracef("[ options ]\n[ %v ]\n[ from yaml ]", m.conf.userSettings)
-	return f(green("\n"+
+	return c.F(c.Green("\n"+
 		"\t|> [DevStatus : %v]\t\t [Choice : %v]\n"+
 		"\t[Is input chosen? : %v]\n"+
 		"\t|> [BluePid : %v]\n"+
@@ -61,7 +63,7 @@ func (m menuModel) String() string {
 // UserOutput to running tasks panel
 func (m menuModel) UserOutput(task, info string) {
 
-	m.state.taskch <- notify(f("%v", task), info)
+	m.state.taskch <- notify(c.F("%v", task), info)
 }
 
 type state struct {
@@ -84,11 +86,13 @@ type config struct {
 // init / update / view ///
 // ////////////////////////
 func (m menuModel) Init() tea.Cmd {
-	log.Warnf(red("\nInit model: %+v \n"), m)
+	log.Warnf(c.Red("\nInit model: %+v \n"), m)
 	return tea.Batch(
 		// textinput.Blink,
 		// spinner.Tick,
 		// checkVM,
+		connectDevice(m),
+		initAfk(&m),
 		activityListener(m.state.taskch), // wait for activity
 	)
 }
@@ -96,7 +100,7 @@ func (m menuModel) Init() tea.Cmd {
 // ////////////////////////
 func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
-	log.Debugf(mag("(UPD) MSG INC. -> %+v [%T]"), msg, msg)
+	log.Debugf(c.Mgt("(UPD) MSG INC. -> %+v [%T]"), msg, msg)
 	switch k := msg.(type) {
 	case tea.KeyMsg:
 		// always exit keysl
@@ -110,21 +114,21 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if k.String() == "ctrl+up" {
 			var cmd tea.Cmd
-			m.UserOutput(f("%vx%v", m.winx, m.winy), " <| MenuList Size")
+			m.UserOutput(c.F("%vx%v", m.winx, m.winy), " <| MenuList Size")
 			m.winy++
 			m.menulist.SetSize(m.winx, m.winy)
 			return m, cmd
 		}
 		if k.String() == "ctrl+down" {
 			var cmd tea.Cmd
-			m.UserOutput(f("%vx%v", m.winx, m.winy), " <| MenuList Size")
+			m.UserOutput(c.F("%vx%v", m.winx, m.winy), " <| MenuList Size")
 			m.winy--
 			m.menulist.SetSize(m.winx, m.winy)
 			return m, cmd
 		}
 		if k.String() == "ctrl+left" {
 			var cmd tea.Cmd
-			m.UserOutput(f("%vx%v", m.winx, m.winy), " <| MenuList Size")
+			m.UserOutput(c.F("%vx%v", m.winx, m.winy), " <| MenuList Size")
 			m.winx--
 			m.menulist.SetSize(m.winx, m.winy)
 
@@ -132,7 +136,7 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if k.String() == "ctrl+right" {
 			var cmd tea.Cmd
-			m.UserOutput(f("%vx%v", m.winx, m.winy), " <| MenuList Size")
+			m.UserOutput(c.F("%vx%v", m.winx, m.winy), " <| MenuList Size")
 			m.winx++
 			m.menulist.SetSize(m.winx, m.winy)
 			return m, cmd
@@ -159,9 +163,9 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case loglevelMsg:
 		m.conf.userSettings.Loglvl = log.GetLevel().String()
-		m.menulist.Title += f("\nShow output level |> %v", cyan(log.GetLevel().String()))
+		m.menulist.Title += c.F("\nShow output level |> %v", c.Cyan(log.GetLevel().String()))
 		m.MenuEntry(msg)
-		m.UserOutput("LOG", f("LVL UPDATED to -> %v", logrus.Level(k)))
+		m.UserOutput("LOG", c.F("LVL UPDATED to -> %v", logrus.Level(k)))
 
 		return m, cmd
 
@@ -184,7 +188,7 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 
-	log.Debugf(yellow("↓ VIEW INC ↓ \n%v"), m)
+	log.Debugf(c.Ylw("↓ VIEW INC ↓ \n%v"), m)
 
 	if m.inputChosen {
 		return updateInput(msg, m)
@@ -231,7 +235,7 @@ func initTextModel(ci textinput.CursorMode, placeholder string, focus bool, prom
 	}
 	// ti.Width = 30
 	ti.PromptStyle.Bold(true).AlignHorizontal(1)
-	ti.Prompt = f("%10s	%v ", prom, sep)
+	ti.Prompt = c.F("%10s	%v ", prom, sep)
 	return ti
 }
 
@@ -317,7 +321,6 @@ func InitialMenuModel(tess, magick map[string]string, options *AppUser) menuMode
 		winx: x,
 		winy: y,
 	}
-
 	return m
 }
 
