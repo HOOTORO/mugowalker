@@ -5,7 +5,7 @@ import (
 	"math"
 	"strings"
 	"time"
-	"worker/cfg"
+	c "worker/cfg"
 	"worker/ocr"
 
 	"golang.org/x/exp/slices"
@@ -18,18 +18,68 @@ type Gamer interface {
 	SetQuests(uint)
 }
 
-var log = cfg.Logger()
+var log = c.Logger()
 
 type DailyQuest uint
 
-var questNames = []string{"loot", "fastrewards", "friends", "wrizz", "arena1x1", "oak", "QCamp", "QKT", "Solo3Q", "LevelUp", "Enhance", "Summon"}
+var (
+	quests = []string{
+		"loot", "fastrewards", "friends",
+		"wrizz", "arena1x1",
+		"oak", "qcamp", "qkt",
+		"solo3q", "levelup",
+		"enhance", "summon",
+	}
+	descs = []string{
+		"collect loot times", "fast rewards function time", "gift friend companion points",
+		"take part guild hunt", "battle arena heroes",
+		"claim friend's gift", "begin battle", "begin battle king's tower",
+		"begin solo bounty quests", "level up hero time",
+		"enhance your gear time", "summon hero tavern",
+	}
+)
+
+// 000000
+const (
+	LootQ DailyQuest = 1 << iota
+	FastReward
+	Friendship
+	Wrizz
+	Arena1x1
+	Oak
+	QCamp
+	QKT
+	Solo3Q
+	LevelUp
+	Enhance
+	Summon
+	Dailies = LootQ | FastReward | Friendship | Wrizz | Arena1x1 | Oak | QCamp | QKT | Solo3Q | LevelUp | Enhance | Summon
+)
+
+func (dq DailyQuest) boardString() string {
+
+	idx := math.Log2(float64(dq))
+	return descs[int(idx)]
+
+}
+func (dq DailyQuest) String() string {
+	idx := math.Log2(float64(dq))
+	return quests[int(idx)]
+}
+
+func (dq DailyQuest) Id() uint {
+	return uint(dq)
+}
+
 var BannedQuests = []DailyQuest{Solo3Q, LevelUp, Enhance, Summon}
 
 func DailyRun(ns Nightstalker, g Gamer) {
 	todo := Deserialize(g.Quests())
 	_ = todo
 	// go back until we get to the location with base footer menu and banners
+	// Back button didn't work on Result screen
 	for !isBaseLoc(ns.Location()) {
+		ns.NotifyUI("DAILY", "Not Base loc, go back")
 		ns.Back()
 	}
 quests:
@@ -38,7 +88,13 @@ quests:
 		time.Sleep(2 * time.Second)
 		goto quests
 	}
-	bq := BoardsQuests(ns.OcResult().Tesseract(2))
+	bq := BoardsQuests(ns.OcResult().NewResults())
+	// Looking for already done quests
+	for _, q := range bq {
+		if q.Btn.String() == "completed" {
+			g.SetQuests(q.Quest.Id())
+		}
+	}
 	ns.Press(Collect)
 
 	for _, q := range bq {
@@ -75,7 +131,7 @@ func ActiveDailies(u Gamer) []DailyQuest {
 
 func Deserialize(raw uint) []DailyQuest {
 	var result []DailyQuest
-	for i := 0; i < len(questNames); i++ {
+	for i := 0; i < len(quests); i++ {
 		if d := DailyQuest(1 << i); raw&(1<<uint(i)) != 0 {
 			result = append(result, d)
 		}
@@ -90,63 +146,6 @@ func markDone(u Gamer, q DailyQuest) {
 	}
 }
 
-// 000000
-const (
-	LootQ DailyQuest = 1 << iota
-	FastReward
-	Friendship
-	Wrizz
-	Arena1x1
-	Oak
-	QCamp
-	QKT
-	Solo3Q
-	LevelUp
-	Enhance
-	Summon
-	Dailies = LootQ | FastReward | Friendship | Wrizz | Arena1x1 | Oak | QCamp | QKT | Solo3Q | LevelUp | Enhance | Summon
-)
-
-func (dq DailyQuest) String() string {
-	idx := math.Log2(float64(dq))
-	return questNames[int(idx)]
-}
-
-func (dq DailyQuest) Id() uint {
-	return uint(dq)
-}
-
-func (dq DailyQuest) boardString() string {
-	switch dq {
-	case LootQ:
-		return "Collect Loot Times"
-	case FastReward:
-		return "Fast Rewards Function Time"
-	case Friendship:
-		return "Gift Friend Companion Points"
-	case QKT:
-		return "Begin Battle King's Tower"
-	case Wrizz:
-		return "Take Part Guild Hunt"
-	case Oak:
-		return "Claim Friend's Gift"
-	case Arena1x1:
-		return "Battle Arena Heroes"
-	case QCamp:
-		return "Begin Battle"
-	case Solo3Q:
-		return "Begin Solo Bounty Quests"
-	case LevelUp:
-		return "Level Up Hero Time"
-	case Enhance:
-		return "Enhance Your Gear Time"
-	case Summon:
-		return "Summon Hero Tavern"
-	default:
-		return ""
-	}
-}
-
 type BoardQuest struct {
 	Quest DailyQuest
 	Desc  []string
@@ -155,32 +154,32 @@ type BoardQuest struct {
 }
 
 func (q BoardQuest) String() string {
-	return fmt.Sprintf("\n|> Btn[%s]Que[%v]Pos[%vx%v] - Desc: %s", q.Btn, q.Quest, q.X, q.Y, q.Desc)
+	return fmt.Sprintf("\n|> Btn[%s]Que[%v]Pos[%vx%v] - Desc: %s", q.Btn, q.Quest, c.Red(q.X), c.Red(q.Y), c.Ylw(q.Desc))
 }
 
-func BoardsQuests(or []ocr.AlmoResult) []BoardQuest {
-	var res []BoardQuest
+func BoardsQuests(or []ocr.AlmoResult) (brdq []BoardQuest) {
 
+	log.Trace(c.Ylw("↓  parsing board quests from results  ↓ \n"), c.Cyan(or))
 	for _, str := range or {
-		if str.Linechars == "Go" || strings.Contains(str.Linechars, "Completed") {
+		if str.Linechars == "Go" || strings.Contains(str.Linechars, "completed") {
 			qblock := &BoardQuest{}
 			qblock.Desc = wordUpperBlock(str, or)
-			qblock.Btn = afkbtn{name: str.Linechars}
+			qblock.Btn = afkbtn{name: strings.Trim(str.Linechars, "()")}
 			qblock.X = str.X
 			qblock.Y = str.Y
 			qblock.Quest = isBoardQuest(qblock.Desc)
 			if qblock.Quest != 0 {
-				res = append(res, *qblock)
+				brdq = append(brdq, *qblock)
 			}
 		}
 	}
-	return res
+	return
 }
 
 func isBoardQuest(s []string) DailyQuest {
 
 	for _, q := range Deserialize(65535) {
-		hits := cfg.Intersect(s, strings.Fields(q.boardString()))
+		hits := c.Intersect(s, strings.Fields(q.boardString()))
 		if len(hits) >= 3 {
 			return q
 		} else if len(s) == 2 && len(hits) == 2 {

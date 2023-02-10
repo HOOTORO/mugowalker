@@ -14,30 +14,30 @@ type afkbtn struct {
 }
 
 var (
-	Quests          = afkbtn{name: "Quests"}
-	Bag             = afkbtn{name: "Bag"}
-	MailBtn         = afkbtn{name: "Mail"}
-	Go              = afkbtn{name: "Go"}
-	Collect         = afkbtn{name: "Collect"}
-	Begin           = afkbtn{name: "Begin"}
-	BeginB          = afkbtn{name: "Stage", yo: 739}
-	BeginBoss       = afkbtn{name: "Begin", xo: 1}
-	CampainBotPanel = afkbtn{name: "Campain"}
-	ForrestBotPanel = afkbtn{name: "Forrest"}
-	BattleBtn       = afkbtn{name: "Battle"}
-	TryAgain        = afkbtn{name: "Again"}
-	Next            = afkbtn{name: "Next"}
-	Continue        = afkbtn{name: "Continue"}
-	Challenge       = afkbtn{name: "Challenge"}
-	King            = afkbtn{name: "Tower"}
-	Wld             = afkbtn{name: "World"}
-	Grvbrn          = afkbtn{name: "Forsaken"}
-	Infrl           = afkbtn{name: "Infernal"}
-	Mlr             = afkbtn{name: "Brutal"}
-	Lght            = afkbtn{name: "Light"}
-	Clstl           = afkbtn{name: "Celestial"}
+	Quests          = afkbtn{name: "quests"}
+	Bag             = afkbtn{name: "bag"}
+	MailBtn         = afkbtn{name: "mail"}
+	Go              = afkbtn{name: "go"}
+	Collect         = afkbtn{name: "collect"}
+	Begin           = afkbtn{name: "begin"}
+	BeginB          = afkbtn{name: "stage", yo: 739}
+	BeginBoss       = afkbtn{name: "begin", xo: 1}
+	CampainBotPanel = afkbtn{name: "campaign"}
+	ForrestBotPanel = afkbtn{name: "forrest"}
+	BattleBtn       = afkbtn{name: "battle"}
+	TryAgain        = afkbtn{name: "again"}
+	Next            = afkbtn{name: "next"}
+	Continue        = afkbtn{name: "continue"}
+	Challenge       = afkbtn{name: "challenge"}
+	King            = afkbtn{name: "tower"}
+	Wld             = afkbtn{name: "world"}
+	Grvbrn          = afkbtn{name: "forsaken"}
+	Infrl           = afkbtn{name: "infernal"}
+	Mlr             = afkbtn{name: "brutal"}
+	Lght            = afkbtn{name: "light"}
+	Clstl           = afkbtn{name: "celestial"}
 	Any             = afkbtn{name: ""}
-	Community       = afkbtn{name: "Community", yo: 80, xo: 40}
+	Community       = afkbtn{name: "community", yo: 80, xo: 40}
 )
 
 var (
@@ -110,63 +110,63 @@ func isBaseLoc(s string) bool {
 var (
 	Ranhorn = &Location{
 		ID: "ranhorn",
-		Kws: []string{"%account", "Guild", "Store", "Library",
-			"Resonating", "Crystal", "Ascension", "Beast", "Grounds:", "Ascensigng", "Rickety",
-			"WeeRickety", "Cart", "Trading", "BeastiGrounds", "Beast", "Noble", "Tavern",
-			"Linrary", "BeastiGrounds)", "hejNoble", "Wall", "Legends", "Quests"},
+		Kws: []string{"%account", "guild", "store", "library",
+			"resonating", "crystal", "ascension", "beast", "grounds:", "ascensigng", "rickety",
+			"weerickety", "cart", "trading", "beastigrounds", "beast", "noble", "tavern",
+			"linrary", "beastigrounds)", "hejnoble", "wall", "legends", "quests"},
 		Hit: 5,
 	}
 	Campain = &Location{
 		ID:  "campain",
-		Kws: []string{"%account", "Campaign", "World", "Map", "Tales", "Fast", "Rewards", "World’Map", "Camp", "Quests"},
+		Kws: []string{"%account", "campaign", "world", "map", "tales", "fast", "rewards", "world’map", "camp", "quests"},
 		Hit: 4,
 	}
 	Forrest = &Location{
 		ID:  "forrest",
-		Kws: []string{"%account", "Arena", "Peaks", "Time", "labyrnts", "KingissTower", "emporal", "Temporal", "Peaksiof", "Voyage", "Arcane", "Labyaintn", "Abyssal", "Expedition", "Bounty", "Board"},
+		Kws: []string{"%account", "arena", "peaks", "time", "labyrnts", "kingissTower", "emporal", "temporal", "peaksiof", "voyage", "arcane", "labyaintn", "abyssal", "expedition", "bounty", "board"},
 		Hit: 5,
 	}
 
 	Prepare = &Location{
 		ID:  "prepare",
-		Kws: []string{"Forntions", "formations", "Formations", "Stage", "Stage:", "VS)", "Floor", "Battle", "BeginBattle", "must", "defeat", "teams", "advance", "VS"},
+		Kws: []string{"forntions", "formations", "formations", "stage", "stage:", "vs)", "floor", "battle", "beginbattle", "must", "defeat", "teams", "advance", "vs"},
 		Hit: 2,
 	}
 	Result = &Location{
 		ID:  "result",
-		Kws: []string{"Continue", "Raise", "increase", "strength", "Tier", "using", "methods", "below.", "next", "Fall", "Level", "Your", "Heroes", "Enhance", "Gear"},
+		Kws: []string{"continue", "raise", "increase", "strength", "tier", "using", "methods", "below.", "next", "fall", "level", "your", "heroes", "enhance", "gear"},
 		Hit: 10,
 	}
 	Win = &Location{
 		ID:  "victory",
-		Kws: []string{"Rewards", "TARY", "Tap", "Continue", "VIEETLARY", "TLARY", "VISELQIRY", "VISFLQIRY", "LQARY", "VIFF", "LARRY", "LORY", "Complete", "Rewards", "Next", "Stage"},
+		Kws: []string{"rewards", "tary", "tap", "continue", "vieetlary", "tlary", "viselqiry", "visflqiry", "lqary", "viff", "larry", "lory", "complete", "rewards", "next", "stage"},
 		Hit: 3,
 	}
 	Stats = &Location{
 		ID:  "stat",
-		Kws: []string{"%account", "Statistics", "Battle", "Hero", "Info", "Baltle"},
+		Kws: []string{"%account", "statistics", "battle", "hero", "info", "baltle"},
 		Hit: 2,
 	}
 	RightBanner = &Location{
 		ID:  "rBanOpen",
-		Kws: []string{"%account", "Bag", "Mail", "Friends", "Solemn", "Vow", "Community"},
+		Kws: []string{"%account", "bag", "mail", "friends", "solemn", "vow", "community"},
 		Hit: 3,
 	}
 	Quest = &Location{
-		ID:  "quiests",
-		Kws: []string{"QUESTS", "Quests", "Refreshes", "Dailies", "Weeklies", "Campaign", "Completed", "Begin", "Battle", "Kings's", "Tower", "QUESTS", "Refreshes", "Level", "Hero", "Time)'", "Enhance", "Your", "Gear", "Timey", "Summon", "Hero", "Tavern"},
+		ID:  "quests",
+		Kws: []string{"quests", "quests", "refreshes", "dailies", "weeklies", "campaign", "completed", "begin", "battle", "kings's", "tower", "quests", "refreshes", "level", "hero", "time)'", "enhance", "your", "gear", "timey", "summon", "hero", "tavern"},
 		Hit: 7,
 	}
 
 	Friends = &Location{
 		ID:  "friends",
-		Kws: []string{"Friends", "Garrisoned"},
+		Kws: []string{"friends", "garrisoned"},
 		Hit: 2,
 	}
 
 	Bossnode = &Location{
 		ID:  "bossnode",
-		Kws: []string{"Enemy", "Formation", "Stage", "Stage:", "Completition", "Rewards", "ormavion"},
+		Kws: []string{"enemy", "formation", "stage", "stage:", "completition", "rewards", "ormavion"},
 		Hit: 3,
 	}
 	Mail = &Location{
@@ -177,97 +177,97 @@ var (
 
 	PopoutExtra = &Location{
 		ID:  "popextra",
-		Kws: []string{"extra", "Customize", "Bundle", "Disappears", "Purchase", "Anywhere", "1999", "Customizs", "Congratulations", "bundle"},
+		Kws: []string{"extra", "customize", "bundle", "Disappears", "purchase", "anywhere", "1999", "customizs", "congratulations", "bundle"},
 		Hit: 6,
 	}
 	FastRewards = &Location{
 		ID:  "fastrewards",
-		Kws: []string{"Collect", "Close", "Rewards", "Fast"},
+		Kws: []string{"collect", "close", "rewards", "fast"},
 		Hit: 3,
 	}
 	Loot = &Location{
 		ID:  "loot",
-		Kws: []string{"Tap", "the", "blank", "area", "claim", "AFK", "Rewards", "Timer", "Collect", "Close"},
+		Kws: []string{"tap", "the", "blank", "area", "claim", "aFK", "rewards", "timer", "collect", "close"},
 		Hit: 4,
 	}
 	Arena = &Location{
 		ID:  "arena",
-		Kws: []string{"Season", "Ends", "CHALLENGER", "TOURNAMENT", "Rank", "Wins", "TREASURE", "LEGENDS:", "Division", "Starts", "championship", "starts", "gladiator", "Gladiator", "Coins", "Rating", "Required"},
+		Kws: []string{"season", "ends", "challenger", "tournament", "rank", "wins", "treasure", "legends:", "division", "starts", "championship", "starts", "gladiator", "gladiator", "coins", "rating", "required"},
 		Hit: 6,
 	}
 	Soloarena = &Location{
 		ID:  "soloarena",
-		Kws: []string{"challendge", "Formation", "Record", "Arena", "Heroes", "Ladder", "Season", "Ranking", "Ends"},
+		Kws: []string{"challendge", "formation", "record", "arena", "Heroes", "ladder", "season", "ranking", "ends"},
 		Hit: 3,
 	}
 	OpponentList = &Location{
 		ID:  "opponent",
-		Kws: []string{"Challenge", "Refresh", "Seregi", "Mpory"},
+		Kws: []string{"challenge", "refresh", "seregi", "mpory"},
 		Hit: 2,
 	}
 	KTentrance = &Location{
 		ID:  "kt",
-		Kws: []string{"Forsaken", "Necropolis", "Kings", "Tower", "Light", "Floors", "Stage", "Wed/Sat/Sun", "Mon/Fri/Sun", "Thu/Sat/Sun", "Mon/FriiSun"},
+		Kws: []string{"forsaken", "necropolis", "kings", "tower", "light", "floors", "stage", "wed/sat/sun", "mon/fri/sun", "thu/sat/sun", "mon/friisun"},
 		Hit: 3,
 	}
 	KTinside = &Location{
 		ID:  "king",
-		Kws: []string{"Floor", "Leaderboard", "Stage", "Info", "Cleared", "Challendge", "Kings's", "Kings"},
+		Kws: []string{"floor", "leaderboard", "stage", "Info", "cleared", "challendge", "kings's", "kings"},
 		Hit: 5,
 	}
 	Graveborn = &Location{
 		ID:  "fn",
-		Kws: []string{"Forsaken", "Necropolis", "Floor", "Leaderboard", "Stage", "Info", "Cleared", "Challendge"},
+		Kws: []string{"forsaken", "necropolis", "floor", "leaderboard", "stage", "info", "cleared", "challendge"},
 		Hit: 5,
 	}
 	Wilder = &Location{
 		ID:  "wt",
-		Kws: []string{"World", "Tree", "Floor", "Leaderboard", "Stage", "Info", "Cleared", "Challendge"},
+		Kws: []string{"world", "tree", "floor", "leaderboard", "stage", "info", "cleared", "challendge"},
 		Hit: 5,
 	}
 	Light = &Location{
 		ID:  "tol",
-		Kws: []string{"Light", "Floor", "Leaderboard", "Stage", "Info", "Cleared", "Challendge"},
+		Kws: []string{"light", "floor", "leaderboard", "stage", "info", "cleared", "challendge"},
 		Hit: 5,
 	}
 	Nauler = &Location{
 		ID:  "bc",
-		Kws: []string{"Brutal", "Citadel", "Floor", "Leaderboard", "Stage", "Info", "Cleared", "Challendge"},
+		Kws: []string{"brutal", "citadel", "floor", "leaderboard", "stage", "info", "cleared", "challendge"},
 		Hit: 5,
 	}
 	Hypo = &Location{
 		ID:  "if",
-		Kws: []string{"Infernal", "Fortress", "Floor", "Leaderboard", "Stage", "Info", "Cleared", "Challendge"},
+		Kws: []string{"Infernal", "fortress", "floor", "leaderboard", "stage", "info", "cleared", "challendge"},
 		Hit: 5,
 	}
 	Celestial = &Location{
 		ID:  "cs",
-		Kws: []string{"Celestial", "Sanctum", "Fortress", "Floor", "Leaderboard", "Stage", "Info", "Cleared", "Challendge"},
+		Kws: []string{"celestial", "sanctum", "fortress", "floor", "leaderboard", "stage", "info", "cleared", "challendge"},
 		Hit: 5,
 	}
 	guildgrounds = &Location{
 		ID:  "guildgrounds",
-		Kws: []string{"Guild", "Hall", "Hellscape", "Grounds", "Hunting"},
+		Kws: []string{"guild", "hall", "hellscape", "grounds", "hunting"},
 		Hit: 2,
 	}
 	guildchest = &Location{
 		ID:  "gichest",
-		Kws: []string{"FORTUNE", "CHESTS", "Realm", "Fabled", "brave", "guildmate", "share", "with", "everyone"},
+		Kws: []string{"fortune", "chests", "realm", "fabled", "brave", "guildmate", "share", "with", "everyone"},
 		Hit: 3,
 	}
 	wrizz = &Location{
 		ID:  "wrizz",
-		Kws: []string{"Wrizz", "Challenge"},
+		Kws: []string{"wrizz", "challenge"},
 		Hit: 2,
 	}
 	skipF = &Location{
 		ID:  "skipf",
-		Kws: []string{"Quick", "Battle", "Sweep", "most", "recent"},
+		Kws: []string{"quick", "battle", "sweep", "most", "recent"},
 		Hit: 3,
 	}
 	oak = &Location{
 		ID:  "oak",
-		Kws: []string{"Workshop", "Tasks", "Smart", "Selections", "Manage"},
+		Kws: []string{"workshop", "tasks", "smart", "selections", "manage"},
 		Hit: 2,
 	}
 )

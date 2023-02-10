@@ -45,6 +45,7 @@ var (
 	Ylw    = color.New(color.FgHiYellow).SprintFunc()
 	Mgt    = color.New(color.FgHiMagenta).SprintFunc()
 	TTrack = color.New(color.BgHiBlue, color.FgCyan, color.Underline, color.Bold).SprintfFunc()
+	RFW    = color.New(color.FgHiRed, color.BgWhite).SprintFunc()
 )
 
 var (
@@ -160,7 +161,7 @@ func GetImages() []string {
 func RunCmd(r Runnable) error {
 	pt := LookupPath(r.Path())
 
-	log.Trace(Blue("RunCMD -> ", pt, r.Args()))
+	log.Trace(Blue("  ↓   RunCMD   ↓ \n", Mgt(pt), "\n", Ylw(r.Args())))
 	cmd := exec.Command(pt, r.Args()...)
 
 	return cmd.Run()
@@ -230,13 +231,10 @@ func defaultUser() *Profile {
 func createDirStructure() (dbfolder, userfolder, appdata, tempfolder string, e error) {
 	dbfolder = makeEnvDir(appdataEnv, programRootDir)
 	userfolder = makeEnvDir(userhome, programRootDir)
-	tempfolder = makeEnvDir(temp, programRootDir)
 	appdata = makeEnvDir(programData, programRootDir)
+	tempfolder = makeEnvDir(temp, programRootDir)
 
 	// Saturday cleaning
-	if time.Now().Weekday().String() == "Saturday" {
-		truncateDir(tempfolder)
-	}
 
 	if dbfolder == "" || userfolder == "" || tempfolder == "" || appdata == "" {
 		e = ErrWorkDirFail
@@ -249,6 +247,9 @@ func createDirStructure() (dbfolder, userfolder, appdata, tempfolder string, e e
 func makeEnvDir(env, dir string) string {
 	envpath := safeEnv(env)
 	patyh := filepath.Join(envpath, dir)
+	if env == temp {
+		truncateDir(patyh)
+	}
 	e := os.MkdirAll(patyh, os.ModeDir)
 	if e != nil {
 		log.Errorf("make dir mailfunc: %v", e)
@@ -269,4 +270,11 @@ func absJoin(d, f string) string {
 	}
 	wd, _ := os.Getwd()
 	return filepath.Join(wd, fb)
+}
+
+func Shorterer(str string, n int) string {
+	if len(str) > n+3 {
+		return str[:n] + "..."
+	}
+	return str
 }

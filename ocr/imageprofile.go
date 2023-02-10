@@ -2,7 +2,7 @@ package ocr
 
 import (
 	"errors"
-	"strings"
+	"time"
 	c "worker/cfg"
 )
 
@@ -15,56 +15,41 @@ type ImageProfile struct {
 	prepArgs   []string
 	prepared   string
 	psm        int
-	used_psms  string
 	recognized []AlmoResult
 }
 
-func (ip *ImageProfile) Tesseract(psmin int) []AlmoResult {
-	switch psmin {
-	case 1, 3, 4, 6, 11, 12:
-		f, _ := tmpFile()
-		e := ActivateTesseract(ip.prepared, f.Name(), customPsm(psmin)...)
-		if e != nil {
-			log.Errorf("Tessereact mailfunc")
-		}
-		ip.recognized = unique(UnmarshalAlto(f.Name()).parse())
-		ip.used_psms += c.F("%v", psmin)
-		z(ip.recognized, psmin)
-		return ip.recognized
+const defpsm = 6
 
-	default:
-		log.Warnf("Provide correct PSM num (%v)", psm)
-		return nil
+func (ip *ImageProfile) NewResults() []AlmoResult {
+
+	f, _ := tmpFile()
+
+	log.Trace(c.Cyan("SENT TO TESS PREPARED FILE  -> "), c.Mgt(ip.prepared))
+	e := ActivateTesseract(ip.prepared, f.Name(), customPsm(defpsm)...)
+	if e != nil {
+		log.Errorf("Tessereact mailfunc")
 	}
+	ip.recognized = unique(UnmarshalAlto(f.Name()).parse())
+
+	log.Debug(c.F("Words Onscr: %v\n	Ocred: %v", c.Cyan(len(ip.recognized)), almoResultsStringer(ip.recognized, defpsm)))
+
+	return ip.recognized
+
 }
 
 func (ip *ImageProfile) Result() []AlmoResult {
 	if len(ip.recognized) > 0 {
 		return ip.recognized
 	} else {
-		return ip.Tesseract(6)
+		return ip.NewResults()
 	}
 }
 
 func (ip *ImageProfile) TryAgain() []AlmoResult {
 
-	newpsm, e := unusedpsm(ip.used_psms)
-	if errors.Is(e, ErrUsedAllPsm) {
-		blaine.args = MagickArgs()
-		ip.used_psms = ""
-		PrepareForRecognize(ip)
-		return ip.Tesseract(1)
-	} else {
-		return ip.Tesseract(newpsm)
-		// z(ip.recognized, newpsm)
-	}
-}
+	blaine.NewRandArgs()
+	time.Sleep(3 * time.Second)
+	PrepareForRecognize(ip)
+	return ip.NewResults()
 
-func unusedpsm(u string) (int, error) {
-	for _, p := range psm {
-		if !strings.ContainsAny(u, c.F("%v", p)) {
-			return p, nil
-		}
-	}
-	return 0, ErrUsedAllPsm
 }

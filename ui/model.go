@@ -72,6 +72,7 @@ type state struct {
 	adbconn    int
 	gameStatus int
 	taskch     chan taskinfo
+	taskstate  chan int
 	taskmsgs   []taskinfo
 	view       sessionState
 }
@@ -143,7 +144,7 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case taskinfo:
-		k.Message = shorterer(k.Message)
+		k.Message = c.Shorterer(k.Message, 57)
 		m.state.taskmsgs = append(m.state.taskmsgs[1:], k)
 		return m, activityListener(m.state.taskch)
 
@@ -183,7 +184,9 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if k >= 0 {
 			prevous := m.parents[int(k)].Items()
 			m.menulist.SetItems(prevous)
+			m.menulist.ResetSelected()
 			m.parents = m.parents[:k]
+
 		}
 		return m, cmd
 	}
@@ -239,13 +242,6 @@ func initTextModel(ci textinput.CursorMode, placeholder string, focus bool, prom
 	return ti
 }
 
-func shorterer(str string) string {
-	if len(str) > 60 {
-		return str[:57] + "..."
-	}
-	return str
-}
-
 type item struct {
 	title, desc string
 	children    interface{}
@@ -299,6 +295,7 @@ func InitialMenuModel(tess, magick map[string]string, options *AppUser) menuMode
 		adbconn:    0,
 		gameStatus: 0,
 		taskch:     make(chan taskinfo),
+		taskstate:  make(chan int),
 		taskmsgs:   make([]taskinfo, showLastTasks),
 		spinme:     spinner.New(),
 		view:       selectView,
@@ -331,5 +328,6 @@ func notify(ev, desc string) taskinfo {
 func (m *menuModel) MenuEntry(msg tea.Msg) {
 	m.menulist.SetItems(toplevelmenu)
 	m.parents = m.parents[:0]
+	m.menulist.ResetSelected()
 	m.menulist.Update(msg)
 }

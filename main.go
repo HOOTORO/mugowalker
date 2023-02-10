@@ -56,7 +56,7 @@ func main() {
 		a := bot.ScanText()
 		_ = a
 		b := activities.BoardsQuests(a.Result())
-		log.Warnf(c.Red(b))
+		log.Warn(c.Red(b))
 
 		return
 	}

@@ -33,6 +33,7 @@ func updateMenu(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 				case []list.Item, func(m menuModel) []list.Item:
 					m.parents = append(m.parents, m.menulist)
 					m.menulist.SetItems(itm.NextLevel(m))
+					m.menulist.ResetSelected()
 
 				// Input
 				case func(m menuModel) []textinput.Model:

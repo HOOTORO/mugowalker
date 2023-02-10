@@ -5,6 +5,7 @@ import (
 	a "worker/adb"
 	"worker/bot"
 	c "worker/cfg"
+	"worker/emulator"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/sirupsen/logrus"
@@ -24,11 +25,16 @@ type (
 
 func checkVM() tea.Msg {
 	taskstr, e := c.Tasklist(bluexe)
-	if e != nil {
+	noxprc, e1 := c.Tasklist(emulator.Nox.String())
+	if e != nil && e1 != nil {
 		return errMsg{e}
 	}
+	if len(taskstr) > 0 {
 
-	return vmStatusMsg(taskstr[0].Pid)
+		return vmStatusMsg(taskstr[0].Pid)
+	} else {
+		return vmStatusMsg(noxprc[0].Pid)
+	}
 }
 
 func prevousMenu(m menuModel) tea.Cmd {
@@ -90,9 +96,11 @@ func connectDevice(m menuModel) tea.Cmd {
 		if dev.DevState != 0 {
 			m.conf.userSettings.Connection = dev.Serial
 			runner.Connect(dev)
+			m.state.adbconn = 1
 		} else {
 			runner.Device = dev
 		}
+		log.Debugf("Device --> %+v", c.Cyan(runner))
 		return connectionMsg(runner.DevState)
 	}
 }

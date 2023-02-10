@@ -7,6 +7,7 @@ import (
 	"worker/afk"
 	"worker/bot"
 	c "worker/cfg"
+	"worker/emulator"
 	"worker/ocr"
 
 	"github.com/charmbracelet/bubbles/list"
@@ -64,6 +65,7 @@ func runBotTask(m *menuModel) bool {
 
 	log.Warnf(c.Ylw("\n	CHOSEN RUNTASK >>> %v <<<"), m.choice)
 	ns := afk.Nightstalker(runner, m.conf.userSettings)
+	log.Debugf("Nightstalker ready to go |> %+v", c.Ylw(ns))
 	ns.Run(m.choice)
 	return true
 }
@@ -84,13 +86,31 @@ func runBluestacks(m *menuModel) bool {
 		m.state.taskch <- notify(bluexe, c.F("|> finished, pid: %v", m.state.vmPid))
 		m.state.vmPid = 0
 	}()
-	return checkBlueStacks(m)
+	return checkEmulator(m)
+}
+func runNox(m *menuModel) bool {
+	// pid, e := c.StartProc(bluestacksexe, strings.Fields(m.opts[bluestacks])...)
+	cmd := c.RunProc(emulator.Nox.String(), emulator.Nox.Values()...)
+
+	m.state.vmPid = cmd.Process.Pid
+	m.statuStr()
+	log.Warnf("\nwait in another gourutine %v", cmd.Process.Pid)
+
+	go func() {
+		e := cmd.Wait()
+		if e != nil {
+			m.state.taskch <- notify(bluexe, c.F("|> error: %v, pid: %v", e, m.state.vmPid))
+		}
+		m.state.taskch <- notify(bluexe, c.F("|> finished, pid: %v", m.state.vmPid))
+		m.state.vmPid = 0
+	}()
+	return checkEmulator(m)
 }
 
 func ocrSettings(c *c.Profile, e c.Runnable) map[string]string {
 	dto := make(map[string]string, 0)
 	var args []string
-	if _, ok := e.(ocr.Magick); ok {
+	if _, ok := e.(*ocr.Magick); ok {
 		args = c.ImagickCfg()
 	} else {
 		args = c.TesseractCfg()
@@ -135,7 +155,7 @@ func updateDto(v map[Option]string) {
 	c.Save(c.UserFile(o.User.Account+".yaml"), o)
 }
 
-func checkBlueStacks(m *menuModel) bool {
+func checkEmulator(m *menuModel) bool {
 	if m.state.vmPid != 0 {
 
 		return c.IsProcess(m.state.vmPid)

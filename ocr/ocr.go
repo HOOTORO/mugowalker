@@ -22,30 +22,29 @@ var (
 	log  *logrus.Logger
 )
 
-var (
-	send func(string, string)
-	z    = func(arr []AlmoResult, psm int) string {
-		var s string
-		s = c.Red(c.F("	↓	|> PSM %v <|	↓	\n", psm))
-		line := 0
+var almoResultsStringer = func(arr []AlmoResult, psm int) string {
+	var s string
+	s = c.Red(c.F("	↓	|> PSM %v <|	↓	\n", psm))
+	line := 0
+	s += "Ln# 0 -> "
+	for _, elem := range arr {
 
-		for i, elem := range arr {
-
-			if elem.LineNo == line {
-				s += c.Cyan(c.F("{idx:%d}%s ", i, elem))
-			} else {
-				line = elem.LineNo
-				s += c.Cyan(c.F("\n{idx:%d}%s ", i, elem))
-			}
+		if elem.LineNo == line {
+			// "#%2s|>%30s" c.Cyan(i),
+			s += c.F("%-48s", elem.String())
+		} else {
+			line = elem.LineNo
+			// log.Debugf("Len S %d", len(elem.String()))
+			s += c.F("\nLn#%11s -> %-48s", c.Mgt(elem.LineNo), elem.String())
 		}
-		s += "\n\n"
-
-		return s
 	}
-)
+	s += "\n\n"
+
+	return s
+}
 
 func (a AlmoResult) String() string {
-	return c.F("[%2d|%4dx%4d <| %s|", a.LineNo, a.X, a.Y, a.Linechars)
+	return c.F("%s [%s]", c.F("%13vx%-13v", c.Red(a.X), c.Red(a.Y)), c.Green(c.Shorterer(a.Linechars, 7)))
 }
 func init() {
 	// Fallback to searching on PATH.
@@ -61,12 +60,11 @@ func ExtractText(img string) *ImageProfile {
 		recognized: make([]AlmoResult, 0),
 	}
 
-	imgPrep := PrepareForRecognize(ip)
-	log.Debug(c.Red("Optimized img -> "), c.Cyan(imgPrep))
-	// s := ip.Tesseract(1)
-	// log.Debug(c.F("Words Onscr: %v\n	Ocred: %v", c.Cyan(len(s)), z(s, 1)))
-
-	// }
+	e := PrepareForRecognize(ip)
+	if e != nil {
+		log.Errorf("IMAGE NOT PREPARED")
+	}
+	log.Trace(c.Red("Optimized img -> "), c.Cyan(ip.prepared))
 
 	return ip
 }

@@ -111,9 +111,13 @@ func (a Alto) parse() []AlmoResult {
 	for i, line := range tl {
 		for _, v := range line.String {
 			if len(v.CONTENT) > 3 || slices.Contains(user.Exceptions, v.CONTENT) || strings.ContainsAny(v.CONTENT, "0123456789") {
-				res = append(res, AlmoResult{Linechars: v.CONTENT, X: cfg.ToInt(v.HPOS), Y: cfg.ToInt(v.VPOS), LineNo: i})
+				res = append(res, AlmoResult{Linechars: lowertrim(v.CONTENT), X: cfg.ToInt(v.HPOS), Y: cfg.ToInt(v.VPOS), LineNo: i})
 			}
 		}
 	}
 	return res
+}
+
+func lowertrim(str string) string {
+	return strings.ToLower(strings.TrimSpace(str))
 }

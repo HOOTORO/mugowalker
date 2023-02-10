@@ -25,17 +25,27 @@ type Tesseract struct {
 }
 
 // Path implemetation Runnable
-func (t Tesseract) Path() string {
+func (t *Tesseract) Path() string {
 	return t.path
 }
 
 // Args implemetation Runnable
-func (t Tesseract) Args() []string {
-	t.args = append([]string{t.in, t.out}, t.args...)
-	return t.args
+func (t *Tesseract) Args() []string {
+	// args := append([]string{t.in, t.out}, t.args...)
+	// t.args = args
+	return append([]string{t.in, t.out}, t.args...)
 }
 
-var tessa = Tesseract{
+func (t *Tesseract) SetArgs(in, out string, args ...string) {
+	t.in = in
+	t.out = out
+	t.args = args
+
+	log.Trace("Tessa ARGS --> ", c.Red(tessa.Args()))
+
+}
+
+var tessa = &Tesseract{
 	path: tessex,
 	args: make([]string, 0),
 }
@@ -45,21 +55,21 @@ func init() {
 }
 
 // PrepareForRecognize alternative optimization
-func PrepareForRecognize(f *ImageProfile) string {
-	blaine.f = f.original
+func PrepareForRecognize(f *ImageProfile) error {
+	blaine.SetFile(f.original)
 	e := c.RunCmd(blaine)
 	if e != nil {
 		log.Error(ErrOptimizeImg, e)
+		return e
 	}
-	f.prepArgs = blaine.args
-	f.prepared = blaine.out()
-	return blaine.out()
+	f.prepared = blaine.Prepared()
+	return nil
 }
 
 func ActivateTesseract(in, out string, args ...string) error {
-	tessa.in = in
-	tessa.out = out
-	tessa.args = args
+	tessa.SetArgs(in, out, args...)
+	// tessa.out = out
+	// tessa.args = args
 	return c.RunCmd(tessa)
 }
 

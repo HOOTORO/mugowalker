@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"worker/afk/activities"
+	"worker/afk/repository"
 	"worker/bot"
 	c "worker/cfg"
 	"worker/ocr"
@@ -15,6 +16,10 @@ import (
 
 const (
 	alto = "ALTO"
+)
+
+var (
+	ErrUnknownButton = errors.New("Not found button named:")
 )
 
 type Daywalker struct {
@@ -29,6 +34,7 @@ type Daywalker struct {
 	lastscreenshot string
 	maxocrtry      int
 	knownBtns      map[activities.Button]sessionBtn
+	knwnBtns       []*repository.Button
 }
 
 type sessionBtn struct {
@@ -47,12 +53,14 @@ func (s sessionBtn) Position() (x int, y int) {
 }
 
 func NewArenaBot(b *bot.BasicBot, g *Game) *Daywalker {
+	btns := repository.GetButtons(b.Resolution.X, b.Resolution.Y)
 	return &Daywalker{
 		BasicBot: b,
 		Game:     g,
 		fprefix:  time.Now().Format("2006_01"),
 		cnt:      0, maxocrtry: 2,
 		knownBtns: make(map[activities.Button]sessionBtn, 0),
+		knwnBtns:  btns,
 	}
 }
 
@@ -64,7 +72,7 @@ func init() {
 }
 
 func (dw *Daywalker) String() string {
-	return c.F("Bot status:\n   Game: %v\n ActiveTask: %v", dw.Game, dw.ActiveTask)
+	return c.F("\nBot status:\n   Game: %v\n ActiveTask: %v\nDevice: %+v", dw.Game, dw.ActiveTask, dw.Device)
 }
 
 // ///////////////////////////////////////////////////////////
@@ -90,34 +98,58 @@ func availiableToday(days string) bool {
 // Press button, search for 'button's text in ocr results
 func (dw *Daywalker) Press(b activities.Button) bool {
 	// or := dw.ScanText()
-	log.Debugf("Known buttons: %+v", dw.knownBtns)
-	btn, ok := dw.knownBtns[b]
-	if ok {
-		dw.NotifyUI(c.Cyan("BTN PRSD"), c.Green(c.F("%v |> %vx%v", b.String(), btn.x, btn.y)))
-		dw.Tap(btn.x, btn.y, 1)
-		return true
+	// log.Debugf("Known buttons: %+v", dw.knownBtns)
+	// btn, ok := dw.knownBtns[b]
+	// if ok {
+	// 	dw.NotifyUI(c.Cyan("BTN PRSD"), c.Green(c.F("%v |> %vx%v", b.String(), btn.x, btn.y)))
+	// 	dw.Tap(btn.x, btn.y, 1)
+	// 	return true
+	// }
+	log.Debugf("Known buttons: %+v", dw.knwnBtns)
+	if len(dw.knwnBtns) > 0 {
+		butt, e := dw.button(b.String())
+		if e == nil {
+			dw.NotifyUI(c.Cyan("BTN PRSD"), c.Green(c.F("%v |> %vx%v", butt, butt.X, butt.Y)))
+			dw.Tap(butt.X, butt.Y, 1)
+			return true
+		}
 	}
-	x, y, e := LookForButton(dw.currentOcr, b)
+
+	res := dw.currentOcr.Result()
+Lookin:
+	x, y, e := LookForButton(res, b)
 	if e != nil {
-		return false
+		res = dw.currentOcr.TryAgain()
+		goto Lookin
 	}
-	dw.knownBtns[b] = sessionBtn{x: x, y: y}
+	// dw.knownBtns[b] = sessionBtn{x: x, y: y}
+	nb := repository.NewBtn(b.String(), "", x, y, dw.Resolution.X, dw.Resolution.Y)
+	dw.knwnBtns = append(dw.knwnBtns, nb)
 	dw.Press(b)
 	// Let location load
 	time.Sleep(3 * time.Second)
 	return true
 }
 
-func LookForButton(or *ocr.ImageProfile, b activities.Button) (x, y int, e error) {
-	log.Debugf(c.Red("Looking for BTN: %v"), b.String())
+func LookForButton(or []ocr.AlmoResult, b activities.Button) (x, y int, e error) {
+	log.Debugf(c.Red("Looking for BTN: %v"), b.String()) //, c.RFW(or))
 	if b.String() == "" {
 		return 500, 100, nil
 	}
-	for _, r := range or.Result() {
+	for _, r := range or {
 		if strings.Contains(r.Linechars, b.String()) {
 			xo, yo := b.Offset()
 			return r.X + xo, r.Y + yo, nil
 		}
 	}
 	return 0, 0, errors.New("btn not found here")
+}
+
+func (dw *Daywalker) button(s string) (*repository.Button, error) {
+	for _, b := range dw.knwnBtns {
+		if s == b.Name {
+			return b, nil
+		}
+	}
+	return &repository.Button{}, ErrUnknownButton
 }

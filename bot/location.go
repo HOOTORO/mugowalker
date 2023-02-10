@@ -18,7 +18,6 @@ type Location interface {
 }
 
 func GuessLocation(a *ocr.ImageProfile, locations []any) (locname string) {
-
 	maxh := 1
 	var resloc string
 	var candidates []string
@@ -35,7 +34,7 @@ func GuessLocation(a *ocr.ImageProfile, locations []any) (locname string) {
 	}
 	if maxh == 1 {
 		outFn(c.Mgt("GUESSHI |>"), c.Ylw(f("Bad recognition -> %v ", c.Red("retry"))))
-		a.Tesseract(0)
+		a.TryAgain()
 	}
 
 	log.Debug(c.Mgt("GUESSHI |> "), c.Ylw(f(" ↓ Location ↓ \n\t -->  Winner|> %v  Hits|> %v]\n\t --> candidates: %v", resloc, maxh, candidates)))

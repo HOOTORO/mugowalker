@@ -69,8 +69,8 @@ func init() {
 func RunMainMenu(c *cfg.Profile) error {
 	log.Debug("entered UI")
 	options := userSettings(c)
-	img := ocrSettings(c, ocr.Magick{})
-	tess := ocrSettings(c, ocr.Tesseract{})
+	img := ocrSettings(c, &ocr.Magick{})
+	tess := ocrSettings(c, &ocr.Tesseract{})
 	m := InitialMenuModel(tess, img, options)
 	m.menulist.Title = header
 	m.menulist.SetSize(110, 28)

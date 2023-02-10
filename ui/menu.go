@@ -4,6 +4,7 @@ import (
 	"time"
 
 	c "worker/cfg"
+	"worker/emulator"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -42,18 +43,18 @@ func availMenuItems() []list.Item {
 var (
 	toplevelmenu = []list.Item{
 		item{
-			title:    "My Device",
+			title:    "Device Setup",
 			desc:     "Setup platform where to run autotasks",
 			children: deviceSetup,
 		},
 
 		item{
-			title:    "My Settings",
+			title:    "App Settings",
 			desc:     "Imagick, Tesseract and other",
 			children: mySettings,
 		},
 		item{
-			title:    "My Tasks",
+			title:    "AFK Tasks",
 			desc:     "Push, Daily etc...",
 			children: myTasks,
 		},
@@ -163,6 +164,16 @@ var (
 			children: func(m menuModel) tea.Cmd {
 				return func() tea.Msg {
 					return runBluestacks(&m)
+				}
+			},
+		})
+		items = append(items, item{
+			title: "Launch Nox",
+			desc:  "With a given args",
+			children: func(m menuModel) tea.Cmd {
+				return func() tea.Msg {
+					emulator.Run(emulator.Nox, "com.lilithgames.hgame.gp.id")
+					return runNox(&m)
 				}
 			},
 		})
