@@ -5,20 +5,8 @@ import (
 	"worker/cfg"
 	"worker/ocr"
 
-	"github.com/sirupsen/logrus"
-
 	tea "github.com/charmbracelet/bubbletea"
 )
-
-// var red, green, cyan, yellow, mag func(...interface{}) string
-
-// func init() {
-// 	red = color.New(color.FgHiRed).SprintFunc()
-// 	green = color.New(color.FgHiGreen).SprintFunc()
-// 	cyan = color.New(color.FgHiCyan).SprintFunc()
-// 	yellow = color.New(color.FgHiYellow).SprintFunc()
-// 	mag = color.New(color.FgHiMagenta, color.BgHiWhite).SprintFunc()
-// }
 
 type AppUser struct {
 	Connection    string
@@ -60,8 +48,6 @@ const (
 	bluexe       = "HD-Player"
 )
 
-var log *logrus.Logger
-
 func init() {
 	log = cfg.Logger()
 }
@@ -71,15 +57,15 @@ func RunMainMenu(c *cfg.Profile) error {
 	options := userSettings(c)
 	img := ocrSettings(c, &ocr.Magick{})
 	tess := ocrSettings(c, &ocr.Tesseract{})
-	m := InitialMenuModel(tess, img, options)
-	m.menulist.Title = header
-	m.menulist.SetSize(110, 28)
-	m.menulist.SetShowHelp(true)
-	m.menulist.SetShowPagination(true)
-	m.menulist.SetShowTitle(true)
-	m.menulist.SetShowStatusBar(false)
-	m.menulist.Styles.Title = titleStl
-	m.menulist.Styles.TitleBar = titbarStl
+	m := initialMenuModel(tess, img, options)
+	m.list.Title = header
+	m.list.SetSize(110, 28)
+	m.list.SetShowHelp(true)
+	m.list.SetShowPagination(true)
+	m.list.SetShowTitle(true)
+	m.list.SetShowStatusBar(false)
+	m.list.Styles.Title = titleStl
+	m.list.Styles.TitleBar = titbarStl
 
 	log.Debugf("Run p, w/ param %s", m)
 	p := tea.NewProgram(m, tea.WithAltScreen())
@@ -91,8 +77,4 @@ func RunMainMenu(c *cfg.Profile) error {
 	}
 
 	return nil
-}
-
-func NotifyUI(task, desc string) {
-
 }

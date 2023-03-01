@@ -27,6 +27,25 @@ const (
 	// TessParams
 )
 
+var mainmenu = func() []list.Item {
+	var items []list.Item
+	items = append(items, item{title: "Device", child: devices})
+	items = append(items, item{title: "Settings", child: mySettings()})
+	items = append(items, item{title: "AFK tasks", child: devices})
+	return items
+}
+
+var connect = func(m appmenu) tea.Cmd {
+	return func() tea.Msg {
+		fields := make([]userField, 0)
+		fields = append(fields,
+			NewUserField("HOST", "127.0.0.1").WithPrompt(c.MgCy("|> ")).WithFocus(),
+			NewUserField("PORT", "5555").WithPrompt(c.MgCy("|> ")),
+		)
+		return initMultiModel(&m, fields)
+	}
+}
+
 func (o Option) String() string {
 	return options[o-1]
 }
@@ -35,189 +54,97 @@ func (o Option) Values() []string {
 	return options
 }
 
-func availMenuItems() []list.Item {
-	log.Debugf("Menu items: %v", toplevelmenu)
-	return toplevelmenu
-}
-
 var (
-	toplevelmenu = []list.Item{
-		item{
-			title:    "Device Setup",
-			desc:     "Setup platform where to run autotasks",
-			children: deviceSetup,
-		},
-
-		item{
-			title:    "App Settings",
-			desc:     "Imagick, Tesseract and other",
-			children: mySettings,
-		},
-		item{
-			title:    "AFK Tasks",
-			desc:     "Push, Daily etc...",
-			children: myTasks,
-		},
-	}
 	////////////////////////
 	/////afk tasks /////////
 	///////////////////////
-	myTasks = func(m menuModel) (out []list.Item) {
-		out = append(out, item{
-			title:    "Do daily?",
-			desc:     "Do quest till 100pts",
-			children: botask,
-		},
-			item{
-				title:    "Push Campain?",
-				desc:     "if you cant",
-				children: botask,
-			},
-			item{
-				title:    "Kings Tower",
-				desc:     "Not yours",
-				children: botask,
-			})
+	myTasks = func(m appmenu) (out []list.Item) {
+		// desc:       "Do quest till 100pts",
+		out = append(out, item{title: "Do daily?", child: botask},
+			// desc:       "if you cant",
+			item{title: "Push Campain?", child: botask},
+			// desc:       "Not yours",
+			item{title: "Kings Tower", child: botask})
 		out = append(out, availTowers()...)
 		return
 	}
 	towers = []list.Item{
-		item{
-			title:    "Towers of Light",
-			desc:     "LIGHTBEARERs home",
-			children: botask,
-		},
-		item{
-			title:    "Brutal Citadel",
-			desc:     "Maulers trainning center",
-			children: botask,
-		},
-		item{
-			title:    "World Tree",
-			desc:     "Wilders birthplace",
-			children: botask,
-		},
-		item{
-			title:    "Forsaken Necropolis",
-			desc:     "Dead man's belongs here",
-			children: botask,
-		},
-		item{
-			title:    "Infernal Fortress",
-			desc:     "Dead man's belongs here",
-			children: botask,
-		},
-		item{
-			title:    "Celestial Sanctum",
-			desc:     "Dead man's belongs here",
-			children: botask,
-		},
+		// desc:       "LIGHTBEARERs home",
+		item{title: "Towers of Light", child: botask},
+		// desc:       "Maulers trainning center",
+		item{title: "Brutal Citadel", child: botask},
+		// desc:       "Wilders birthplace",
+		item{title: "World Tree", child: botask},
+		// desc:       "Dead man's belongs here",
+		item{title: "Forsaken Necropolis", child: botask},
+		// desc:       "Dead man's belongs here",
+		item{title: "Infernal Fortress", child: botask},
+		// desc:       "Dead man's belongs here",
+		item{title: "Celestial Sanctum", child: botask},
 	}
 )
 
 // func
 var (
-	deviceSetup = func(m menuModel) []list.Item {
+	deviceSetup = func(s item) []list.Item {
 		var items []list.Item
-		items = append(items, item{
-			title:    "Availible devices",
-			desc:     "'adb devices -l'",
-			children: devices,
-		})
-		items = append(items, item{
-			title:    "Emulator",
-			desc:     "Setup bluestacks settings",
-			children: emulatorSettings,
-		})
-		items = append(items, item{
-			title:    "Start App",
-			desc:     c.F("Run app: %v", m.conf.userSettings.AndroidGameID),
-			children: runApp,
-		})
+		// desc:       "'adb devices -l'",
+		items = append(items, item{title: "Availible devices",
+			child: func(a appmenu) tea.Cmd { return func() tea.Msg { return devices(a) } }})
+		// desc:       "Setup bluestacks settings",
+		items = append(items, item{title: "Emulator",
+			child: func(a appmenu) tea.Cmd { return func() tea.Msg { return emulatorSettings(a) } }})
+		// desc:       c.F("Run app: %v", m.conf.userSettings.AndroidGameID),
+		items = append(items, item{title: "Start App", child: runApp})
 		return items
 	}
-	mySettings = func(m menuModel) (out []list.Item) {
-		out = append(out, item{
-			title:    "Log Level",
-			desc:     c.F("Current lvl |> %v", c.Cyan(log.GetLevel().String())),
-			children: loglevel,
-		})
-		out = append(out, item{
-			title:    "Tesseract",
-			desc:     "Parameters for OCR Engine",
-			children: tessArgs,
-		})
-		out = append(out, item{
-			title:    "Imagick",
-			desc:     "Optimizing image before OCR",
-			children: imagickArgs,
-		})
-		out = append(out, item{})
+	mySettings = func() (out []list.Item) {
+		// desc:       c.F("Current lvl |> %v", c.Cyan(log.GetLevel().String())),
+		// action: func(a appmenu) tea.Cmd { return func() tea.Msg { return loglevel } },
+		out = append(out, item{title: "Log Level", child: func(a appmenu) tea.Cmd { return func() tea.Msg { return setLoglevel } }})
+		// desc:       "Parameters for OCR Engine",
+		out = append(out, item{title: "Tesseract", child: func(a appmenu) tea.Cmd { return func() tea.Msg { return tessArgs(a) } }})
+		// desc:   "Optimizing image before OCR",
+		out = append(out, item{title: "Imagick", child: func(a appmenu) tea.Cmd { return func() tea.Msg { return imagickArgs(a) } }})
 		return
 	}
 
-	emulatorSettings = func(m menuModel) []list.Item {
+	emulatorSettings = func(m appmenu) []list.Item {
 		var items []list.Item
-		items = append(items, item{
-			title: "Launch Bluestacks",
-			desc:  "With a given args",
-			children: func(m menuModel) tea.Cmd {
-				return func() tea.Msg {
-					return runBluestacks(&m)
-				}
-			},
+		// desc:  "With a given args",
+		items = append(items, item{title: "Launch Bluestacks", child: func(m appmenu) tea.Cmd { return func() tea.Msg { return runBluestacks(&m) } }})
+		// desc:  "With a given args",
+		items = append(items, item{title: "Launch Nox", child: func(m appmenu) tea.Cmd {
+			return func() tea.Msg {
+				emulator.Run(emulator.Nox, "com.lilithgames.hgame.gp.id")
+				return runNox(&m)
+			}
+		},
 		})
-		items = append(items, item{
-			title: "Launch Nox",
-			desc:  "With a given args",
-			children: func(m menuModel) tea.Cmd {
-				return func() tea.Msg {
-					emulator.Run(emulator.Nox, "com.lilithgames.hgame.gp.id")
-					return runNox(&m)
-				}
-			},
-		})
-		items = append(items, item{
-			title:    "Change arguments",
-			desc:     "VM name, Launch Application",
-			children: blueArgs,
-		})
+		// desc:   "VM name, Launch Application",
+		items = append(items, item{title: "Change arguments", child: func(a appmenu) tea.Cmd { return func() tea.Msg { return blueArgs(a) } }})
 		return items
 	}
-	runApp = func(m menuModel) tea.Cmd {
+	runApp = func(m appmenu) tea.Cmd {
 		return func() tea.Msg {
 			return runAfk(&m)
 		}
 	}
-	devices = func(m menuModel) []list.Item {
+	devices = func(m appmenu) []list.Item {
 		var items []list.Item
 		items = append(items, avalibleConnections(&m)...)
-		items = append(items, item{
-			title: "ADB Connect",
-			desc:  "Connect via TCP/IP to emulator or remote device",
-			children: func(m menuModel) tea.Cmd {
-				return func() tea.Msg {
-					fields := make([]inputField, 0)
-					fields = append(fields,
-						inputField{fieldname: "HOST", placeholder: "127.0.0.1", promt: "", charlim: 20, width: 30, focus: true},
-						inputField{fieldname: "PORT", placeholder: "5555", promt: "", charlim: 5, width: 5, focus: false},
-					)
-					return initMultiModel(&m, fields)
-					// return initialMIModel(&m)
-				}
-			},
-		})
+
 		return items
 	}
 
-	loglevel = func(m menuModel) []list.Item {
+	loglevel = func(m item) []list.Item {
 		var items []list.Item
 		current := log.GetLevel()
 		all := logrus.AllLevels
 
 		for _, lvl := range all {
 			if lvl != current {
-				items = append(items, item{title: lvl.String(), children: func(m menuModel) tea.Cmd {
+				items = append(items, item{title: lvl.String(), child: func(m appmenu) tea.Cmd {
 					return func() tea.Msg {
 						return setLoglevel(m.choice)
 					}
@@ -226,7 +153,7 @@ var (
 			} else {
 				items = append(items, item{
 					title: lvl.String(),
-					desc:  " ↑ Current level ",
+					// desc:  " ↑ Current level ",
 				})
 			}
 		}
@@ -236,7 +163,7 @@ var (
 
 // Settings inputs
 var (
-	imagickArgs = func(m menuModel) (out []textinput.Model) {
+	imagickArgs = func(m appmenu) (out []textinput.Model) {
 		var pairs []string
 		for k, v := range m.conf.magic {
 			pairs = append(pairs, k, v)
@@ -244,7 +171,7 @@ var (
 		out = inputModels(m.cursorMode, pairs...)
 		return
 	}
-	tessArgs = func(m menuModel) (out []textinput.Model) {
+	tessArgs = func(m appmenu) (out []textinput.Model) {
 		var pairs []string
 		for k, v := range m.conf.ocr {
 			pairs = append(pairs, k, v)
@@ -252,11 +179,11 @@ var (
 		out = inputModels(m.cursorMode, pairs...)
 		return
 	}
-	settings = func(m menuModel) []textinput.Model {
+	settings = func(m appmenu) []textinput.Model {
 		return inputModels(m.cursorMode, AccountName.String(), m.conf.userSettings.Account)
 	}
 
-	blueArgs = func(m menuModel) []textinput.Model {
+	blueArgs = func(m appmenu) []textinput.Model {
 		return inputModels(m.cursorMode, VmName.String(), m.conf.userSettings.VMName, AppId.String(), m.conf.userSettings.AndroidGameID)
 	}
 )
@@ -281,7 +208,7 @@ func inputModels(cursorMode textinput.CursorMode, fields ...string) []textinput.
 
 var (
 	// helper func
-	botask = func(m menuModel) tea.Cmd {
+	botask = func(m appmenu) tea.Cmd {
 		return func() tea.Msg {
 			return runBotTask(&m)
 		}

@@ -21,8 +21,8 @@ var (
 // ////////////////////
 // /// Menu view /////
 // //////////////////
-func listView(m menuModel) string {
-	return menulistStl.Render(m.menulist.View())
+func listView(m appmenu) string {
+	return menulistStl.Render(m.list.View())
 }
 
 // func nlistView(m menuModel) string {
@@ -32,7 +32,7 @@ func listView(m menuModel) string {
 // /////////////////////////////////
 // /////// VIEW Input /////////////
 // ///////////////////////////////
-func inputFormView(m menuModel) string {
+func inputFormView(m appmenu) string {
 	var b strings.Builder
 
 	for i := range m.manyInputs {
@@ -62,14 +62,14 @@ func inputFormView(m menuModel) string {
 // /////////////////////
 // // ui elements /////
 // ///////////////////
-func (m *menuModel) statuStr() string {
+func (m *appmenu) statuStr() string {
 
 	// con, emu = c.Red("Offline"), c.Red("Shutdown")
 
 	return statusStl.Render(m.IsAdbAvailible())
 }
 
-func (m *menuModel) runningTasksPanel() string {
+func (m *appmenu) runningTasksPanel() string {
 	log.Tracef("Upd status spanel....%v:%v", m.state.adbconn, m.state.vmPid)
 	// var s, rt string
 	s := m.statuStr()
@@ -89,7 +89,7 @@ func (m *menuModel) runningTasksPanel() string {
 	return lipgloss.JoinVertical(lipgloss.Top, s, rt)
 }
 
-func (m *menuModel) runninVMs() string {
+func (m *appmenu) runninVMs() string {
 	if rf < refresh {
 		return emuStatus.Render(vmstatus)
 	}
@@ -112,7 +112,7 @@ func (m *menuModel) runninVMs() string {
 	return emuStatus.Render(r)
 }
 
-func (m *menuModel) IsAdbAvailible() string {
+func (m *appmenu) IsAdbAvailible() string {
 	r := c.F("User		|> %v <|\n", c.Cyan(m.conf.userSettings.Account))
 
 	connectionstatus := c.Red("Disconnected")

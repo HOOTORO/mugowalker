@@ -46,6 +46,7 @@ var (
 	Mgt    = color.New(color.FgHiMagenta).SprintFunc()
 	TTrack = color.New(color.BgHiBlue, color.FgCyan, color.Underline, color.Bold).SprintfFunc()
 	RFW    = color.New(color.FgHiRed, color.BgWhite).SprintFunc()
+	MgCy   = color.New(color.FgHiMagenta, color.BgCyan).SprintFunc()
 )
 
 var (

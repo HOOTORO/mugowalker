@@ -1,3 +1,7 @@
+/*
+Package ui
+User Interface
+*/
 package ui
 
 import (
@@ -13,6 +17,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var log = c.Logger()
+
 var (
 	// ErrNoAdb cant reach device via adb
 	ErrNoAdb = errors.New("no ADB, setup Device")
@@ -27,13 +33,14 @@ const (
 	inputView
 )
 
-type menuModel struct {
+// Main appmenu
+type appmenu struct {
 	state *state
 	conf  *config
 
 	showmore bool
 
-	menulist    list.Model
+	list        list.Model
 	parents     []list.Model
 	choice      string
 	inputChosen bool
@@ -42,12 +49,12 @@ type menuModel struct {
 	manyInputs []textinput.Model
 	cursorMode textinput.CursorMode
 
-	cnct multiIputModel
+	input inputDialog
 
 	winx, winy int
 }
 
-func (m menuModel) String() string {
+func (m appmenu) String() string {
 	log.Tracef("[ options ]\n[ %v ]\n[ from yaml ]", m.conf.userSettings)
 	return c.F(c.Green("\n"+
 		"\t|> [DevStatus : %v]\t\t [Choice : %v]\n"+
@@ -56,13 +63,12 @@ func (m menuModel) String() string {
 		"\t|> userSettings --> %+v\n"+
 		"\t|> Magick --> %+v\n"+
 		"\t|> Tess -> %v\n"+
-		"\t|> ManyInput -> %v"),
-		m.state.adbconn, m.choice, m.inputChosen, m.state.vmPid, m.conf.userSettings, m.conf.magic, m.conf.ocr, len(m.manyInputs))
+		"\t|> List -> %v"),
+		m.state.adbconn, m.choice, m.inputChosen, m.state.vmPid, m.conf.userSettings, m.conf.magic, m.conf.ocr, m.list)
 }
 
 // UserOutput to running tasks panel
-func (m menuModel) UserOutput(task, info string) {
-
+func (m appmenu) UserOutput(task, info string) {
 	m.state.taskch <- notify(c.F("%v", task), info)
 }
 
@@ -86,12 +92,11 @@ type config struct {
 // /////// General //////////
 // init / update / view ///
 // ////////////////////////
-func (m menuModel) Init() tea.Cmd {
+func (m appmenu) Init() tea.Cmd {
 	log.Warnf(c.Red("\nInit model: %+v \n"), m)
 	return tea.Batch(
 		// textinput.Blink,
 		// spinner.Tick,
-		// checkVM,
 		connectDevice(m),
 		initAfk(&m),
 		activityListener(m.state.taskch), // wait for activity
@@ -99,12 +104,14 @@ func (m menuModel) Init() tea.Cmd {
 }
 
 // ////////////////////////
-func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m appmenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	log.Debugf(c.Mgt("(UPD) MSG INC. -> %+v [%T]"), msg, msg)
 	switch k := msg.(type) {
 	case tea.KeyMsg:
-		// always exit keysl
+		// return KeyPressed(k.String(), msg, m)
+		// KeyPressed(k.String(), msg, m)
+		var cmd tea.Cmd
 		if k.String() == "ctrl+c" {
 			return m, tea.Quit
 		}
@@ -117,29 +124,29 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			var cmd tea.Cmd
 			m.UserOutput(c.F("%vx%v", m.winx, m.winy), " <| MenuList Size")
 			m.winy++
-			m.menulist.SetSize(m.winx, m.winy)
+			m.list.SetSize(m.winx, m.winy)
 			return m, cmd
 		}
 		if k.String() == "ctrl+down" {
 			var cmd tea.Cmd
 			m.UserOutput(c.F("%vx%v", m.winx, m.winy), " <| MenuList Size")
 			m.winy--
-			m.menulist.SetSize(m.winx, m.winy)
+			m.list.SetSize(m.winx, m.winy)
 			return m, cmd
 		}
 		if k.String() == "ctrl+left" {
 			var cmd tea.Cmd
 			m.UserOutput(c.F("%vx%v", m.winx, m.winy), " <| MenuList Size")
 			m.winx--
-			m.menulist.SetSize(m.winx, m.winy)
+			m.list.SetSize(m.winx, m.winy)
 
 			return m, cmd
 		}
 		if k.String() == "ctrl+right" {
-			var cmd tea.Cmd
+
 			m.UserOutput(c.F("%vx%v", m.winx, m.winy), " <| MenuList Size")
 			m.winx++
-			m.menulist.SetSize(m.winx, m.winy)
+			m.list.SetSize(m.winx, m.winy)
 			return m, cmd
 		}
 
@@ -164,16 +171,16 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case loglevelMsg:
 		m.conf.userSettings.Loglvl = log.GetLevel().String()
-		m.menulist.Title += c.F("\nShow output level |> %v", c.Cyan(log.GetLevel().String()))
+		m.list.Title += c.F("\nShow output level |> %v", c.Cyan(log.GetLevel().String()))
 		m.MenuEntry(msg)
 		m.UserOutput("LOG", c.F("LVL UPDATED to -> %v", logrus.Level(k)))
 
 		return m, cmd
 
-	case multiIputModel:
+	case inputDialog:
 		m.state.view = inputView
-		m.cnct = k
-		return m.cnct.Update(msg)
+		m.input = k
+		return m.input.Update(msg)
 
 	case appOnlineMsg:
 		m.state.gameStatus = int(k)
@@ -181,14 +188,13 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case prevousMenuMsg:
-		if k >= 0 {
-			prevous := m.parents[int(k)].Items()
-			m.menulist.SetItems(prevous)
-			m.menulist.ResetSelected()
-			m.parents = m.parents[:k]
-
-		}
+		prevous := m.parents[int(k)].Items()
+		m.list.SetItems(prevous)
+		m.list.ResetSelected()
+		m.parents = m.parents[:k]
 		return m, cmd
+	case func(appmenu) tea.Msg:
+		return m.Update(k(m))
 	}
 
 	log.Debugf(c.Ylw("↓ VIEW INC ↓ \n%v"), m)
@@ -201,7 +207,7 @@ func (m menuModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 ///////////////////////////////////
 
-func (m menuModel) View() string {
+func (m appmenu) View() string {
 	var srt, res string
 	if m.inputChosen {
 		m.showmore = false
@@ -218,6 +224,16 @@ func (m menuModel) View() string {
 	return lipgloss.JoinVertical(lipgloss.Center, m.runninVMs(), res)
 	// return res
 }
+
+// func (m model) View() string {
+// 	if m.choice != "" {
+// 		return quitTextStyle.Render(fmt.Sprintf("%s? Sounds good to me.", m.choice))
+// 	}
+// 	if m.quitting {
+// 		return quitTextStyle.Render("Not hungry? That’s cool.")
+// 	}
+// 	return "\n" + m.list.View()
+// }
 
 //////////////////////////////////
 
@@ -243,45 +259,45 @@ func initTextModel(ci textinput.CursorMode, placeholder string, focus bool, prom
 }
 
 type item struct {
-	title, desc string
-	children    interface{}
+	title string
+	child interface{}
 }
 
 func (i item) Title() string       { return i.title }
-func (i item) Description() string { return i.String() }
+func (i item) Description() string { return "" }
 func (i item) FilterValue() string { return i.title }
 
-func (i item) String() string {
-	elems := i.desc
-	switch children := i.children.(type) {
-	case []list.Item:
-		for _, v := range children {
-			elems += "<" + v.FilterValue() + sep
-		}
-		if elems == "" {
-			return i.desc
-		}
-		return elems
-	case textinput.Model:
-		return children.Placeholder
+// func (i item) String() string {
+// 	elems := i.desc
+// 	switch children := i.children.(type) {
+// 	case []list.Item:
+// 		for _, v := range children {
+// 			elems += "<" + v.FilterValue() + sep
+// 		}
+// 		if elems == "" {
+// 			return i.desc
+// 		}
+// 		return elems
+// 	case textinput.Model:
+// 		return children.Placeholder
 
-	default:
-		return elems
-	}
-}
+// 	default:
+// 		return elems
+// 	}
+// }
 
-func (i item) NextLevel(m menuModel) []list.Item {
-	switch c := i.children.(type) {
+func (i item) Sub(m appmenu) []list.Item {
+	switch c := i.child.(type) {
 	case []list.Item:
 		return c
-	case func(m menuModel) []list.Item:
+	case func(m appmenu) []list.Item:
 		return c(m)
 
 	}
 	return nil
 }
 
-func InitialMenuModel(tess, magick map[string]string, options *AppUser) menuModel {
+func initialMenuModel(tess, magick map[string]string, options *AppUser) appmenu {
 	const showLastTasks, x, y = 7, 100, 20
 
 	sessionConf := &config{
@@ -303,8 +319,12 @@ func InitialMenuModel(tess, magick map[string]string, options *AppUser) menuMode
 	state.spinme.Spinner = spinner.Moon
 	state.spinme.Style = spinnerStyle
 
-	m := menuModel{
-		menulist:   list.New(availMenuItems(), list.NewDefaultDelegate(), x/2, y),
+	delegate := list.NewDefaultDelegate()
+	l := list.New(mainmenu(), delegate, x/2, y)
+	log.Debugf("ENTRY LIST --> %v", c.MgCy(l))
+
+	m := appmenu{
+		list:       l, //list.New(availMenuItems(), delegate, x/2, y),
 		parents:    nil,
 		choice:     "",
 		manyInputs: make([]textinput.Model, 0),
@@ -318,6 +338,7 @@ func InitialMenuModel(tess, magick map[string]string, options *AppUser) menuMode
 		winx: x,
 		winy: y,
 	}
+
 	return m
 }
 
@@ -325,9 +346,18 @@ func notify(ev, desc string) taskinfo {
 	return taskinfo{Task: ev, Message: desc}
 }
 
-func (m *menuModel) MenuEntry(msg tea.Msg) {
-	m.menulist.SetItems(toplevelmenu)
+func (m *appmenu) MenuEntry(msg tea.Msg) {
+	m.list.SetItems(mainmenu())
 	m.parents = m.parents[:0]
-	m.menulist.ResetSelected()
-	m.menulist.Update(msg)
+	m.list.ResetSelected()
+	m.list.Update(msg)
+}
+
+func (m *appmenu) NewList(msg tea.Msg, items []list.Item) {
+	m.parents = append(m.parents, m.list)
+	m.list.SetItems(items)
+	m.list.ResetSelected()
+
+	m.list.Update(msg)
+
 }

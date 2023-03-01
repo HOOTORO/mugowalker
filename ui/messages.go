@@ -16,11 +16,13 @@ type errMsg struct{ err error }
 func (e errMsg) Error() string { return e.err.Error() }
 
 type (
-	vmStatusMsg    int
-	connectionMsg  int
-	loglevelMsg    int
-	prevousMenuMsg int
-	appOnlineMsg   int
+	vmStatusMsg    uint
+	connectionMsg  uint
+	loglevelMsg    uint
+	prevousMenuMsg uint
+	nextMenuMsg    uint
+	appOnlineMsg   uint
+	chosenSection  string
 )
 
 func checkVM() tea.Msg {
@@ -37,14 +39,16 @@ func checkVM() tea.Msg {
 	}
 }
 
-func prevousMenu(m menuModel) tea.Cmd {
+func prevousMenu(m appmenu) tea.Cmd {
 	prevousState := len(m.parents) - 1
 	return func() tea.Msg {
 		return prevousMenuMsg(prevousState)
 	}
 }
 
-func runAfk(m *menuModel) tea.Msg {
+// func nextMenu()
+
+func runAfk(m *appmenu) tea.Msg {
 	if m.state.adbconn > 0 {
 		if runner.IsAppRunnin(m.conf.userSettings.AndroidGameID) > 0 {
 			return appOnlineMsg(1)
@@ -53,11 +57,11 @@ func runAfk(m *menuModel) tea.Msg {
 			return appOnlineMsg(1)
 		}
 	} else {
-		return errMsg{err: errors.New("Device offline")}
+		return errMsg{err: errors.New("device offline")}
 	}
 }
 
-func initAfk(m *menuModel) tea.Cmd {
+func initAfk(m *appmenu) tea.Cmd {
 	return func() tea.Msg {
 		log.Debugf("INIT AFK MAFAKA : %+v", c.Cyan(m))
 		if m.state.adbconn > 0 {
@@ -72,6 +76,13 @@ func initAfk(m *menuModel) tea.Cmd {
 	}
 }
 
+func userChoice(m *appmenu) tea.Cmd {
+	return func() tea.Msg {
+		log.Debugf("на правах рекламы", c.Cyan(m))
+		return chosenSection(m.choice)
+	}
+}
+
 func adbConnect(serial string) tea.Msg {
 	dev, e := a.Connect(serial)
 	if e != nil {
@@ -82,7 +93,7 @@ func adbConnect(serial string) tea.Msg {
 	return connectionMsg(dev.DevState)
 }
 
-func connectDevice(m menuModel) tea.Cmd {
+func connectDevice(m appmenu) tea.Cmd {
 	runner = bot.New(m.UserOutput)
 	d := runner.DiscoverDevices()
 	dev := &a.Device{DevState: 0}
@@ -126,6 +137,12 @@ type taskinfo struct {
 func activityListener(strch chan taskinfo) tea.Cmd {
 	return func() tea.Msg {
 		return taskinfo(<-strch)
+	}
+}
+
+func listenTaskState(taskstate <-chan int) tea.Cmd {
+	return func() tea.Msg {
+		return uint(<-taskstate)
 	}
 }
 

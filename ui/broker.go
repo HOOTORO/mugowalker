@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"os"
 
 	"worker/afk"
@@ -28,15 +27,15 @@ func userSettings(c *c.Profile) *AppUser {
 	}
 }
 
-func avalibleConnections(m *menuModel) []list.Item {
+func avalibleConnections(m *appmenu) []list.Item {
 	var menuItems []list.Item
 
 	runner = bot.New(m.UserOutput)
 	d := runner.DiscoverDevices()
 
 	for _, v := range d {
-		descu := fmt.Sprintf("State: %s, T_Id: %v, WMsize: %v", v.DevState, v.TransportId, v.Resolution)
-		menuItems = append(menuItems, item{title: v.Serial, desc: descu, children: func(m menuModel) tea.Cmd {
+		// descu := fmt.Sprintf("State: %s, T_Id: %v, WMsize: %v", v.DevState, v.TransportId, v.Resolution)
+		menuItems = append(menuItems, item{title: v.Serial, child: func(m appmenu) tea.Cmd {
 			return func() tea.Msg {
 				m.conf.userSettings.Connection = v.Serial
 				runner.Connect(v)
@@ -47,8 +46,8 @@ func avalibleConnections(m *menuModel) []list.Item {
 	return menuItems
 }
 
-func runBotTask(m *menuModel) bool {
-	m.menulist.Styles.HelpStyle = noStyle
+func runBotTask(m *appmenu) bool {
+	m.list.Styles.HelpStyle = noStyle
 	m.state.spinme.Style = noStyle
 	s := m.state
 	switch {
@@ -70,7 +69,7 @@ func runBotTask(m *menuModel) bool {
 	return true
 }
 
-func runBluestacks(m *menuModel) bool {
+func runBluestacks(m *appmenu) bool {
 	// pid, e := c.StartProc(bluestacksexe, strings.Fields(m.opts[bluestacks])...)
 	cmd := c.RunProc(bluexe, c.ActiveUser().Bluestacks.Args()...)
 
@@ -88,7 +87,7 @@ func runBluestacks(m *menuModel) bool {
 	}()
 	return checkEmulator(m)
 }
-func runNox(m *menuModel) bool {
+func runNox(m *appmenu) bool {
 	// pid, e := c.StartProc(bluestacksexe, strings.Fields(m.opts[bluestacks])...)
 	cmd := c.RunProc(emulator.Nox.String(), emulator.Nox.Values()...)
 
@@ -155,7 +154,7 @@ func updateDto(v map[Option]string) {
 	c.Save(c.UserFile(o.User.Account+".yaml"), o)
 }
 
-func checkEmulator(m *menuModel) bool {
+func checkEmulator(m *appmenu) bool {
 	if m.state.vmPid != 0 {
 
 		return c.IsProcess(m.state.vmPid)

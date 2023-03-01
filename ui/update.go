@@ -1,17 +1,65 @@
 package ui
 
 import (
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
+	c "worker/cfg"
 
 	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
 )
+
+// Handle control keys first
+func KeyPressed(keys string, msg tea.Msg, m appmenu) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	if keys == "ctrl+c" {
+		return m, tea.Quit
+	}
+
+	if keys == "alt+s" {
+		m.showmore = !m.showmore
+	}
+
+	if keys == "ctrl+up" {
+		var cmd tea.Cmd
+		m.UserOutput(c.F("%vx%v", m.winx, m.winy), " <| MenuList Size")
+		m.winy++
+		m.list.SetSize(m.winx, m.winy)
+		return m, cmd
+	}
+	if keys == "ctrl+down" {
+		var cmd tea.Cmd
+		m.UserOutput(c.F("%vx%v", m.winx, m.winy), " <| MenuList Size")
+		m.winy--
+		m.list.SetSize(m.winx, m.winy)
+		return m, cmd
+	}
+	if keys == "ctrl+left" {
+		var cmd tea.Cmd
+		m.UserOutput(c.F("%vx%v", m.winx, m.winy), " <| MenuList Size")
+		m.winx--
+		m.list.SetSize(m.winx, m.winy)
+
+		return m, cmd
+	}
+	if keys == "ctrl+right" {
+
+		m.UserOutput(c.F("%vx%v", m.winx, m.winy), " <| MenuList Size")
+		m.winx++
+		m.list.SetSize(m.winx, m.winy)
+		return m, cmd
+	}
+	return m, cmd
+}
+
+// TODO:
+// Handle program messages
+//func
 
 /////////////////////////////
 //// UPD. SelectList ///////
 ///////////////////////////
 
-func updateMenu(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
+func updateMenu(msg tea.Msg, m appmenu) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 
@@ -23,45 +71,52 @@ func updateMenu(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 
 		case "enter", " ":
 			log.Debugf("We enter")
-			if itm, ok := m.menulist.SelectedItem().(item); ok {
+			if itm, ok := m.list.SelectedItem().(item); ok {
 
 				m.choice = itm.FilterValue()
-
-				log.Debugf("NEXT CHILDREN -> %v", itm.children)
-				switch chld := itm.children.(type) {
-				// go deeper in menu
-				case []list.Item, func(m menuModel) []list.Item:
-					m.parents = append(m.parents, m.menulist)
-					m.menulist.SetItems(itm.NextLevel(m))
-					m.menulist.ResetSelected()
-
-				// Input
-				case func(m menuModel) []textinput.Model:
-					m.inputChosen = true
-					m.focusIndex = -1
-					m.manyInputs = chld(m)
-					return updateInput(msg, m)
-
-				// Run something go to updateExec
-				case func(m menuModel) tea.Cmd:
-					m.state.taskch <- notify(itm.title, "Launched!")
-					cmd = chld(m)
-					// m.focusIndex = 1
-					m.menulist.Update(msg)
-					return m, cmd
-
-				// Alternative input
-				case func() multiIputModel:
-					m.state.view = inputView
-					m.cnct = chld()
-					m.cnct.Update(msg)
-					return m.cnct, cmd
+				switch child := itm.child.(type) {
+				case []list.Item:
+					m.parents = append(m.parents, m.list)
+					m.list.SetItems(child)
+					m.list.ResetSelected()
 				}
+				log.Debugf("NEXT CHILDREN -> %v, %v", itm.child, m.choice)
+				return m, cmd
+				// switch chld := itm.action; {
+				// // go deeper in menu
+				// case []list.Item, func(m appmenu) []list.Item:
+				// 	m.parents = append(m.parents, m.list)
+				// 	m.list.SetItems(itm.NextLevel(m))
+				// 	m.list.ResetSelected()
+
+				// // Input
+				// case func(m appmenu) []textinput.Model:
+				// 	m.inputChosen = true
+				// 	m.focusIndex = -1
+				// 	m.manyInputs = chld(m)
+				// 	return updateInput(msg, m)
+
+				// // Run something go to updateExec
+				// case func(m appmenu) tea.Cmd:
+				// 	m.state.taskch <- notify(itm.title, "Launched!")
+				// 	cmd = chld(m)
+				// 	// m.focusIndex = 1
+				// 	m.list.Update(msg)
+				// 	return m, cmd
+
+				// // Alternative input
+				// case func() inputModel:
+				// 	m.state.view = inputView
+				// 	m.input = chld()
+				// 	m.input.Update(msg)
+				// 	return m.input, cmd
+				// }
 			}
 
 		case "backspace":
 			// go up to top using chain parents
-			return m, prevousMenu(m)
+			m.MenuEntry(msg)
+			return m, cmd
 		}
 		//log.Debugf(c.Red("FOCUS # %v"), m.menulist.SelectedItem().FilterValue())
 		// May be... some day
@@ -70,7 +125,7 @@ func updateMenu(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 		// m.statusInfo =
 	}
 
-	m.menulist, cmd = m.menulist.Update(msg)
+	m.list, cmd = m.list.Update(msg)
 	return m, cmd
 }
 
@@ -78,7 +133,7 @@ func updateMenu(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 // ///// UPD. Input ////////////
 // ////////////////////////////
 // / UPD Multiline input /////
-func updateInput(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
+func updateInput(msg tea.Msg, m appmenu) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -148,7 +203,7 @@ func updateInput(msg tea.Msg, m menuModel) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m menuModel) updatemanyInputs(msg tea.Msg) tea.Cmd {
+func (m appmenu) updatemanyInputs(msg tea.Msg) tea.Cmd {
 	cmds := make([]tea.Cmd, len(m.manyInputs))
 
 	// Only text manyInputs with Focus() set will respond, so it's safe to simply
