@@ -3,9 +3,11 @@ package cfg
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -64,8 +66,8 @@ func init() {
 		sysvars.Logfile = f.Name()
 		log.SetOutput(f)
 	}
-
 	activeUser = LastLoaded()
+	log.Infof("Last Loaded -> %v", activeUser)
 
 	ll, e := logrus.ParseLevel(activeUser.Loglevel)
 	// log.SetReportCaller(true)
@@ -126,12 +128,14 @@ func ActiveUser() *Profile {
 // LastLoaded <userconf>.yaml
 func LastLoaded() *Profile {
 	conf := &Profile{}
-	lastcfg := mostRecentModifiedYAML(sysvars.Userhome, sysvars.Db)
+	lastcfg := mostRecentModifiedYAML(sysvars.App, sysvars.Db)
 	if lastcfg != "" {
 		e := Parse(lastcfg, conf)
 		if e != nil {
 			log.Errorf("Err: %v", e)
 		}
+	} else {
+		conf = userTemplate
 	}
 	return conf
 }
@@ -175,7 +179,7 @@ func TempFile(f string) string {
 
 // UserFile from $env:USERPROFILE
 func UserFile(f string) string {
-	return absJoin(sysvars.Userhome, f)
+	return absJoin(sysvars.App, f)
 }
 
 // LookupPath for exe s
@@ -203,7 +207,7 @@ func ToInt(s string) int {
 func loadSysconf() (sys *SystemVars, e error) {
 	sys = &SystemVars{}
 
-	sys.Db, sys.Userhome, sys.App, sys.Temp, e = createDirStructure()
+	sys.Db, sys.App, sys.Temp, e = createDirStructure()
 	if e != nil {
 		log.Errorf("Create app folders mailfunc: %v", e)
 	}
@@ -229,33 +233,38 @@ func defaultUser() *Profile {
 	return settings
 }
 
-func createDirStructure() (dbfolder, userfolder, appdata, tempfolder string, e error) {
-	dbfolder = makeEnvDir(appdataEnv, programRootDir)
-	userfolder = makeEnvDir(userhome, programRootDir)
-	appdata = makeEnvDir(programData, programRootDir)
-	tempfolder = makeEnvDir(temp, programRootDir)
+func createDirStructure() (dbf, appf, tempf string, e error) {
 
-	// Saturday cleaning
+	var home string
+	var m fs.FileMode
 
-	if dbfolder == "" || userfolder == "" || tempfolder == "" || appdata == "" {
-		e = ErrWorkDirFail
+	switch runtime.GOOS {
+	case "darwin":
+		if home = safeEnv(macEnv); home != "" {
+			m = os.ModePerm
+		}
+	case "windows":
+		if home = safeEnv(userhome); home != "" {
+			m = os.ModeDir
+
+		}
 	}
 
-	log.Infof("\ninit: success; dirs created: \n%v\n%v\n%v\n%v", dbfolder, userfolder, tempfolder, appdata)
+	appf, dbf, tempf = userFolders(home)
+	et := os.MkdirAll(tempf, m)
+	ed := os.MkdirAll(dbf, m)
+	if et != nil || ed != nil {
+		e = ErrWorkDirFail
+	}
+	log.Infof("\ninit err: %v; dirs created: \n\tappf\t -> %v\n\ttemp\t -> %v\n\tdb\t -> %v", e, appf, tempf, dbf)
 	return
 }
 
-func makeEnvDir(env, dir string) string {
-	envpath := safeEnv(env)
-	patyh := filepath.Join(envpath, dir)
-	if env == temp {
-		truncateDir(patyh)
-	}
-	e := os.MkdirAll(patyh, os.ModeDir)
-	if e != nil {
-		log.Errorf("make dir mailfunc: %v", e)
-	}
-	return patyh
+func userFolders(usrhome string) (app, db, temp string) {
+	app = filepath.Join(usrhome, programRootDir)
+	db = filepath.Join(app, dbfolder)
+	temp = filepath.Join(app, tempfolder)
+	return
 }
 
 func truncateDir(d string) {

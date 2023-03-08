@@ -169,6 +169,10 @@ func (m appmenu) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.MenuEntry(msg)
 		return m, cmd
 
+	case userInit:
+		m.state.view = inputView
+		return m.input.Update(userDataInput(m))
+
 	case loglevelMsg:
 		m.conf.userSettings.Loglvl = log.GetLevel().String()
 		m.list.Title += c.F("\nShow output level |> %v", c.Cyan(log.GetLevel().String()))

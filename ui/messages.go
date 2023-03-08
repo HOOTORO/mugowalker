@@ -16,6 +16,7 @@ type errMsg struct{ err error }
 func (e errMsg) Error() string { return e.err.Error() }
 
 type (
+	userInit       uint
 	vmStatusMsg    uint
 	connectionMsg  uint
 	loglevelMsg    uint
@@ -73,6 +74,17 @@ func initAfk(m *appmenu) tea.Cmd {
 			}
 		}
 		return appOnlineMsg(0)
+	}
+}
+
+func initUser(m *appmenu) tea.Cmd {
+	// return userDataInput(*m)
+	return func() tea.Msg {
+		log.Debugf("INIT User : %+v", c.Cyan(m))
+		if m.conf.userSettings.Account == "" {
+			return userInit(0)
+		}
+		return userInit(1)
 	}
 }
 

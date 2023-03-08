@@ -42,9 +42,9 @@ type CmdArgs struct {
 }
 
 type SystemVars struct {
-	Logfile                 string `yaml:"logfile"`
-	UserConfPath            string
-	App, Userhome, Temp, Db string
+	Logfile       string `yaml:"logfile"`
+	UserConfPath  string
+	App, Temp, Db string
 }
 
 func (ac *Profile) String() string {

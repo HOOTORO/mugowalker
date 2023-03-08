@@ -1,6 +1,6 @@
 package cfg
 
-// required sys envs
+// required win sys envs
 const (
 	appdataEnv  = "APPDATA"
 	programData = "ProgramData"
@@ -9,13 +9,19 @@ const (
 )
 
 const (
+	macEnv = "HOME"
+)
+
+const (
 	programRootDir = ".afkworker"
+	dbfolder       = "db"
+	tempfolder     = "temp"
 	logfile        = "app.log"
 )
 
-/////////////////////////////
+// ///////////////////////////
 // Global afk activities ///
-///////////////////////////
+// /////////////////////////
 type Mission int
 
 const (
@@ -35,9 +41,9 @@ var (
 	userTemplate = &Profile{
 		DeviceSerial: "",
 		User: &User{
-			Account:     "",
-			Game:        "",
-			TaskConfigs: []string{"cfg/reactions.yaml", "cfg/daily.yaml"},
+			Account: "",
+			Game:    "",
+			// TaskConfigs: []string{"cfg/reactions.yaml", "cfg/daily.yaml"},
 		},
 		Imagick: imgksArggs(),
 		AltImagick: []string{

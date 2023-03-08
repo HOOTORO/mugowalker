@@ -46,6 +46,17 @@ var connect = func(m appmenu) tea.Cmd {
 	}
 }
 
+var userDataInput = func(m appmenu) tea.Cmd {
+	return func() tea.Msg {
+		fields := make([]userField, 0)
+		fields = append(fields,
+			NewUserField(AccountName.String(), "").WithPrompt(c.MgCy("|> ")).WithFocus(),
+		)
+		return initMultiModel(&m, fields)
+	}
+	// return inputModels(m.cursorMode, AccountName.String(), m.conf.userSettings.Account)
+}
+
 func (o Option) String() string {
 	return options[o-1]
 }
