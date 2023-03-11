@@ -36,15 +36,17 @@ const (
 	GuildBosses
 	Daily
 )
+const (
+	afkapp     = "com.lilithgames.hgame.gp"
+	afktestapp = "com.lilithgames.hgame.gp.id"
+)
 
 var (
 	userTemplate = &Profile{
 		DeviceSerial: "",
-		User: &User{
-			Account: "",
-			Game:    "",
-			// TaskConfigs: []string{"cfg/reactions.yaml", "cfg/daily.yaml"},
-		},
+		GameAccount:  "",
+		// TaskConfigs: []string{"cfg/reactions.yaml", "cfg/daily.yaml"},
+
 		Imagick: imgksArggs(),
 		AltImagick: []string{
 			"-colorspace", "Gray",
@@ -56,9 +58,9 @@ var (
 		},
 		Tesseract:    tssA(),
 		AltTesseract: []string{"--psm", "3", "hoot", "quiet"},
-		Bluestacks:   &Bluestacks{Instance: "Rvc64", Package: "com.lilithgames.hgame.gp.id"},
+		Bluestacks:   &Bluestacks{Instance: "Rvc64"},
 		Exceptions:   []string{"Go", "Up ", "In", "Tap"},
-		Loglevel:     "FATAL",
+		Loglvl:       "TRACE",
 		DrawStep:     false,
 	}
 	imgksArggs = func() map[int]CmdArgs {

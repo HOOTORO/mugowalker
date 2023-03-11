@@ -6,6 +6,7 @@ import (
 
 	"worker/adb"
 	"worker/afk/activities"
+	"worker/cfg"
 
 	// "worker/afk/activities"
 	"worker/bot"
@@ -37,6 +38,7 @@ func init() {
 func main() {
 	log = c.Logger()
 	fn := func(a string, b string) {
+
 		log.Warnf("%v |>\n %v", mgt(a), b)
 	}
 
@@ -63,7 +65,8 @@ func main() {
 
 	log.Warnf(c.Red("RUN BEGIN : %v"), time.Now())
 
-	err := ui.RunMainMenu(user)
+	// err := ui.RunMainMenu(user)
+	err := ui.RunUI(cfg.ActiveUser())
 	if err != nil {
 		log.Errorf("ERROROR: %v", err)
 	}

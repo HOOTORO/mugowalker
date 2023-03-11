@@ -67,10 +67,9 @@ func init() {
 		log.SetOutput(f)
 	}
 	activeUser = LastLoaded()
-	log.Infof("Last Loaded -> %v", activeUser)
+	log.Infof("\n↓Last Loaded↓\n%v", activeUser)
 
-	ll, e := logrus.ParseLevel(activeUser.Loglevel)
-	// log.SetReportCaller(true)
+	ll, e := logrus.ParseLevel(activeUser.Loglevel())
 
 	if e != nil {
 		panic(e)
@@ -113,7 +112,7 @@ func Logger() *logrus.Logger {
 			PadLevelText:              true,
 			TimestampFormat:           time.Stamp,
 		},
-		Level: logrus.FatalLevel,
+		Level: logrus.TraceLevel,
 	}
 }
 
@@ -143,10 +142,9 @@ func LastLoaded() *Profile {
 // UpdateUserInfo saves to yaml into Userhome dir
 func UpdateUserInfo(au AppUser) {
 	activeUser.DeviceSerial = au.DevicePath()
-	activeUser.Loglevel = au.Loglevel()
-	activeUser.User.Account = au.Acccount()
-	activeUser.User.Game = au.Game()
-	Save(UserFile(au.Acccount()+".yaml"), activeUser)
+	activeUser.Loglvl = au.Loglevel()
+	activeUser.GameAccount = au.Account()
+	Save(UserFile(au.Account()+".yaml"), activeUser)
 
 }
 

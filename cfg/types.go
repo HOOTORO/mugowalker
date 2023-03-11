@@ -6,9 +6,25 @@ import (
 
 type AppUser interface {
 	Loglevel() string
+	Account() string
 	Game() string
-	Acccount() string
 	DevicePath() string
+}
+
+func (p *Profile) Loglevel() string {
+	return p.Loglvl
+}
+
+func (p *Profile) Account() string {
+	return p.GameAccount
+}
+
+func (p *Profile) Game() string {
+	return afkapp
+}
+
+func (p *Profile) DevicePath() string {
+	return p.DeviceSerial
 }
 
 type OcrConfig interface {
@@ -19,7 +35,7 @@ type OcrConfig interface {
 type Profile struct {
 	DeviceSerial string `yaml:"connection"`
 
-	User *User `yaml:"userprofile"`
+	GameAccount string `yaml:"account"`
 	//  Recognition settings (cmd args for 'Imagick' and 'Tesseract')
 	Imagick       map[int]CmdArgs `yaml:"imagick"`
 	AltImagick    []string        `yaml:"alt_imagick"`
@@ -32,7 +48,7 @@ type Profile struct {
 	// Dict short word exceptions (>= 3)
 	Exceptions []string `yaml:"dict_shrt_except"`
 
-	Loglevel string `yaml:"loglevel"`
+	Loglvl   string `yaml:"loglevel"`
 	DrawStep bool   `yaml:"draw_step"`
 }
 
@@ -49,15 +65,14 @@ type SystemVars struct {
 
 func (ac *Profile) String() string {
 	return fmt.Sprintf(
-		" -> Device: %v"+
-			"%s\n"+
-			"-> Args: \n"+
-			" Bluestacks: %v\n"+
-			" Magick: %v\n"+
-			" Tesseract: %v\n"+
-			"%v\n"+
-			Green(ac.DeviceSerial),
-		ac.User,
+		"\nDevice |> %v"+
+			"\n%s"+
+			"\n↓ Args ↓\n"+
+			"Bluestacks -> %v\n"+
+			"Magick -> %v\n"+
+			"Tesseract -> %v\n",
+		Green(ac.DeviceSerial),
+		ac.Account(),
 		ac.Bluestacks,
 		ac.Imagick,
 		ac.Tesseract,
@@ -72,7 +87,7 @@ type User struct {
 }
 
 func (up *User) String() string {
-	return F("\n	-> Game: %v\n\t   Account: %v", Green(up.Game), Green(up.Account))
+	return F(" Game |> %v\n Account |> %v\n", Green(up.Game), Green(up.Account))
 }
 
 // New user profile
@@ -83,16 +98,15 @@ func New(accname, game string, taskcfgpath []string) *User {
 // Bluestacks vm settings
 type Bluestacks struct {
 	Instance string `yaml:"instance"`
-	Package  string `yaml:"package"`
 }
 
 func (bs *Bluestacks) String() string {
-	return F("\n -> VM: %v\n     App: %v", bs.Instance, bs.Package)
+	return F("\n VM -> %v\n App -> %v", bs.Instance)
 }
 
 // Args upack in same order as packed? Will see
 func (bs *Bluestacks) Args() []string {
-	return []string{"--instance", bs.Instance, "--cmd", "launchApp", "--package", bs.Package}
+	return []string{"--instance", bs.Instance, "--cmd", "launchApp", "--package", afkapp}
 }
 
 type ReactiveTask struct {

@@ -1,162 +1,23 @@
 package ui
 
-import (
-	"errors"
-	a "worker/adb"
-	"worker/bot"
-	c "worker/cfg"
-	"worker/emulator"
+import tea "github.com/charmbracelet/bubbletea"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/sirupsen/logrus"
-)
+type inputMsg string
+type inputDoneMsg string
 
-type errMsg struct{ err error }
-
-func (e errMsg) Error() string { return e.err.Error() }
-
-type (
-	userInit       uint
-	vmStatusMsg    uint
-	connectionMsg  uint
-	loglevelMsg    uint
-	prevousMenuMsg uint
-	nextMenuMsg    uint
-	appOnlineMsg   uint
-	chosenSection  string
-)
-
-func checkVM() tea.Msg {
-	taskstr, e := c.Tasklist(bluexe)
-	noxprc, e1 := c.Tasklist(emulator.Nox.String())
-	if e != nil && e1 != nil {
-		return errMsg{e}
-	}
-	if len(taskstr) > 0 {
-
-		return vmStatusMsg(taskstr[0].Pid)
-	} else {
-		return vmStatusMsg(noxprc[0].Pid)
-	}
-}
-
-func prevousMenu(m appmenu) tea.Cmd {
-	prevousState := len(m.parents) - 1
+func inputChosen(m string) tea.Cmd {
 	return func() tea.Msg {
-		return prevousMenuMsg(prevousState)
+		return inputMsg(m)
 	}
 }
-
-// func nextMenu()
-
-func runAfk(m *appmenu) tea.Msg {
-	if m.state.adbconn > 0 {
-		if runner.IsAppRunnin(m.conf.userSettings.AndroidGameID) > 0 {
-			return appOnlineMsg(1)
-		} else {
-			runner.StartApp(m.conf.userSettings.AndroidGameID)
-			return appOnlineMsg(1)
-		}
-	} else {
-		return errMsg{err: errors.New("device offline")}
-	}
-}
-
-func initAfk(m *appmenu) tea.Cmd {
+func inputDone(m string) tea.Cmd {
 	return func() tea.Msg {
-		log.Debugf("INIT AFK MAFAKA : %+v", c.Cyan(m))
-		if m.state.adbconn > 0 {
-			if runner.IsAppRunnin(m.conf.userSettings.AndroidGameID) > 0 {
-				return appOnlineMsg(1)
-			} else {
-				runner.StartApp(m.conf.userSettings.AndroidGameID)
-				return appOnlineMsg(1)
-			}
-		}
-		return appOnlineMsg(0)
+		return inputDoneMsg(m)
 	}
 }
 
-func initUser(m *appmenu) tea.Cmd {
-	// return userDataInput(*m)
+func selectedItem(m string) tea.Cmd {
 	return func() tea.Msg {
-		log.Debugf("INIT User : %+v", c.Cyan(m))
-		if m.conf.userSettings.Account == "" {
-			return userInit(0)
-		}
-		return userInit(1)
+		return selectMsg{ChosenItem: m}
 	}
 }
-
-func userChoice(m *appmenu) tea.Cmd {
-	return func() tea.Msg {
-		log.Debugf("на правах рекламы", c.Cyan(m))
-		return chosenSection(m.choice)
-	}
-}
-
-func adbConnect(serial string) tea.Msg {
-	dev, e := a.Connect(serial)
-	if e != nil {
-		log.Errorf("\nConn err: %v", e)
-		return errMsg{e}
-	}
-
-	return connectionMsg(dev.DevState)
-}
-
-func connectDevice(m appmenu) tea.Cmd {
-	runner = bot.New(m.UserOutput)
-	d := runner.DiscoverDevices()
-	dev := &a.Device{DevState: 0}
-	for _, v := range d {
-		// descu := c.F("State: %s, T_Id: %v, WMsize: %v", v.DevState, v.TransportId, v.Resolution)
-		if v.Serial == m.conf.userSettings.Connection {
-			dev = v
-		}
-	}
-	return func() tea.Msg {
-		if dev.DevState != 0 {
-			m.conf.userSettings.Connection = dev.Serial
-			runner.Connect(dev)
-			m.state.adbconn = 1
-		} else {
-			runner.Device = dev
-		}
-		log.Debugf("Device --> %+v", c.Cyan(runner))
-		return connectionMsg(runner.DevState)
-	}
-}
-
-func setLoglevel(lvl string) tea.Msg {
-	obj, e := logrus.ParseLevel(lvl)
-	if e != nil {
-		log.Error("Wrong LogLevel String")
-		return errMsg{e}
-	}
-	log.SetLevel(obj)
-	return loglevelMsg(obj)
-}
-
-// taskinfo is send when a pretend process completes.
-type taskinfo struct {
-	Task    string
-	Message string
-	// Duration time.Time
-}
-
-// A command that waits for the activity on a channel.
-func activityListener(strch chan taskinfo) tea.Cmd {
-	return func() tea.Msg {
-		return taskinfo(<-strch)
-	}
-}
-
-func listenTaskState(taskstate <-chan int) tea.Cmd {
-	return func() tea.Msg {
-		return uint(<-taskstate)
-	}
-}
-
-// ///////////////////////////////////////////////////////////////////////////////////////////////////
-// Validator functions to ensure valid input

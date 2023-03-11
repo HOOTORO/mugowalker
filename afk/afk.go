@@ -37,7 +37,7 @@ func New(up cfg.AppUser) *Game {
 		if loc, ok := l.(activities.Location); ok {
 			for _, kw := range loc.Keywords() {
 				if kw == "%account" {
-					loc.Kws = append(loc.Kws, up.Acccount())
+					loc.Kws = append(loc.Kws, up.Account())
 				}
 			}
 
@@ -47,7 +47,7 @@ func New(up cfg.AppUser) *Game {
 
 	log.Infof("Locations: %v", anylocs...)
 
-	user := repository.GetUser(up.Acccount())
+	user := repository.GetUser(up.Account())
 
 	return &Game{
 		Name:      up.Game(),
