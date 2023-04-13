@@ -1,8 +1,11 @@
 vendor
+worker
 _*
 .*
 *.exe
+*.log
 *.db
+*.csv
 .github
 *.png
 *.ps1

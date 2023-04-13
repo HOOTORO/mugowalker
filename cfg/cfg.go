@@ -3,75 +3,103 @@ package cfg
 import (
 	"errors"
 	"fmt"
-	"image"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
-	"worker/adb"
+	"github.com/fatih/color"
+
 	"worker/afk/repository"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
-	appdataEnv  = "APPDATA"
-	profileEnv  = "USERPROFILE"
-	programData = "ProgramData"
-	temp        = "TEMP"
-	cfg         = "assets/default.yaml"
+	defaultcfg = "assets/default.yaml"
+	game       = "AFK Arena"
 )
 
-const (
-	game = "AFK Arena"
-)
-
-var roamdata, userfolder, appdata, tempdir string
+type Runnable interface {
+	Path() string
+	Args() []string
+}
 
 var (
 	ErrWorkDirFail        = errors.New("working dirictories wasn't created. Exit")
 	ErrRequiredProgram404 = errors.New("missing some of required soft")
+	ErrLoadInitConf       = errors.New("load sysvars")
+)
+var (
+	// F... format alias func(...interface{}) string
+	F = fmt.Sprintf
+	// Red coloring Sprint
+	Red = color.New(color.FgHiRed).SprintFunc()
+	// Green coloring Sprint
+	Green = color.New(color.FgHiGreen).SprintFunc()
+	// Cyan coloring Sprint
+	Cyan = color.New(color.FgHiCyan).SprintFunc()
+	// Blue coloring Sprint
+	Blue   = color.New(color.FgHiBlue).SprintFunc()
+	Ylw    = color.New(color.FgHiYellow).SprintFunc()
+	Mgt    = color.New(color.FgHiMagenta).SprintFunc()
+	TTrack = color.New(color.BgHiBlue, color.FgCyan, color.Underline, color.Bold).SprintfFunc()
+	RFW    = color.New(color.FgHiRed, color.BgWhite).SprintFunc()
+	MgCy   = color.New(color.FgHiMagenta, color.BgCyan).SprintFunc()
 )
 
 var (
-	log *logrus.Logger
-	Env *AppConfig
+	log        *logrus.Logger
+	activeUser *Profile
+	sysvars    *SystemVars
 )
-
-var OcrConf *OcrConfig
 
 func init() {
 	log = Logger()
-	if Env == nil {
-		Env = loadConf()
+	sysvars, _ = loadSysconf()
+
+	f, e := os.OpenFile(sysvars.Logfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if e == nil {
+		sysvars.Logfile = f.Name()
+		log.SetOutput(f)
 	}
+	activeUser = LastLoaded()
+	log.Infof("\n↓Last Loaded↓\n%v", activeUser)
 
-	e := createDirStructure()
-
-	e = Env.validateDependencies()
-
-	f, _ := os.OpenFile(absJoin(appdata, Env.Logfile), os.O_APPEND|os.O_CREATE, 0o644)
-
-	loglvl, e := logrus.ParseLevel(Env.Loglevel)
-	if e != nil {
-		log.Errorf("logrus err: %v", e)
-	}
-
-	log.SetLevel(loglvl)
-	log.SetOutput(f)
+	ll, e := logrus.ParseLevel(activeUser.Loglevel())
 
 	if e != nil {
 		panic(e)
 	}
 
+	log.SetLevel(ll)
+
 	repository.DbInit(func(x string) string {
-		return filepath.Join(roamdata, x)
+		return filepath.Join(sysvars.Db, x)
 	})
 }
 
+type emum interface {
+	~uint
+	String() string
+	Values() []string
+}
+
+// Deserialize bits to string values
+func Deserialize[T emum](raw T) []string {
+	var result []string
+	for i := 0; i < len(raw.Values()); i++ {
+		if d := T(1 << i); raw&(1<<uint(i)) != 0 {
+			result = append(result, d.String())
+		}
+	}
+	return result
+}
+
+// Logger for app to use
 func Logger() *logrus.Logger {
 	if log != nil {
 		return log
@@ -84,116 +112,75 @@ func Logger() *logrus.Logger {
 			PadLevelText:              true,
 			TimestampFormat:           time.Stamp,
 		},
-		Level: logrus.FatalLevel,
+		Level: logrus.TraceLevel,
 	}
 }
 
-func (rt ReactiveTask) React(trigger string) *adb.Point {
-	for _, v := range rt.Reactions {
-		if trigger == v.If {
-			return cutgrid(v.Do)
+// ActiveUser or template wwithout name, connect, gameID
+func ActiveUser() *Profile {
+	if activeUser != nil {
+		return activeUser
+	}
+	return userTemplate
+}
+
+// LastLoaded <userconf>.yaml
+func LastLoaded() *Profile {
+	conf := &Profile{}
+	lastcfg := mostRecentModifiedYAML(sysvars.App, sysvars.Db)
+	if lastcfg != "" {
+		e := Parse(lastcfg, conf)
+		if e != nil {
+			log.Errorf("Err: %v", e)
 		}
+	} else {
+		conf = userTemplate
 	}
-	return cutgrid("1:18")
+	return conf
 }
 
-func (rt ReactiveTask) Before(trigger string) string {
-	for _, v := range rt.Reactions {
-		if trigger == v.If && v.Before != "" {
-			return v.Before
-		}
-	}
-	return ""
+// UpdateUserInfo saves to yaml into Userhome dir
+func UpdateUserInfo(au AppUser) {
+	activeUser.DeviceSerial = au.DevicePath()
+	activeUser.Loglvl = au.Loglevel()
+	activeUser.GameAccount = au.Account()
+	Save(UserFile(au.Account()+".yaml"), activeUser)
+
 }
 
-func (rt ReactiveTask) After(trigger string) string {
-	for _, v := range rt.Reactions {
-		if trigger == v.If && v.After != "" {
-			return v.After
-		}
-	}
-	return ""
-}
-
-func Parse(s string, out interface{}) error {
-	f, err := os.ReadFile(s)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = yaml.Unmarshal(f, out)
-	if err != nil {
-		log.Fatalf("UNMARSHAL WASTED: %v", err)
-	}
-	log.Tracef("UNMARSHALLED: %v\n\n", out)
-	return err
-}
-
-func Save(name string, in interface{}) {
-	f, err := os.Create(name)
-	if err != nil {
-		log.Fatal(err)
-	}
-	b, err := yaml.Marshal(in)
-	if err != nil {
-		log.Fatalf("MARSHAL WASTED: %v", err)
-	}
-	_, err = f.Write(b)
-	if err != nil {
-		log.Errorf("write yaml (e): %v", err)
-	}
-	log.Tracef("MARSHALLED: %v\n\n", f)
-}
-
-//func Load(a *AppConfig) *adb.Device {
-//	devs, e := adb.Devices()
-//	if e != nil || len(devs) == 0 {
-//		d, e := adb.Connect(a.DeviceSerial)
-//		if e != nil {
-//			panic("dev err")
-//		}
-//		devs = append(devs, d)
-//
-//	}
-//	num := 0
-//	if len(devs) > 1 {
-//		var desc string = "Choose, which one will be used by bot\n"
-//		for i, dev := range devs {
-//			desc += fmt.Sprintf("%v: Serial-> %v,   id-> %v,    resolution-> %v\n", i, dev.Serial, dev.TransportId, dev.Resolution)
-//		}
-//		num, _ = strconv.Atoi(ui.UserInput(desc, "0"))
-//	}
-//	return devs[num]
-//}
-
-func LoadTask(up *UserProfile) (r []ReactiveTask) {
-	for _, t := range up.TaskConfigs {
-		reactiveTasks := make([]ReactiveTask, 0)
-		Parse(t, &reactiveTasks)
-		r = append(r, reactiveTasks...)
-	}
-	return
-}
-
+// GetImages from temp/<appfolder>
 func GetImages() []string {
-	d, e := os.ReadDir(tempdir)
+	d, e := os.ReadDir(sysvars.Temp)
 	if e != nil {
-		panic("crop err")
+		panic("get imgs")
 	}
 	var res []string
 	for _, f := range d {
-		res = append(res, ImageDir(f.Name()))
+		res = append(res, TempFile(f.Name()))
 	}
 	return res
 }
 
-func ImageDir(f string) string {
-	return absJoin(tempdir, f)
+func RunCmd(r Runnable) error {
+	pt := LookupPath(r.Path())
+
+	log.Trace(Blue("  ↓   RunCMD   ↓ \n", Mgt(pt), "\n", Ylw(r.Args())))
+	cmd := exec.Command(pt, r.Args()...)
+
+	return cmd.Run()
 }
 
-func UsrDir(f string) string {
-	return absJoin(userfolder, f)
+// TempFile in <temp>/<appfolder>/*
+func TempFile(f string) string {
+	return absJoin(sysvars.Temp, f)
 }
 
+// UserFile from $env:USERPROFILE
+func UserFile(f string) string {
+	return absJoin(sysvars.App, f)
+}
+
+// LookupPath for exe s
 func LookupPath(name string) (path string) {
 	p, err := exec.LookPath(name)
 	if err == nil {
@@ -205,8 +192,26 @@ func LookupPath(name string) (path string) {
 }
 
 /*
-	Helper func
+Helper func
 */
+func ToInt(s string) int {
+	num, e := strconv.Atoi(s)
+	if e != nil {
+		log.Warnf("Calledc.F():%v\nError:%v", "cfg.ToInt", e)
+	}
+	return num
+}
+
+func loadSysconf() (sys *SystemVars, e error) {
+	sys = &SystemVars{}
+
+	sys.Db, sys.App, sys.Temp, e = createDirStructure()
+	if e != nil {
+		log.Errorf("Create app folders mailfunc: %v", e)
+	}
+	sys.Logfile = logfile
+	return
+}
 
 func safeEnv(n string) string {
 	str, ok := os.LookupEnv(n)
@@ -217,142 +222,67 @@ func safeEnv(n string) string {
 	return ""
 }
 
-func loadConf() *AppConfig {
-	conf := &AppConfig{}
-	e := Parse(cfg, conf)
-	if e != nil {
-		log.Warnf("Configuration file not found, invalid or maybe this  is first run!.\nInitialize creating configuration\n")
-		conf = inputminsettings()
-	} else {
-		conf.Thiscfg = UsrDir(cfg)
-	}
-
-	return conf
-}
-
-func inputminsettings() *AppConfig {
-	settings := defaultAppConfig
-	cfgpath := UsrDir(cfg)
-	settings.Thiscfg = cfgpath
-	Save(cfg, settings)
+func defaultUser() *Profile {
+	settings := userTemplate
+	cfgpath := UserFile(defaultcfg)
+	sysvars.UserConfPath = cfgpath
+	Save(defaultcfg, settings)
 
 	return settings
 }
 
-func toInt(s string) int {
-	num, e := strconv.Atoi(s)
-	if e != nil {
-		log.Errorf("\nerr:%v\nduring run:%v", e, "intconv")
-	}
-	return num
-}
+func createDirStructure() (dbf, appf, tempf string, e error) {
 
-func cutgrid(str string) (p *adb.Point) {
-	ords := strings.Split(str, ":")
-	p = &adb.Point{
-		Point: image.Point{
-			X: toInt(ords[0]),
-			Y: toInt(ords[1]),
-		},
-		Offset: 1,
+	var home string
+	var m fs.FileMode
+
+	switch runtime.GOOS {
+	case "darwin":
+		if home = safeEnv(macEnv); home != "" {
+			m = os.ModePerm
+		}
+	case "windows":
+		if home = safeEnv(userhome); home != "" {
+			m = os.ModeDir
+
+		}
 	}
-	if len(ords) > 2 {
-		p.Offset = toInt(ords[2])
+
+	appf, dbf, tempf = userFolders(home)
+	et := os.MkdirAll(tempf, m)
+	ed := os.MkdirAll(dbf, m)
+	if et != nil || ed != nil {
+		e = ErrWorkDirFail
 	}
+	log.Infof("\ninit err: %v; dirs created: \n\tappf\t -> %v\n\ttemp\t -> %v\n\tdb\t -> %v", e, appf, tempf, dbf)
 	return
 }
 
-func createDirStructure() error {
-	roamdata = makeEnvDir(appdataEnv, Env.Dirs.SqDB)
-	userfolder = makeEnvDir(profileEnv, Env.Dirs.GameConf)
-	tempdir = makeEnvDir(temp, Env.Dirs.TempImg)
-	appdata = makeEnvDir(programData, Env.Dirs.TestData)
-
-	// Saturday cleaning
-	if time.Now().Weekday().String() == "Saturday" {
-		truncateDir(tempdir)
-	}
-
-	if roamdata == safeEnv(appdataEnv) || userfolder == safeEnv(profileEnv) || tempdir == safeEnv(temp) || appdata == safeEnv(programData) {
-		return ErrWorkDirFail
-	}
-
-	log.Infof("\ninit: success; dirs created: \n%v\n%v\n%v\n%v", roamdata, userfolder, tempdir, appdata)
-	return nil
-}
-
-func makeEnvDir(env, dir string) string {
-	envpath := safeEnv(env)
-	patyh := filepath.Join(envpath, Env.Dirs.Root, dir)
-	e := os.MkdirAll(patyh, os.ModeDir)
-	if e != nil {
-		log.Errorf("make dir mailfunc: %v", e)
-	}
-	return patyh
-}
-
-func (ac *AppConfig) validateDependencies() error {
-	for i, s := range ac.RequiredInstalledSoftware {
-		if pt := LookupPath(s); pt != "" {
-			ac.RequiredInstalledSoftware[i] = pt
-		} else {
-			return ErrRequiredProgram404
-		}
-	}
-	return nil
+func userFolders(usrhome string) (app, db, temp string) {
+	app = filepath.Join(usrhome, programRootDir)
+	db = filepath.Join(app, dbfolder)
+	temp = filepath.Join(app, tempfolder)
+	return
 }
 
 func truncateDir(d string) {
 	a, _ := filepath.Abs(d)
-	//    _ = os.RemoveAll(a)
-	fmt.Printf("DELETED %v", a)
+	_ = os.RemoveAll(a)
+	log.Warnf("DELETED %v\n", a)
 }
 
 func absJoin(d, f string) string {
+	fb := filepath.Base(f)
 	if filepath.IsAbs(d) {
-		return filepath.Join(d, f)
+		return filepath.Join(d, fb)
 	}
 	wd, _ := os.Getwd()
-	return filepath.Join(wd, f)
+	return filepath.Join(wd, fb)
 }
 
-//app := &cfg.AppConfig{
-//    DeviceSerial: "192.168.1.7:5555",
-//    UserProfile: &cfg.UserProfile{
-//        Account:     "E6osh!ro",
-//        Game:        "AFK Arena",
-//        TaskConfigs: []string{"cfg/reactions.yaml", "cfg/daily.yaml"},
-//        },
-//        Imagick: cfg.OcrConf.Imagick,
-//        AltImagick: []string{"-colorspace", "Gray", "-alpha", "off", "-threshold", "75%", "-edge", "2", "-negate", "-black-threshold",
-//            //			"-white-threshold",
-//            //			"60%",
-//            "90%",
-//            },
-//            Tesseract:    cfg.OcrConf.Tesseract,
-//            AltTesseract: []string{"--psm", "3", "hoot", "quiet"},
-//            Bluestacks:   []string{"--instance", "Rvc64_16", "--cmd", "launchApp", "--package", "com.lilithgames.hgame.gp.id"},
-//            Exceptions:   cfg.OcrConf.Exceptions,
-//            Loglevel:     "INFO",
-//            DrawStep:     false,
-//            Dirs: struct {
-//        Logfile     string `yaml:"logfile"`
-//        Root     string `yaml:"rootDir"`
-//        TempImg  string `yaml:"tempImgDir"`
-//        SqDB    string `yaml:"sqDBDir"`
-//        User    string `yaml:"userDir"`
-//        GameConf string `yaml:"gameConfDir"`
-//        TestData string `yaml:"testDataDir"`
-//            }{
-//        Logfile:     "app.log",
-//        Root:     ".afk_data",
-//        TempImg:  "work_images",
-//        SqDB:     "db",
-//        User:     "usrdata",
-//        GameConf: "cfg",
-//        TestData: "_test",
-//        },
-//        }
-//
-//
-//        cfg.Save("runset.yaml", app)
+func Shorterer(str string, n int) string {
+	if len(str) > n+3 {
+		return str[:n] + "..."
+	}
+	return str
+}

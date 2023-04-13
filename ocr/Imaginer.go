@@ -1,107 +1,74 @@
 package ocr
 
 import (
-	"fmt"
-	"image"
-	"os/exec"
-	"path/filepath"
-	"strings"
+	"math/rand"
+	"time"
 
-	"worker/cfg"
-
-	"github.com/vitali-fedulov/images/v2"
+	c "worker/cfg"
 )
 
-var magick string
+const mag = "magick"
 
-const (
-	CROP = "-crop"
-)
+var imagickSets [][]string
 
+// Magick params to run ImageMagick via cfg.Runnable
+type Magick struct {
+	path string
+	f    string
+	args []string
+	fout string
+}
+
+var blaine = &Magick{
+	path: mag,
+	args: make([]string, 0),
+}
+
+// Args implementing Runnable
+func (m *Magick) Args() []string {
+	newargs := make([]string, 0)
+	newargs = append(newargs, m.f)
+	newargs = append(newargs, m.args...)
+	newargs = append(newargs, m.fout)
+	return newargs
+}
+
+// Path implementing Runnable
+func (m *Magick) Path() string {
+	m.path = mag
+	return m.path
+}
+func (m *Magick) SetFile(f string) {
+	m.f = f
+	m.fout = c.TempFile(magicRandPrefix() + ".png")
+}
+func (m *Magick) Prepared() string {
+	return m.fout
+}
 func init() {
-	// Fallback to searching on PATH.
-	magick = cfg.LookupPath("magick")
-	log = cfg.Logger()
+	rand.Seed(time.Now().Unix())
+	blaine.args = append(blaine.args, c.ActiveUser().AltImagick...)
+	log = c.Logger()
+
+	// origin
+	// imagickSets = append(imagickSets, c.ActiveUser().AltImagick)
+	// imagickSets = append(imagickSets, c.ActiveUser().ImagickCfg())
+
+	// great for recognize buttons
+	imagickSets = append(imagickSets, []string{"-alpha", "off", "-brightness-contrast", "-70x1", "-negate", "-threshold", "70%"})
+	// general recognition
+	imagickSets = append(imagickSets, []string{"-colorspace", "Gray", "-alpha", "off", "-threshold", "70%", "-edge", "1", "-negate", "-black-threshold", "70%"}) //80
+	imagickSets = append(imagickSets, []string{"-alpha", "off", "-brightness-contrast", "-25x10", "-density", "300", "-negate", "-threshold", "70%"})
+
+	// imagickSets = append(imagickSets, []string{"-alpha", "off", "-fill", "black", "-fuzz", "30%", "+opaque", "#FFFFFF"})
+	// imagickSets = append(imagickSets, []string{"-alpha", "off", "-negate", "-threshold", "100", "-negate"})
 }
 
-type Cutter interface {
-	Concat(image.Image, int, int)
+func (m *Magick) NewRandArgs() {
+	m.args = imagickSets[rand.Intn(len(imagickSets))]
+	log.Debug(c.RFW("NEW IMAGICK ARGS #> ", m.args))
 }
 
-type TextScanner interface {
-	ImageText(image.Image) (string, error)
-}
-
-type Similizer interface {
-	Similarity(image.Image, image.Image) (similar bool, percent int)
-}
-
-func Similarity(imgA, imgB image.Image) (similar bool) {
-	// Calculate hashes and image sizes.
-	hashA, imgSizeA := images.Hash(imgA)
-	hashB, imgSizeB := images.Hash(imgB)
-
-	similar = images.Similar(hashA, hashB, imgSizeA, imgSizeB)
-	log.Debugf("Are Images similar? --> %v", similar)
-
-	return
-}
-
-func OpenImg(fname string) image.Image {
-	imgA, err := images.Open(fname)
-	if err != nil {
-		panic(err)
-	}
-	if err != nil {
-		return nil
-	}
-	return imgA
-}
-
-// func PrepareImg(img string) string {
-// 	imagick.Initialize()
-// 	defer imagick.Terminate()
-// 	dest := "prcsd.png"
-// 	mw := imagick.NewMagickWand()
-// 	mw.ReadImage(img)
-// 	width, height := mw.GetImageWidth(), mw.GetImageHeight()
-// 	half := mw.GetImageRegion(0, height/2, int(width), int(height))
-// 	half.WriteImage(dest)
-// 	half.Destroy()
-// 	mw.Destroy()
-// 	return dest
-// }
-
-func Magick(img string, args ...string) (string, error) {
-	out := cfg.ImageDir(img)
-	args = append([]string{img}, args...)
-	args = append(args, out)
-	log.Tracef("Imagick args -> %v", args)
-	cmd := exec.Command(magick, args...)
-
-	return out, cmd.Run()
-}
-
-func Concat(f string, topleft, bottomright image.Point) string {
-	posArg := fmt.Sprintf("%vx%v+%v+%v", bottomright.X, bottomright.Y, topleft.X, topleft.Y)
-	res, e := Magick(f, CROP, posArg)
-	if e != nil {
-		log.Errorf("%v", e)
-		return ""
-	}
-	return res
-}
-
-func GridCrop(f string) (crpdImages []string) {
-	r, e := Magick(f, cfg.OcrConf.Split...)
-	if e != nil {
-		log.Errorf("Grid Crop fail -> %v", e)
-	}
-	origName := strings.TrimRight(filepath.Base(f), filepath.Ext(f))
-	for _, file := range cfg.GetImages() {
-		if file != r && strings.Contains(file, origName) {
-			crpdImages = append(crpdImages, file)
-		}
-	}
-	return crpdImages
+func magicRandPrefix() string {
+	return c.F("maaagick_%d", rand.Intn(999))
 }

@@ -1,14 +1,8 @@
 package adb
 
 const (
-
 	remotedir = "/sdcard/"
-
 )
-
-func init() {
-
-}
 
 // Push Pushes the local file to the remote one.
 func (d *Device) Push(local, remote string) error {

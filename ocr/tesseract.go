@@ -1,41 +1,78 @@
 package ocr
 
 import (
-	"os/exec"
-
-	"worker/cfg"
-
-	"github.com/sirupsen/logrus"
+	"errors"
+	"fmt"
+	c "worker/cfg"
 )
 
 var (
-	tesser   string
-	tessAgrs []string
-
-	log *logrus.Logger
+	ErrOptimizeImg = errors.New("error during handling optimize image proccess")
+)
+var (
+	psm      = []int{1, 3, 4, 6, 11, 12}
+	altoargs = []string{"--psm", "3", "-c", "tessedit_create_alto=1", "hoot", "quiet"}
 )
 
+const tessex = "tesseract"
+
+// Tesseract parameters to cfg.RunCmd
+type Tesseract struct {
+	path string
+	args []string
+	in   string
+	out  string
+}
+
+// Path implemetation Runnable
+func (t *Tesseract) Path() string {
+	return t.path
+}
+
+// Args implemetation Runnable
+func (t *Tesseract) Args() []string {
+	// args := append([]string{t.in, t.out}, t.args...)
+	// t.args = args
+	return append([]string{t.in, t.out}, t.args...)
+}
+
+func (t *Tesseract) SetArgs(in, out string, args ...string) {
+	t.in = in
+	t.out = out
+	t.args = args
+
+	log.Trace("Tessa ARGS --> ", c.Red(tessa.Args()))
+
+}
+
+var tessa = &Tesseract{
+	path: tessex,
+	args: make([]string, 0),
+}
+
 func init() {
-	// Fallback to searching on PATH.
-	tesser = cfg.LookupPath("tesseract")
-	log = cfg.Logger()
+	tessa.args = user.TesseractCfg()
 }
 
-func OptimizeForOCR(f string) string {
-	res, _ := Magick(f, cfg.Env.Imagick...)
-	return res
+// PrepareForRecognize alternative optimization
+func PrepareForRecognize(f *ImageProfile) error {
+	blaine.SetFile(f.original)
+	e := c.RunCmd(blaine)
+	if e != nil {
+		log.Error(ErrOptimizeImg, e)
+		return e
+	}
+	f.prepared = blaine.Prepared()
+	return nil
 }
 
-func runOcr(in string, out string) error {
-	tessAgrs = cfg.OcrConf.Tesseract
-
-	args := append([]string{in, out}, tessAgrs...)
-	cmd := exec.Command(tesser, args...)
-	log.Tracef("cmd tess : %v\n", cmd.String())
-	// uncomment for ocr log
-	// cmd.Stdout = os.Stdout
-	// cmd.Stderr = os.Stderr
-	return cmd.Run()
+func ActivateTesseract(in, out string, args ...string) error {
+	tessa.SetArgs(in, out, args...)
+	// tessa.out = out
+	// tessa.args = args
+	return c.RunCmd(tessa)
 }
 
-// func tessAlto
+func customPsm(n int) []string {
+	return []string{"--psm", fmt.Sprint(n), "-c", "tessedit_create_alto=1", "hoot", "quiet"}
+}

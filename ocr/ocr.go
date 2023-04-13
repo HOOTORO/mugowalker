@@ -1,115 +1,80 @@
 package ocr
 
 import (
-	"fmt"
-	"image"
 	"os"
-	"regexp"
-	"strconv"
-	"strings"
 	"time"
 
-	"worker/cfg"
+	c "worker/cfg"
 
-	"github.com/fatih/color"
-	"golang.org/x/exp/slices"
+	"github.com/sirupsen/logrus"
 )
 
-type Result struct {
-	raw    string
-	fields []string
+// AlmoResult parsed xml Almo
+type AlmoResult struct {
+	Linechars string
+	X, Y      int
+	LineNo    int
+	// Psm       int
 }
 
-func (or Result) String() string {
-	return or.raw // strings.Join(or.fields, " | ")
-}
+var (
+	user *c.Profile
+	log  *logrus.Logger
+)
 
-func (or Result) Fields() []string {
-	return or.fields
-}
+var almoResultsStringer = func(arr []AlmoResult, psm int) string {
+	var s string
+	s = c.Red(c.F("	↓	|> PSM %v <|	↓	\n", psm))
+	line := 0
+	s += "Ln# 0 -> "
+	for _, elem := range arr {
 
-func (or Result) Regex(r string) (res []uint) {
-	re := regexp.MustCompile(r)
-	for _, v := range re.FindStringSubmatch(or.raw) {
-		i, err := strconv.ParseUint(v, 10, 32)
-		if err == nil {
-			res = append(res, uint(i))
+		if elem.LineNo == line {
+			// "#%2s|>%30s" c.Cyan(i),
+			s += c.F("%-48s", elem.String())
+		} else {
+			line = elem.LineNo
+			// log.Debugf("Len S %d", len(elem.String()))
+			s += c.F("\nLn#%11s -> %-48s", c.Mgt(elem.LineNo), elem.String())
 		}
 	}
-	return
+	s += "\n\n"
+
+	return s
 }
 
-func (or Result) Intersect(k []string) (r []string) {
-	for _, v := range k {
-		if slices.Contains(or.fields, v) {
-			r = append(r, v)
-		}
+func (a AlmoResult) String() string {
+	return c.F("%s [%s]", c.F("%13vx%-13v", c.Red(a.X), c.Red(a.Y)), c.Green(c.Shorterer(a.Linechars, 7)))
+}
+func init() {
+	// Fallback to searching on PATH.
+	user = c.ActiveUser()
+	log = c.Logger()
+}
+
+// ExtractText prepare and extract text from img
+func ExtractText(img string) *ImageProfile {
+	// defer  timeTrack(time.Now(), "AltOcr")
+	ip := &ImageProfile{
+		original:   img,
+		recognized: make([]AlmoResult, 0),
 	}
-	return r
-}
 
-func RegionText(img string, topleft, size image.Point) Result {
-	defer timeTrack(time.Now(), "\nRegionText")
-	cropedregion := Concat(img, topleft, size)
-	prep := OptimizeForOCR(cropedregion)
-	r, e := recognize(prep)
+	e := PrepareForRecognize(ip)
 	if e != nil {
-		log.Errorf("RegionText fails: %v", e)
+		log.Errorf("IMAGE NOT PREPARED")
 	}
-	return r
-}
+	log.Trace(c.Red("Optimized img -> "), c.Cyan(ip.prepared))
 
-func TextExtract(img string) Result {
-	defer timeTrack(time.Now(), "RegularOcr")
-	imgPrep := OptimizeForOCR(img)
-	t, _ := recognize(imgPrep)
-	return t
-}
-
-func TextExtractAlto(img string) Alto {
-	defer timeTrack(time.Now(), "RegularOcr")
-	imgPrep := OptimizeForOCR(img)
-	f, _ := tmpFile()
-	runOcr(imgPrep, f.Name())
-	return UnmarshalAlto(f.Name())
-}
-
-// recognize text on a given img
-func recognize(img string) (Result, error) {
-	f, _ := tmpFile()
-	e := runOcr(img, f.Name())
-	raw, e := readTmp(f.Name() + ".txt")
-	r := Result{
-		raw: formatStr(strings.TrimSpace(string(raw))),
-	}
-	log.Tracef("Raw OCR: %s", raw)
-	//	color.HiCyan("Raw OCR: %s", raw)
-	r.fields = cleanText(r.raw)
-	return r, e
-}
-
-func cleanText(s string) []string {
-	res := strings.Fields(s)
-	var filtered []string
-	for _, v := range res {
-		if len(v) > 3 || strings.ContainsAny(v, "01234356789") || slices.Contains(cfg.OcrConf.Exceptions, v) {
-			filtered = append(filtered, v)
-		}
-	}
-	return filtered
-}
-
-func formatStr(in string) string {
-	res := strings.Split(in, "\n")
-	return strings.Join(res, " ")
+	return ip
 }
 
 func tmpFile() (*os.File, error) {
-	outfile, err := os.CreateTemp("", "ghost-tesseract-out-")
-	defer outfile.Close()
+	outfile, err := os.CreateTemp(c.TempFile(""), "ghost-tesseract-out-")
 	if err != nil {
 		return nil, err
 	}
+	defer outfile.Close()
 	return outfile, nil
 }
 
@@ -121,8 +86,30 @@ func readTmp(fname string) ([]byte, error) {
 	return bytes, nil
 }
 
-func timeTrack(start time.Time, name string) {
-	c := color.New(color.BgHiBlue, color.FgCyan, color.Underline, color.Bold).SprintfFunc()
+func timeTrack(start time.Time, name string) string {
 	elapsed := time.Since(start)
-	fmt.Printf("%v\n", c("[%s] %s", name, elapsed.Round(time.Millisecond)))
+	return c.F("%v\n\r", c.TTrack("\r[%s] %s", name, elapsed.Round(time.Millisecond)))
+}
+
+func unique(sample []AlmoResult) []AlmoResult {
+	var unique []AlmoResult
+	type key struct {
+		value1 string
+		val2   int
+	}
+	m := make(map[key]int)
+	for _, v := range sample {
+		k := key{v.Linechars, v.Y}
+		if i, ok := m[k]; ok {
+			// Overwrite previous value per requirement in
+			// question to keep last matching value.
+			unique[i] = v
+		} else {
+			// Unique key found. Record position and collect
+			// in result.
+			m[k] = len(unique)
+			unique = append(unique, v)
+		}
+	}
+	return unique
 }

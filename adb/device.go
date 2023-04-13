@@ -8,14 +8,17 @@ import (
 	"strconv"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"worker/cfg"
 )
 
 // DevState represents the last queried state of an Android device.
 
 type DevState int
 
-var ErrNoDevices = errors.New("attached devices not found")
+var (
+	log          = cfg.Logger()
+	ErrNoDevices = errors.New("attached devices not found")
+)
 
 // Point Offset:
 // 0 -> full x*height
@@ -38,6 +41,12 @@ const (
 	Online
 	Unauthorized
 )
+
+var strstates = [...]string{"Offline", "Online", "Unautorized"}
+
+func (d DevState) String() string {
+	return strstates[d]
+}
 
 // Device represents an attached Android device.
 type Device struct {
@@ -80,17 +89,26 @@ func Connect(hostport string) (*Device, error) {
 	if adb == "" {
 		return nil, ErrADBNotFound
 	}
+	//check existing connection
+	devs, e := Devices()
+	if e == nil {
+		for _, d := range devs {
+			if d.Serial == hostport {
+				return d, nil
+			}
+		}
+	}
 	// serial := fmt.Sprintf("%v:%v", host, port)
 	cmd := Cmd{Args: []string{"connect", hostport}}
 
-	if out, err := cmd.Call(); err == nil {
+	if out, err := cmd.Call(); err == nil && checkOut(out) {
 		dev := &Device{Serial: hostport, DevState: Online}
-		err = resolution(dev)
+		_ = resolution(dev)
 		Abi(dev)
-		log.Infof("--> %v <--\n", out)
+		log.Infof("--> %v", out)
 		return dev, nil
 	} else {
-		return nil, err
+		return nil, errors.New(out)
 	}
 }
 
@@ -105,10 +123,10 @@ func parseDevices(out string) ([]*Device, error) {
 	for _, line := range lines {
 		fields := strings.Fields(line)
 		switch len(fields) {
-		case 0:
+		case 0, 8:
 			continue
 		case 6:
-			tid, _ := strconv.Atoi(strings.Trim(fields[5], "transport_id:"))
+			tid, _ := strconv.Atoi(strings.Trim(fields[5], "transpo_id:"))
 			device := &Device{
 				Serial:      fields[0],
 				DevState:    state(fields[1]),
@@ -144,10 +162,8 @@ func resolution(d *Device) error {
 			switch k {
 			case 1:
 				(d.Resolution).Y, err = strconv.Atoi(v)
-				break
 			case 2:
 				(d.Resolution).X, err = strconv.Atoi(v)
-				break
 			}
 		}
 	}
@@ -159,4 +175,9 @@ func state(str string) DevState {
 		return Online
 	}
 	return Offline
+}
+
+func checkOut(str string) bool {
+	return strings.Contains(str, "connected to") || strings.Contains(str, "already connected to")
+
 }

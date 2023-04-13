@@ -2,10 +2,10 @@ package repository
 
 import (
 	"errors"
+	"os"
 	"time"
 
-	"github.com/fatih/color"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -16,11 +16,8 @@ const (
 )
 
 var udb, lcdb *gorm.DB
+var log *logrus.Logger
 
-type Client interface {
-	GetDaily() map[string]bool
-	UpdateDaily() error
-}
 type RawLocation struct {
 	gorm.Model
 	Name string
@@ -41,21 +38,41 @@ type User struct {
 type Progress struct {
 	UserID uint
 	gorm.Model
-	Location uint
-	Level    uint
+	Mode  string
+	Level uint
 }
 
 type Daily struct {
 	UserID uint
 	gorm.Model
-	Quests uint8 `gorm:"default:0"`
+	Quests uint `gorm:"default:0"`
+}
+
+type Button struct {
+	gorm.Model
+	Name                   string
+	Text                   string
+	X, Y, Xwmsize, Ywmsize int
 }
 
 func DbInit(fn func(string) string) {
+	f, _ := os.OpenFile(fn("db.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+
+	log = &logrus.Logger{
+		Out: f,
+		Formatter: &logrus.TextFormatter{
+			ForceColors:               true,
+			EnvironmentOverrideColors: true,
+			PadLevelText:              true,
+			TimestampFormat:           time.Stamp,
+		},
+		Level: logrus.TraceLevel,
+	}
+
 	udb = CreateDBConnection(fn(appdata))
 	migrateScheme(udb, &User{}, &Daily{}, &Progress{})
 	lcdb = CreateDBConnection(fn(locations))
-	migrateScheme(lcdb, &RawLocation{})
+	migrateScheme(lcdb, &RawLocation{}, &Button{})
 }
 
 func CreateDBConnection(dbname string) *gorm.DB {
@@ -70,7 +87,7 @@ func migrateScheme(g *gorm.DB, datatypes ...interface{}) {
 	// Migrate the schema
 	e := g.AutoMigrate(datatypes...)
 	if e != nil {
-		color.HiWhite("\nerr:%v\nduring run:%v", e, "udb connect")
+		log.Errorf("\nerr:%v\nduring run:%v", e, "udb connect")
 	}
 }
 
@@ -83,10 +100,36 @@ func GetUser(user string) *User {
 	}
 	return &usr
 }
+func (u *User) Id() uint {
+	return u.ID
+}
+func (u *User) Name() string {
+	return u.Username
+}
+
+func (u *User) Quests() uint {
+	var td *Daily
+	r := udb.Where("user_id = ? and created_at > ?", u.ID, StartOfDay(time.Now().UTC())).First(&td)
+	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
+		td = &Daily{Quests: 0, UserID: u.ID}
+		udb.Save(td)
+	}
+	return td.Quests
+}
+func (u *User) SetQuests(q uint) {
+	var usrDaily *Daily
+	r := udb.Where("user_id = ? and created_at > ?", u.ID, StartOfDay(time.Now().UTC())).First(&usrDaily)
+	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
+		usrDaily = &Daily{Quests: q, UserID: u.ID}
+	} else {
+		usrDaily.Quests = q
+	}
+	udb.Save(usrDaily)
+}
 
 func (u *User) save() {
 	r := udb.Save(u)
-	color.HiWhite("\nudb: %v user updated", r.RowsAffected)
+	log.Errorf("\nudb: %v user updated", r.RowsAffected)
 	if r.Error != nil {
 		panic("DB ERROR : " + r.Error.Error())
 	}
@@ -97,49 +140,24 @@ func (u *User) AfterUpdate(tx *gorm.DB) (err error) {
 	return
 }
 
-func (u *User) DailyData() *Daily {
-	var td *Daily
-	r := udb.Where("user_id = ? and created_at > ?", u.ID, StartOfDay(time.Now().UTC())).First(&td)
-	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
-		td = &Daily{Quests: 0, UserID: u.ID}
-		udb.Save(td)
-	}
-
-	return td
-}
-
-func (u *Daily) Update(quest uint8) {
-	u.Quests = quest
-	r := udb.Save(u)
-	color.HiWhite("\nudb: %v user updated", r.RowsAffected)
+func (p *Progress) Update(level uint) {
+	p.Level = level
+	r := udb.Save(p)
+	log.Errorf("\nudb: %v user updated", r.RowsAffected)
 	if r.Error != nil {
 		panic("DB ERROR : " + r.Error.Error())
 	}
 }
 
-func (u *Progress) Update(level uint) {
-	u.Level = level
-	r := udb.Save(u)
-	color.HiWhite("\nudb: %v user updated", r.RowsAffected)
-	if r.Error != nil {
-		panic("DB ERROR : " + r.Error.Error())
-	}
-}
-
-func (u *User) GetProgress(loc uint) *Progress {
+func (u *User) GetProgress(loc string) *Progress {
 	var p *Progress
-	r := udb.Where("user_id = ? and location = ?", u.ID, loc).Order("created_at DESC").First(&p)
+	r := udb.Where("user_id = ? and location_type = ?", u.ID, loc).Order("created_at DESC").First(&p)
 	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
 		log.Error("No entries rn")
-		p = &Progress{Location: loc, Level: 0, UserID: u.ID}
+		p = &Progress{Mode: loc, Level: 0, UserID: u.ID}
 		udb.Save(p)
 	}
 	return p
-}
-
-func (u *User) LocLevel(loc, level uint) {
-	u.Locations = append(u.Locations, Progress{Location: loc, Level: level})
-	udb.Save(u)
 }
 
 func StartOfDay(t time.Time) time.Time {
@@ -164,5 +182,35 @@ func RawLocData(loc, txt string) {
 	lcdb.Create(&RawLocation{Name: loc, Text: txt})
 }
 
+func (b Button) String() string {
+	return b.Name
+}
 
+func (b Button) Offset() (x int, y int) {
+	return 0, 0
+}
 
+func (b Button) Position() (x int, y int) {
+	return b.X, b.Y
+}
+
+func GetButtons(xResolution, yResolution int) []*Button {
+	var bts []*Button
+	r := lcdb.Where("xwmsize = ? and ywmsize = ?", xResolution, yResolution).Find(&bts)
+	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
+		log.Error("No entries rn")
+	}
+	return bts
+}
+func NewBtn(name, text string, x, y, xResolution, yResolution int) *Button {
+	b := &Button{
+		Name:    name,
+		Text:    text,
+		X:       x,
+		Y:       y,
+		Xwmsize: xResolution,
+		Ywmsize: yResolution,
+	}
+	lcdb.Save(b)
+	return b
+}
