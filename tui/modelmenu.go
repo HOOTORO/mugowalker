@@ -1,4 +1,4 @@
-package ui
+package tui
 
 import (
 	"fmt"
@@ -42,10 +42,11 @@ func (m modelSelect) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			i, ok := m.list.SelectedItem().(item)
 			if ok {
-				m.choice = string(i)
-				l.Tracef("Chosen -> %v", c.Red(m.choice))
-				// cmd := inputChosen(m.choice)
-				cmd := selectedItem(m.choice)
+				m.choice = i.option
+				l.Tracef("Chosen -> %+v", c.Red(m.choice))
+				cmd := inputChosen(m.choice, i.viewform)
+				// cmd := selectedItem(m.choice)
+
 				return m, cmd
 			}
 			// return m.Update(msg)
@@ -82,9 +83,13 @@ func initSelectModel(li []list.Item) modelSelect {
 	return modelSelect{list: m}
 }
 
-type item string
+type item struct {
+	option   string
+	viewform state
+}
 
-func (i item) FilterValue() string { return "" }
+func (i item) FilterValue() string { return i.option }
+func (i item) View() state         { return i.viewform }
 
 type itemDelegate struct{}
 

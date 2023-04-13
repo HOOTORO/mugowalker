@@ -1,4 +1,4 @@
-package ui
+package tui
 
 import (
 	c "worker/cfg"
@@ -74,7 +74,7 @@ func (cm coreModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return cm, cmd
 		}
 	case inputMsg:
-		switch msg {
+		switch msg.m {
 		case "Settings":
 			cm.current = selectView
 			cm.menuList = initSelectModel(settings)
@@ -117,7 +117,7 @@ func (cm coreModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		}
 	case selectMsg:
-		if nextItems := FindItem(msg.ChosenItem); nextItems != nil {
+		if nextItems := Finditem(msg.ChosenItem); nextItems != nil {
 
 		}
 

@@ -7,10 +7,10 @@ import (
 	"worker/adb"
 	"worker/afk/activities"
 	"worker/cfg"
+	"worker/tui"
 
 	// "worker/afk/activities"
 	"worker/bot"
-	"worker/ui"
 
 	"github.com/sirupsen/logrus"
 
@@ -51,7 +51,7 @@ func main() {
 		if e != nil {
 			log.Fatalf(c.Red("%v"), e.Error())
 		}
-		gw := afk.New(&ui.AppUser{})
+		gw := afk.New(&tui.AppUser{})
 		bb := bot.New(fn)
 		bot := afk.NewArenaBot(bb, gw)
 
@@ -66,7 +66,7 @@ func main() {
 	log.Warnf(c.Red("RUN BEGIN : %v"), time.Now())
 
 	// err := ui.RunMainMenu(user)
-	err := ui.RunUI(cfg.ActiveUser())
+	err := tui.RunUI(cfg.ActiveUser())
 	if err != nil {
 		log.Errorf("ERROROR: %v", err)
 	}

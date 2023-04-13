@@ -1,13 +1,16 @@
-package ui
+package tui
 
 import tea "github.com/charmbracelet/bubbletea"
 
-type inputMsg string
+type inputMsg struct {
+	m string
+	s state
+}
 type inputDoneMsg string
 
-func inputChosen(m string) tea.Cmd {
+func inputChosen(m string, st state) tea.Cmd {
 	return func() tea.Msg {
-		return inputMsg(m)
+		return inputMsg{m: m, s: st}
 	}
 }
 func inputDone(m string) tea.Cmd {

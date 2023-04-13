@@ -1,4 +1,4 @@
-package ui
+package tui
 
 import (
 	"github.com/charmbracelet/bubbles/list"
@@ -7,50 +7,50 @@ import (
 
 var (
 	mainmenu = []list.Item{
-		item("Device"),
-		item("AFK Arena"),
-		item("Parse Images"),
-		item("Settings"),
-		item("Statistics"),
+		item{"Device", selectView},
+		item{"AFK Arena", selectView},
+		item{"Parse Images", selectView},
+		item{"Settings", selectView},
+		item{"Statistics", selectView},
 	}
 
 	device = []list.Item{
-		item("manual connect via ADB"),
-		item("last used"),
+		item{"manual connect via ADB", selectView},
+		item{"last used", selectView},
 	}
 	afkarena = []list.Item{
-		item("Do daily"),
-		item("Push Campain"),
-		item("Push King Tower"),
+		item{"Do daily", selectView},
+		item{"Push Campain", selectView},
+		item{"Push King Tower", selectView},
 	}
 	imagework = []list.Item{
-		item("Folder path"),
-		item("Destination"),
+		item{"Folder path", selectView},
+		item{"Destination", selectView},
 	}
 	settings = []list.Item{
-		item("Account"),
-		item("App (AFK Global/Test)"),
-		item("Imagick"),
-		item("Magick"),
-		item("LogLevel"),
+		item{"Account", selectView},
+		item{"App (AFK Global/Test)", selectView},
+		item{"Imagick", selectView},
+		item{"Magick", selectView},
+		item{"LogLevel", selectView},
 	}
 
 	statistics = []list.Item{
-		item("Summons"),
-		item("Rankings"),
-		item("Boss/Team DMG"),
+		item{"Summons", selectView},
+		item{"Rankings", selectView},
+		item{"Boss/Team DMG", selectView},
 	}
 	loglvls = []list.Item{
-		item("Trace"),
-		item("Info"),
-		item("Debug"),
-		item("Error"),
-		item("Fatal"),
-		item("Panic"),
+		item{"Trace", selectView},
+		item{"Info", selectView},
+		item{"Debug", selectView},
+		item{"Error", selectView},
+		item{"Fatal", selectView},
+		item{"Panic", selectView},
 	}
 	afkgameids = []list.Item{
-		item("com.lilithgames.hgame.gp"),
-		item("com.lilithgames.hgame.gp.id"),
+		item{"com.lilithgames.hgame.gp", selectView},
+		item{"com.lilithgames.hgame.gp.id", selectView},
 	}
 )
 
@@ -62,7 +62,7 @@ type menuItem struct {
 
 var items = [][]list.Item{mainmenu, device, afkarena, imagework, settings, statistics, loglvls, afkgameids}
 
-func FindItem(s string) []list.Item {
+func Finditem(s string) []list.Item {
 	for _, v := range items {
 		for _, i := range v {
 			if i.FilterValue() == s {
