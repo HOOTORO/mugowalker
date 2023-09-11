@@ -1,0 +1,38 @@
+{
+  "version": "0.2.0",
+  "configurations": [    
+    {
+      "name": "LiveReload: Dev mugowalker",
+      "type": "PowerShell",
+      "request": "launch",
+      "script": "wails dev"
+    },
+    {
+      "name": "Wails: Production mugowalker",
+      "type": "go",
+      "request": "launch",
+      "mode": "exec",
+      "program": "${workspaceFolder}/build/bin/mugowalker.exe",
+      "preLaunchTask": "build",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Wails: Debug mugowalker",
+      "type": "go",
+      "request": "launch",
+      "mode": "exec",
+      "program": "${workspaceFolder}/build/bin/mugowalker.exe",
+      "preLaunchTask": "build debug",
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "name": "Wails: Dev mugowalker",
+      "type": "go",
+      "request": "launch",
+      "mode": "exec",
+      "program": "${workspaceFolder}/build/bin/mugowalker.exe",
+      "preLaunchTask": "build dev",
+      "cwd": "${workspaceFolder}"
+    },
+  ]
+}

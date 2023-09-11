@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Mugowalker</title>
+</head>
+
+<style>
+    * {
+        user-select: none;
+        box-sizing: border-box;
+    }
+
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        -webkit-font-smoothing: antialiased;
+        font-family: "Twilio Sans Mono";
+        font-family: "Twilio Sans Mono";
+        font-feature-settings: "kern", "liga";
+        -webkit-text-size-adjust: none;
+        text-size-adjust: none;
+        color: #e7e7e7;
+    }
+
+    @keyframes slidebg {
+        to {
+            background-position: 200px;
+        }
+    }
+
+    .control {
+        position: absolute;
+        top: 0;
+        right: 0;
+    }
+
+    .control .btn {
+        background-color: transparent;
+        cursor: pointer;
+        font-size: 1.3rem;
+        padding: 5px;
+    }
+
+    a {
+        text-decoration: none;
+        color: #00eeff;
+    }
+
+    h1 {
+        color: rgba(248, 248, 242, 0.54);
+        text-align: center;
+        font-size: 3em;
+        margin: 0 0 1.25em;
+        text-shadow: 1px 1px 2px red, 0 0 1em blue, 0 0 0.2em blue;
+    }
+
+    footer {
+        line-height: 0.6;
+        text-align: end;
+        font-size: small;
+        position: absolute;
+        padding: 0;
+        margin: 0;
+        bottom: 0;
+        right: 10px;
+    }
+</style>
+
+<body style="--wails-draggable:drag">
+    <script src="./src/main.ts" type="module"></script>
+</body>
+
+<footer>
+    <p>
+        Read the documentation <a href="https://kit.svelte.dev" rel="noopener noreferrer"
+            target="_blank">kit.svelte.dev</a>
+    </p>
+    <p>
+        Read the documentation <a href="https://wails.io/docs" rel="noopener noreferrer"
+            target="_blank">wails.io/docs</a>
+    </p>
+    <p>
+        Study svetle at <a href="https://learn.svelte.dev/" rel="noopener noreferrer"
+            target="_blank">learn.svelte.dev</a>
+    </p>
+</footer>
+
+</html>

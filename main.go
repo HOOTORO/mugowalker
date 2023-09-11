@@ -1,73 +1,41 @@
 package main
 
 import (
-	"os"
-	"time"
+	"embed"
 
-	"worker/adb"
-	"worker/afk/activities"
-	"worker/cfg"
-	"worker/tui"
-
-	// "worker/afk/activities"
-	"worker/bot"
-
-	"github.com/sirupsen/logrus"
-
-	"worker/afk"
-	c "worker/cfg"
-
-	"github.com/fatih/color"
+	"github.com/wailsapp/wails/v2"
+	"github.com/wailsapp/wails/v2/pkg/options"
+	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 )
 
-var (
-	log                        *logrus.Logger
-	user                       *c.Profile
-	red, green, cyan, ylw, mgt func(...interface{}) string
-)
-
-func init() {
-	user = c.ActiveUser()
-	red = color.New(color.FgHiRed).SprintFunc()
-	green = color.New(color.FgHiGreen).SprintFunc()
-	cyan = color.New(color.FgHiCyan).SprintFunc()
-	ylw = color.New(color.FgHiYellow).SprintFunc()
-	mgt = color.New(color.FgHiMagenta).SprintFunc()
-}
+//go:embed all:frontend/build
+var assets embed.FS
 
 func main() {
-	log = c.Logger()
-	fn := func(a string, b string) {
+	// Create an instance of the app structure
+	app := NewApp()
 
-		log.Warnf("%v |>\n %v", mgt(a), b)
-	}
+	// Create application with options
+	err := wails.Run(&options.App{
+		Title:         "mugowalker",
+		Width:         500,
+		Height:        900,
+		DisableResize: true,
+		AlwaysOnTop:   true,
+		AssetServer: &assetserver.Options{
+			Assets: assets,
+		},
+		Frameless:        true,
+		CSSDragProperty:  "--wails-draggable",
+		CSSDragValue:     "drag",
+		BackgroundColour: &options.RGBA{R: 11, G: 11, B: 21, A: 1},
+		OnStartup:        app.startup,
+		Bind: []interface{}{
+			app,
+		},
+	})
 
-	if len(os.Args) > 1 && os.Args[1] == "-t" {
-		log.SetLevel(logrus.TraceLevel)
-
-		color.HiRed("%v", "TEST RUN")
-
-		_, e := adb.Connect("127.0.0.1:5556")
-		if e != nil {
-			log.Fatalf(c.Red("%v"), e.Error())
-		}
-		gw := afk.New(&tui.AppUser{})
-		bb := bot.New(fn)
-		bot := afk.NewArenaBot(bb, gw)
-
-		a := bot.ScanText()
-		_ = a
-		b := activities.BoardsQuests(a.Result())
-		log.Warn(c.Red(b))
-
-		return
-	}
-
-	log.Warnf(c.Red("RUN BEGIN : %v"), time.Now())
-
-	// err := ui.RunMainMenu(user)
-	err := tui.RunUI(cfg.ActiveUser())
 	if err != nil {
-		log.Errorf("ERROROR: %v", err)
+		println("Error:", err.Error())
 	}
 }
