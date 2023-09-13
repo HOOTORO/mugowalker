@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"mugowalker/backend/adb"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -39,6 +40,16 @@ func (a *App) startup(ctx context.Context) {
 // Greet returns a greeting for the given name
 func (a *App) Greet(name string) string {
 	return fmt.Sprintf("Connected to  %s!", name)
+}
+
+func (a *App) AdbConnect(dev string) (bool, string) {
+	d, e := adb.Connect(dev)
+	if e != nil {
+		log.Printf("ADB --> %s, %s", "false", e.Error())
+		return false, e.Error()
+	}
+	log.Printf("ADB --> %s, %v", "true", d)
+	return true, fmt.Sprintf("Connected to  %s!", dev)
 }
 
 func (a *App) SelectFolder() string {
