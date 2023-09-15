@@ -1,0 +1,63 @@
+connection: "localhost"
+userprofile: "hui"
+    account: "pizda"
+    game: "afk"
+    taskconfigs:
+        - cfg/reactions.yaml
+        - cfg/daily.yaml
+imagick:
+    - -colorspace
+    - Gray
+    - -alpha
+    - "off"
+    - -threshold
+    - 75%
+alt_imagick:
+    - -colorspace
+    - Gray
+    - -alpha
+    - "off"
+    - -threshold
+    - 75%
+    - -edge
+    - "2"
+    - -negate
+    - -black-threshold
+    - 90%
+tesseract:
+    - --psm
+    - "6"
+    - ..\ocr\tesscnf
+    - quiet
+alt_tesseract:
+    - --psm
+    - "3"
+    - hoot
+    - quiet
+bluestacks:
+    - --instance
+    - Rvc64
+    - --cmd
+    - launchApp 
+    - --package 
+    - "com.lilithgames.hgame.gp.id"
+dict_shrt_except:
+    - Go
+    - Up
+    - In
+    - Tap
+logfile: appp.log
+loglevel: TRACE
+draw_step: false
+dirs:
+    root: .afkworker
+    sqDB: db
+    testData: _test
+    gameConf: cfg
+    tempImg: work_images
+    user: usrdata
+required_installed_software:
+    - adb
+    - magick
+    - tesseract
+    - HD-Player

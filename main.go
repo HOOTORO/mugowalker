@@ -18,9 +18,14 @@ func main() {
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:         "Mugowalker",
-		Width:         500,
-		Height:        1000,
-		DisableResize: true,
+		Width:         800,
+		Height:        400,
+		MinWidth:      100,
+		MinHeight:     100,
+		MaxWidth:      1280,
+		MaxHeight:     740,
+		DisableResize: false,
+		Fullscreen:    false,
 		AlwaysOnTop:   true,
 		AssetServer: &assetserver.Options{
 			Assets: assets,

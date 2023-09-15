@@ -2,29 +2,25 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"mugowalker/backend/adb"
-	"os"
-	"path/filepath"
-	"regexp"
-	"strings"
+	"mugowalker/backend/afk"
+	"mugowalker/backend/bot"
+	"mugowalker/backend/cfg"
 
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	rt "github.com/wailsapp/wails/v2/pkg/runtime"
 )
-
-type OptionsType struct {
-	CaseInsensitive bool `json:"caseInsensitive,omitempty"`
-	WholeWord       bool `json:"wholeWord,omitempty"`
-	WholeLine       bool `json:"wholeLine,omitempty"`
-	FilenameOnly    bool `json:"filenameOnly,omitempty"`
-	FilesWoMatches  bool `json:"filesWoMatches,omitempty"`
-}
 
 // App struct
 type App struct {
 	ctx context.Context
+	dw  *afk.Daywalker
 }
+
+// type Msg struct {
+// 	Component string
+// 	Message   string
+// 	err       error
+// }
 
 // NewApp creates a new App application struct
 func NewApp() *App {
@@ -35,120 +31,38 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+
+	fn := func(s1, s2 string) { a.sendMessage(s1, s2) }
+	u := cfg.ActiveUser()
+	u.GameAccount = "fdsf"
+	u.DeviceSerial = "fdsdfdf"
+	gw := afk.New(u)
+	bb := bot.New(fn)
+	a.dw = afk.NewArenaBot(bb, gw)
+	a.sendMessage("init", cfg.F("%v", a.dw))
+	// a := bot.ScanText()
+	// _ = a
+	// b := activities.BoardsQuests(a.Result())
+	// log.Warn(c.Red(b))
+	// a.dw.outFn("APP STARTED")
 }
 
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Connected to  %s!", name)
+func (a *App) sendMessage(event, message string) {
+	rt.EventsEmit(a.ctx, event, message)
 }
 
-func (a *App) AdbConnect(dev string) (bool, string) {
-	d, e := adb.Connect(dev)
-	if e != nil {
-		log.Printf("ADB --> %s, %s", "false", e.Error())
-		return false, e.Error()
+func (a *App) AdbConnect(str string) (isConnected bool) {
+
+	dev, err := adb.Connect(str)
+
+	if err == nil {
+		a.dw.Connect(dev)
+		isConnected = true
+		// a.dw.outFn("dev connnected")
+
 	}
-	log.Printf("ADB --> %s, %v", "true", d)
-	return true, fmt.Sprintf("Connected to  %s!", dev)
+	return
+
 }
 
-func (a *App) SelectFolder() string {
-	selection, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Select Folder",
-	})
-	if err != nil {
-		log.Println("Error selecting a folder")
-	}
-	return selection
-}
-
-func (a *App) SelectFile() string {
-	selection, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Select File",
-	})
-	if err != nil {
-		log.Println("Error selecting a file")
-	}
-	return selection
-}
-
-func (a *App) Search(path string, pattern string, options OptionsType) string {
-	if path == "" {
-		_, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-			Title:         "ERROR",
-			Message:       "No path was entered",
-			Buttons:       []string{"OK"},
-			DefaultButton: "OK",
-		})
-		if err != nil {
-			log.Println(err)
-			return ""
-		}
-		return ""
-	}
-
-	if pattern == "" {
-		_, err := runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-			Title:         "ERROR",
-			Message:       "No pattern was entered",
-			Buttons:       []string{"OK"},
-			DefaultButton: "OK",
-		})
-		if err != nil {
-			log.Println(err)
-			return ""
-		}
-		return ""
-	}
-
-	if options.CaseInsensitive {
-		pattern = "(?i)" + pattern
-	}
-	if options.WholeWord {
-		pattern = `\b` + pattern + `\b`
-	}
-	if options.WholeLine {
-		pattern = "^" + pattern + "$"
-	}
-
-	results, err := walkDir(path, pattern, options)
-	if err != nil {
-		log.Fatalln("ERROR walking the directory!")
-	}
-
-	if len(results) > 0 {
-		return results
-	} else {
-		return "Not results were found"
-	}
-}
-
-// func (a *App) ParseImage(path string) string {
-// 	ip := ocr.ExtractText(path)
-// }
-
-func walkDir(dirToWalk string, pattern string, options OptionsType) (string, error) {
-	var matches []string
-	err := filepath.Walk(dirToWalk, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			r, err := regexp.Compile(pattern)
-			if err != nil {
-				return err
-			}
-			if r.MatchString(info.Name()) {
-				matches = append(matches, path)
-			}
-		}
-		return nil
-	})
-
-	if err != nil {
-		return "", err
-	}
-
-	results := strings.Join(matches, "\n")
-	return strings.ReplaceAll(results, dirToWalk, ""), nil
-}
+// func (a *App) runMF()

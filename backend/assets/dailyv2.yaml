@@ -1,0 +1,168 @@
+########## DAILY ########
+
+- name: quests
+  reactions:
+    - if: campain
+      do:
+        - Quests
+    - if: forrest
+      do:
+        - Quests
+    - if: ranhorn
+      do:
+        - Quests
+    - if: rBanOpen
+      do:
+        - Quests
+    - if: Collect
+      do:
+        - Collect
+    - if: Begin Battle
+      do:
+        - Go
+        - Begin
+        - Battle
+# - name: fastrewards
+#   reactions:
+#       - if: campain
+#         do: 5:17
+#       - if: forrest
+#         do: 3:18
+#       - if: ranhorn
+#         do: 3:18
+#       - if: fastrewards
+#         do: 4:12
+#         after: markDone
+# #
+# #  midloc: overlay 4:14;5:11;4:14;5:11
+# #  final: campain
+
+# - name: friends
+#   reactions:
+#       - if: campain
+#         do: 5:4:2
+#       - if: forrest
+#         do: 3:18
+#       - if: ranhorn
+#         do: 3:18
+#       - if: rBanOpen
+#         do: 5:7
+#       - if: friends
+#         do: 5:16
+#         after: markDone
+
+# - name: wrizz
+#   reactions:
+#       - if: campain
+#         do: 1:18
+#       - if: forrest
+#         do: 1:18
+#       - if: ranhorn
+#         do: 2:5
+#       - if: rBanOpen
+#         do: 5:10
+#       - if: guildgrounds
+#         do: 2:7
+#       - if: wrizz
+#         do: 4:18
+#       - if: skipf
+#         do: 4:12
+#         after: markDone
+
+# - name: oak
+#   reactions:
+#       - if: campain
+#         do: 1:18
+#       - if: forrest
+#         do: 1:18
+#       - if: ranhorn
+#         do: 4:3
+#       - if: rBanOpen
+#         do: 5:10
+#       - if: oak
+#         before: 2:14:2
+#         do: 3:14:2
+#         after: markDone
+
+# #      - grid: 3:3
+# #        delay: 1
+# #        skiplocheck: true
+# #      - grid: 4:12:2
+# #        delay: 1
+# #        skiplocheck: true
+# #      - grid: 3:3
+# #        delay: 1
+# #        skiplocheck: true
+# - name: arena1x1
+#   reactions:
+#       - if: campain
+#         do: 2:18
+#       - if: forrest
+#         do: 4:10
+#       - if: ranhorn
+#         do: 2:18
+#       - if: rBanOpen
+#         do: 5:10
+#       - if: arena
+#         do: 1:7
+#       - if: soloarena
+#         do: 3:18
+#       - if: opponent
+#         before:  4:13:2
+#         do: 3:18
+#         after: markDone
+
+#- name: QKT
+#  startloc:
+#      - ranhorn
+#  steps:
+#      - grid: 2:18
+#        delay: 5
+#        skiplocheck: true
+#      - grid: 3:9
+#        delay: 3
+#        skiplocheck: true
+#      - grid: 3:9
+#        delay: 2
+#        skiplocheck: true
+#      - grid: 3:10
+#        delay: 1
+#        skiplocheck: true
+#      - grid: 3:18
+#        delay: 1
+#        skiplocheck: true
+#      - grid: 1:15:0
+#        delay: 1
+#        skiplocheck: true
+#      - grid: 2:10
+#        delay: 1
+#        skiplocheck: true
+#      - grid: 3:18
+#        delay: 1
+#        skiplocheck: true
+#      - grid: 4:15:0
+#        delay: 1
+#        skiplocheck: true
+
+#- name: QCamp
+#  startloc:
+#      - ranhorn
+#  steps:
+#      - grid: 3:18
+#        delay: 3
+#        skiplocheck: true
+#      - grid: 3:17
+#        delay: 1
+#        skiplocheck: true
+#      - grid: 3:18
+#        delay: 1
+#        skiplocheck: true
+#      - grid: 1:15
+#        delay: 1
+#        skiplocheck: true
+#      - grid: 2:10
+#        delay: 1
+#        skiplocheck: true
+#      - grid: 1:18
+#        delay: 1
+#        skiplocheck: true

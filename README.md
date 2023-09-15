@@ -13,3 +13,5 @@ This software under the hood uses:
 - [ImageMagick](https://imagemagick.org/index.php)
 
 So they should be installed first.
+
+
