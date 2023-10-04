@@ -1,38 +1,38 @@
 {
-  "version": "0.2.0",
-  "configurations": [    
+  "configurations": [
     {
       "name": "LiveReload: Dev mugowalker",
-      "type": "PowerShell",
       "request": "launch",
-      "script": "wails dev"
+      "script": "wails dev",
+      "type": "zsh"
     },
     {
+      "cwd": "${workspaceFolder}",
+      "mode": "exec",
       "name": "Wails: Production mugowalker",
-      "type": "go",
-      "request": "launch",
-      "mode": "exec",
-      "program": "${workspaceFolder}/build/bin/mugowalker.exe",
       "preLaunchTask": "build",
-      "cwd": "${workspaceFolder}"
+      "program": "${workspaceFolder}/build/bin/mugowalker.exe",
+      "request": "launch",
+      "type": "go"
     },
     {
+      "cwd": "${workspaceFolder}",
+      "mode": "exec",
       "name": "Wails: Debug mugowalker",
-      "type": "go",
-      "request": "launch",
-      "mode": "exec",
-      "program": "${workspaceFolder}/build/bin/mugowalker.exe",
       "preLaunchTask": "build debug",
-      "cwd": "${workspaceFolder}"
+      "program": "${workspaceFolder}/build/bin/mugowalker.exe",
+      "request": "launch",
+      "type": "go"
     },
     {
-      "name": "Wails: Dev mugowalker",
-      "type": "go",
-      "request": "launch",
+      "cwd": "${workspaceFolder}",
       "mode": "exec",
-      "program": "${workspaceFolder}/build/bin/mugowalker.exe",
+      "name": "Wails: Dev mugowalker",
       "preLaunchTask": "build dev",
-      "cwd": "${workspaceFolder}"
+      "program": "${workspaceFolder}/build/bin/mugowalker.exe",
+      "request": "launch",
+      "type": "go"
     },
-  ]
+  ],
+  "version": "0.2.0"
 }
