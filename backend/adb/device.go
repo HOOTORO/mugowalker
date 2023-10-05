@@ -7,9 +7,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"mugowalker/backend/cfg"
-
 )
 
 // DevState represents the last queried state of an Android device.
@@ -17,7 +14,6 @@ import (
 type DevState int
 
 var (
-	log          = cfg.Logger()
 	ErrNoDevices = errors.New("attached devices not found")
 )
 
@@ -106,7 +102,7 @@ func Connect(hostport string) (*Device, error) {
 		dev := &Device{Serial: hostport, DevState: Online}
 		_ = resolution(dev)
 		Abi(dev)
-		log.Infof("--> %v", out)
+		// log.Infof("--> %v", out)
 		return dev, nil
 	} else {
 		return nil, errors.New(out)
@@ -140,7 +136,7 @@ func parseDevices(out string) ([]*Device, error) {
 			return nil, ErrNoDevices
 		}
 	}
-	log.Infof("Availiable Devices:\n%v", devices)
+	// log.Infof("Availiable Devices:\n%v", devices)
 	return devices, nil
 }
 

@@ -1,7 +1,7 @@
 package activities
 
 import (
-	c "mugowalker/backend/cfg"
+	"fmt"
 	"time"
 )
 
@@ -40,7 +40,7 @@ func (t Tower) Id() uint {
 func PushTower(ns Nightstalker, t Tower) {
 	for {
 		where := ns.Location()
-		log.Trace("NS", c.F("Where am I? %v", where))
+		fmt.Print("NS", fmt.Sprintf("Where am I? %v", where))
 		switch where {
 		case Campain.ID:
 			ns.Press(ForrestBotPanel)

@@ -2,6 +2,7 @@ package cfg
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"regexp"
@@ -38,7 +39,7 @@ func IsProcess(pid int) bool {
 }
 
 func Tasklist(processname string) ([]ProcessInfo, error) {
-	args := []string{"/fi", F("IMAGENAME eq %v*", processname), "/NH"}
+	args := []string{"/fi", fmt.Sprintf("IMAGENAME eq %v*", processname), "/NH"}
 	cmd := exec.Command("tasklist", args...)
 	var buf bytes.Buffer
 	cmd.Stdout = &buf

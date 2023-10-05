@@ -1,8 +1,9 @@
 package ocr
 
 import (
-	c "mugowalker/backend/cfg"
 	"errors"
+	"fmt"
+	"mugowalker/backend/settings"
 	"time"
 )
 
@@ -15,6 +16,7 @@ type ImageProfile struct {
 	prepArgs   []string
 	prepared   string
 	psm        int
+	ignored    []string
 	recognized []AlmoResult
 }
 
@@ -24,14 +26,14 @@ func (ip *ImageProfile) NewResults() []AlmoResult {
 
 	f, _ := tmpFile()
 
-	log.Trace(c.Cyan("SENT TO TESS PREPARED FILE  -> "), c.Mgt(ip.prepared))
+	log(settings.TRACE, "SENT TO TESS PREPARED FILE  -> "+ip.prepared)
 	e := ActivateTesseract(ip.prepared, f.Name(), customPsm(defpsm)...)
 	if e != nil {
-		log.Errorf("Tessereact mailfunc")
+		log(settings.ERR, "Tessereact mailfunc")
 	}
-	ip.recognized = unique(UnmarshalAlto(f.Name()).parse())
+	ip.recognized = unique(UnmarshalAlto(f.Name()).parse(ip.ignored))
 
-	log.Debug(c.F("Words Onscr: %v\n	Ocred: %v", c.Cyan(len(ip.recognized)), almoResultsStringer(ip.recognized, defpsm)))
+	log(settings.TRACE, fmt.Sprintf("Words Onscr: %v\n	Ocred: %v", len(ip.recognized), almoResultsStringer(ip.recognized, defpsm)))
 
 	return ip.recognized
 
@@ -46,10 +48,8 @@ func (ip *ImageProfile) Result() []AlmoResult {
 }
 
 func (ip *ImageProfile) TryAgain() []AlmoResult {
-
-	blaine.NewRandArgs()
 	time.Sleep(3 * time.Second)
-	PrepareForRecognize(ip)
+	PrepareForRecognize(ip, ip.psm, ip.prepArgs)
 	return ip.NewResults()
 
 }

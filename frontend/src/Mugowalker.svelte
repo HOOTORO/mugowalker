@@ -1,7 +1,7 @@
 <script lang="ts">
-    import { onMount, afterUpdate, tick } from "svelte";
-    import * as rt from "./lib/wailsjs/runtime/runtime.js";
+    import { afterUpdate, onMount } from "svelte";
     import Device from "./components/Device.svelte";
+    import * as rt from "./lib/wailsjs/runtime/runtime.js";
     // import { main } from "$lib/wailsjs/go/models.js";
     import { activity } from "./stores/activity.js";
     import { message } from "./stores/message.js";
@@ -14,20 +14,25 @@
 
     onMount(async () => {
         rt.EventsOn("message", (msg) => {
-            rt.LogPrint("recivew msg!" + msg);
+            rt.LogPrint("review msg!" + msg);
+            $message = msg;
+            activity.writeLog(msg);
+        });
+
+        rt.EventsOn("init", (msg) => {
+            rt.LogPrint("INIT msg!" + msg);
             $message = msg;
             activity.writeLog(msg);
         });
     });
 
-    function quit() {
-        rt.Quit();
-    }
+    afterUpdate(async () => {
+        const ou = document.querySelector(".lof");
+        if (ou && ou.innerHTML.length > 980) {
+            ou.scrollBy(0, 100);
+        }
+    });
 </script>
-
-<div class="control" id="winbtn">
-    <button class="btn" on:click={quit}>❌</button>
-</div>
 
 <div class="main">
     <Device />
@@ -38,24 +43,37 @@
         <Settings />
     </span>
      <span> <h1 id="❤️">Imaginer</h1></span> -->
+    <div class="output">
+        <h1 id="🌝">
+            <span>ACTIVITY LOG</span>
+            <button on:click={activity.reset}>CLEAN</button>
+        </h1>
 
-    <h1 id="🌝">ACTIVITY</h1>
-    <p class="lof">{@html loo}</p>
+        <p class="lof">{@html loo}</p>
+    </div>
 </div>
 
 <style lang="scss">
     .main {
-        display: block;
+        display: flex;
+        justify-content: space-between;
+    }
+    .output {
+        display: inline-flex;
+        flex-direction: column;
+        justify-items: center;
+        border: 1px outset #8400ff;
+        border-radius: 5px;
     }
     .lof {
-        position: absolute;
-        padding-left: 10px;
+        padding-left: 5px;
+        padding-right: 5px;
         font-size: small;
         text-align: left;
-        border: 2px outset #8400ff;
         opacity: 0.9;
-        border-radius: 5px;
         background-color: transparent;
         text-wrap: nowrap;
+        max-height: 500px;
+        overflow-y: auto;
     }
 </style>

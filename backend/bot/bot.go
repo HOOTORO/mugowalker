@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 
 	"mugowalker/backend/adb"
-	c "mugowalker/backend/cfg"
 	"mugowalker/backend/ocr"
+	"mugowalker/backend/settings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -26,11 +26,6 @@ const (
 	ocrs = "OCR"
 	mgc  = "MAGIC"
 	tess = "TESSERACT"
-)
-
-var (
-	user    = c.ActiveUser()
-	origocr = user.Imagick
 )
 
 var ErrLocationMismatch = errors.New("wrong location")
@@ -65,21 +60,22 @@ type BasicBot struct {
 	xgrid, ygrid int
 	location     string
 	outFn        func(string, string)
+	eyes         func(string) *ocr.ImageProfile
 	*adb.Device
+	*settings.Settings
 }
 
 // New Instance of bot
-func New(altout func(s1, s2 string)) *BasicBot {
+func New(altout func(s1, s2 string), cfg *settings.Settings) *BasicBot {
 	outFn = altout
 	return &BasicBot{
-		id:    rand.Uint32(),
-		outFn: altout,
-		xgrid: xgrid,
-		ygrid: ygrid,
+		id:       rand.Uint32(),
+		outFn:    altout,
+		xgrid:    xgrid,
+		ygrid:    ygrid,
+		Settings: cfg,
+		eyes:     ocr.Engine(cfg, "BB").ExtractText,
 	}
-}
-func init() {
-	log = c.Logger()
 }
 
 func (b *BasicBot) NotifyUI(pref, msg string) {
@@ -92,9 +88,9 @@ func (b *BasicBot) Location() (locname string) {
 
 func (b *BasicBot) ScanText() *ocr.ImageProfile { // ocr.Result {
 	s := b.Screenshot(tempfile)
-	text := ocr.ExtractText(s)
+	text := b.eyes(s)
 
-	// log.Trace(c.Green("OCR-R"),c.F("Words Onscr: %v lns: %s\nocred: %v", c.Cyan(len(text)), c.Green(text[len(text)].LineNo), c.Cyan(z(text))))
+	// log.Trace(c.Green("OCR-R"),fmt.Sprintf("Words Onscr: %v lns: %s\nocred: %v", c.Cyan(len(text)), c.Green(text[len(text)].LineNo), c.Cyan(z(text))))
 	return text
 }
 
@@ -103,9 +99,9 @@ func (b *BasicBot) Screenshot(name string) string {
 	if filepath.IsAbs(name) {
 		p, n = filepath.Split(name)
 	} else {
-		p = c.UserFile("")
+		p = "wd/temp/"
 	}
-	newn := c.F("%v_%v.png", b.id, n)
+	newn := fmt.Sprintf("%v_%v.png", b.id, n)
 
 	b.Screencap(newn)
 	b.Pull(newn, p)
@@ -154,7 +150,7 @@ func drawTap(tx, ty int, bot Bot) {
 	s := bot.Screenshot(f("%v", step))
 	circle := fmt.Sprintf("circle %v,%v %v,%v", tx, ty, tx+20, ty+20)
 	no := fmt.Sprintf("+%v+%v", tx-20, ty+20)
-	cmd := exec.Command("magick", s, "-fill", "red", "-draw", circle, "-fill", "black", "-pointsize", "60", "-annotate", no, c.F("%v", step), c.UserFile(""))
+	cmd := exec.Command("magick", s, "-fill", "red", "-draw", circle, "-fill", "black", "-pointsize", "60", "-annotate", no, fmt.Sprintf("%v", step), "wd/temp/")
 	e := cmd.Run()
 
 	if e != nil {

@@ -1,9 +1,11 @@
 package ocr
 
 import (
-	c "mugowalker/backend/cfg"
 	"errors"
 	"fmt"
+	c "mugowalker/backend/cfg"
+	"mugowalker/backend/settings"
+	"strings"
 )
 
 var (
@@ -41,7 +43,7 @@ func (t *Tesseract) SetArgs(in, out string, args ...string) {
 	t.out = out
 	t.args = args
 
-	log.Trace("Tessa ARGS --> ", c.Red(tessa.Args()))
+	log(settings.TRACE, "Tessa ARGS --> "+strings.Join(tessa.Args(), ""))
 
 }
 
@@ -50,16 +52,12 @@ var tessa = &Tesseract{
 	args: make([]string, 0),
 }
 
-func init() {
-	tessa.args = user.TesseractCfg()
-}
-
 // PrepareForRecognize alternative optimization
-func PrepareForRecognize(f *ImageProfile) error {
+func PrepareForRecognize(f *ImageProfile, psm int, args []string) error {
 	blaine.SetFile(f.original)
 	e := c.RunCmd(blaine)
 	if e != nil {
-		log.Error(ErrOptimizeImg, e)
+		log(settings.ERR, e.Error())
 		return e
 	}
 	f.prepared = blaine.Prepared()

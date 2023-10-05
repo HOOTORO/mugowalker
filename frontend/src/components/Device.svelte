@@ -1,8 +1,10 @@
 <script lang="ts">
-    import { device } from "../stores/device";
-    import { AdbConnect } from "../lib/wailsjs/go/main/App";
-    import Butt from "./Butt.svelte";
+    import { afterUpdate } from "svelte";
+    import { AdbConnect } from "../lib/wailsjs/go/backend/Config";
+    import * as rt from "../lib/wailsjs/runtime/runtime.js";
     import { activity } from "../stores/activity";
+    import { device } from "../stores/device";
+    import Butt from "./Butt.svelte";
 
     const devStatus = {
         online: `<span style="color: green;text-align:right"><strong>CONNECTED</strong></span>`,
@@ -11,52 +13,55 @@
         dis: `DISCONNECT`,
         loading: `CONNECTING`,
     };
-    let btname = devStatus.con;
-    let btnActifve = true;
-    let isAvailiable = devStatus.offline;
+    let buttonName = devStatus.con;
+    let btnActive = true;
+    let isAvailable = devStatus.offline;
 
     // let result: Promise<string | boolean> | null = null;
 
     function connect() {
-        btname = devStatus.loading;
-        btnActifve = false;
+        buttonName = devStatus.loading;
+        btnActive = false;
         activity.writeLog(`Connecting to ${$device.dest}`);
+        rt.EventsEmit("task", $device.dest);
         AdbConnect($device.dest)
             .then((x) => {
-                console.log(x);
                 if (x) {
-                    isAvailiable = devStatus.online;
-                    btname = devStatus.dis;
-                    activity.writeLog("connection succesful");
+                    isAvailable = devStatus.online;
+                    buttonName = devStatus.dis;
+                    activity.writeLog("connection successful");
                 } else {
-                    btnActifve = true;
-                    btname = devStatus.con;
-                    isAvailiable = devStatus.offline;
+                    btnActive = true;
+                    buttonName = devStatus.con;
+                    isAvailable = devStatus.offline;
                     activity.writeLog("connection failed");
                 }
             })
             .catch((e) => {
-                btnActifve = true;
-                btname = devStatus.con;
-                isAvailiable = devStatus.offline;
-                console.log(e);
+                btnActive = true;
+                buttonName = devStatus.con;
+                isAvailable = devStatus.offline;
                 activity.writeLog(devStatus.offline);
             });
-        // console.log(result);
-        // activity += result.
+    }
+    afterUpdate(async () => {
+        rt.EventsEmit("config", $device.dest);
+    }); // console.log(result);
+    // activity += result.
+    function updCfg() {
+        rt.EventsEmit("config", $device.dest);
     }
 </script>
 
 <div class="component">
-    <h1 id="📲">Device <span><sup>{@html isAvailiable}</sup></span></h1>
-    <input bind:value={$device.dest} />
-    <Butt name={btname} on:click={connect} ro={btnActifve} />
+    <h1 id="📲">Device <span><sup>{@html isAvailable}</sup></span></h1>
+    <input bind:value={$device.dest} on:change={updCfg} />
+    <Butt name={buttonName} on:click={connect} ro={btnActive} />
 </div>
 
 <style lang="scss">
     .component {
         display: block;
-
         padding: 1em;
 
         h1:before {

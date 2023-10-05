@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/glebarez/sqlite"
-	// "gorm.io/driver/sqlite"
+	// "github.com/glebarez/sqlite"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -223,11 +223,13 @@ func (b Button) Position() (x int, y int) {
 }
 
 func GetButtons(xResolution, yResolution int) []*Button {
-	var bts []*Button
-	r := db.Where("xwmsize = ? and ywmsize = ?", xResolution, yResolution).Find(&bts)
-	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
-		log.Error("No entries rn")
-	}
+	// var bts []*Button
+	// r := db.Where("xwmsize = ? and ywmsize = ?", xResolution, yResolution).Find(&bts)
+	// if errors.Is(r.Error, gorm.ErrRecordNotFound) {
+	// 	log.Error("No entries rn")
+	// }
+	bts := make([]*Button, 1)
+	bts = append(bts, NewBtn("ddd", "dfd", 1, 1, 2, 2))
 	return bts
 }
 func NewBtn(name, text string, x, y, xResolution, yResolution int) *Button {
@@ -239,6 +241,6 @@ func NewBtn(name, text string, x, y, xResolution, yResolution int) *Button {
 		Xwmsize: xResolution,
 		Ywmsize: yResolution,
 	}
-	db.Save(b)
+	// db.Save(b)
 	return b
 }

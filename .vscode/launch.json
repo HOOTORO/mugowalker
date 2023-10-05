@@ -4,7 +4,7 @@
       "name": "LiveReload: Dev mugowalker",
       "request": "launch",
       "script": "wails dev",
-      "type": "zsh"
+      "type": "shell"
     },
     {
       "cwd": "${workspaceFolder}",

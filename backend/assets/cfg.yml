@@ -1,0 +1,24 @@
+draw_step: false
+logfile: appp.log
+loglevel: TRACE
+imagick:
+  colorspace: Gray
+  alpha: "off"
+  threshold: 75%
+  edge: "2"
+  negate: true
+  black-threshold: 90%
+tesseract:
+  psm: 3
+  args:
+    - hoot
+    - quiet
+bluestacks:
+  instance: Rvc64
+  cmd: launchApp
+  package: "com.lilithgames.hgame.gp.id"
+ignored_words:
+  - Go
+  - Up
+  - In
+  - Tap

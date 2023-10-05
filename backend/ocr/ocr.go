@@ -1,13 +1,17 @@
 package ocr
 
 import (
+	"fmt"
 	"os"
 	"time"
 
 	c "mugowalker/backend/cfg"
-
-	"github.com/sirupsen/logrus"
+	"mugowalker/backend/settings"
 )
+
+type engine struct {
+	*settings.Settings
+}
 
 // AlmoResult parsed xml Almo
 type AlmoResult struct {
@@ -18,24 +22,23 @@ type AlmoResult struct {
 }
 
 var (
-	user *c.Profile
-	log  *logrus.Logger
+	log func(string, string)
 )
 
 var almoResultsStringer = func(arr []AlmoResult, psm int) string {
 	var s string
-	s = c.Red(c.F("	↓	|> PSM %v <|	↓	\n", psm))
+	s = fmt.Sprintf("	↓	|> PSM %v <|	↓	\n", psm)
 	line := 0
 	s += "Ln# 0 -> "
 	for _, elem := range arr {
 
 		if elem.LineNo == line {
 			// "#%2s|>%30s" c.Cyan(i),
-			s += c.F("%-48s", elem.String())
+			s += fmt.Sprintf("%-48s", elem.String())
 		} else {
 			line = elem.LineNo
 			// log.Debugf("Len S %d", len(elem.String()))
-			s += c.F("\nLn#%11s -> %-48s", c.Mgt(elem.LineNo), elem.String())
+			s += fmt.Sprintf("\nLn#%11s -> %-48s", elem.LineNo, elem.String())
 		}
 	}
 	s += "\n\n"
@@ -44,33 +47,36 @@ var almoResultsStringer = func(arr []AlmoResult, psm int) string {
 }
 
 func (a AlmoResult) String() string {
-	return c.F("%s [%s]", c.F("%13vx%-13v", c.Red(a.X), c.Red(a.Y)), c.Green(c.Shorterer(a.Linechars, 7)))
+	return fmt.Sprintf("%s [%s]", fmt.Sprintf("%13vx%-13v", a.X, a.Y), c.Shortener(a.Linechars, 7))
 }
-func init() {
+func Engine(c *settings.Settings, usr string) *engine {
+	// log = c.Log
 	// Fallback to searching on PATH.
-	user = c.ActiveUser()
-	log = c.Logger()
+	return &engine{c}
+
 }
 
 // ExtractText prepare and extract text from img
-func ExtractText(img string) *ImageProfile {
+func (en *engine) ExtractText(img string) *ImageProfile {
 	// defer  timeTrack(time.Now(), "AltOcr")
 	ip := &ImageProfile{
 		original:   img,
 		recognized: make([]AlmoResult, 0),
+		psm:        en.Tesseract.Psm,
+		ignored:    en.IgnoredWords,
 	}
 
-	e := PrepareForRecognize(ip)
+	e := PrepareForRecognize(ip, en.Tesseract.Psm, en.Tesseract.Args)
 	if e != nil {
-		log.Errorf("IMAGE NOT PREPARED")
+		// en.Log(settings.ERR, "IMAGE NOT PREPARED")
 	}
-	log.Trace(c.Red("Optimized img -> "), c.Cyan(ip.prepared))
+	// en.Log(settings.TRACE, "Optimized img -> "+ip.prepared)
 
 	return ip
 }
 
 func tmpFile() (*os.File, error) {
-	outfile, err := os.CreateTemp(c.TempFile(""), "ghost-tesseract-out-")
+	outfile, err := os.CreateTemp("wd/temp", "ghost-tesseract-out-")
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +94,7 @@ func readTmp(fname string) ([]byte, error) {
 
 func timeTrack(start time.Time, name string) string {
 	elapsed := time.Since(start)
-	return c.F("%v\n\r", c.TTrack("\r[%s] %s", name, elapsed.Round(time.Millisecond)))
+	return fmt.Sprintf("%v\n\r", fmt.Sprintf("\r[%s] %s", name, elapsed.Round(time.Millisecond)))
 }
 
 func unique(sample []AlmoResult) []AlmoResult {

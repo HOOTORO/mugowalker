@@ -1,9 +1,14 @@
 {
     "cSpell.language": "en,ru,lorem",
     "cSpell.words": [
+        "Almo",
         "assetserver",
         "Mugowalker",
-        "wailsapp"
+        "sysvars",
+        "tesseract",
+        "wailsapp",
+        "wailsjs",
+        "Warnf"
     ],
     "go.toolsEnvVars": {}
 }

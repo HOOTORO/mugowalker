@@ -4,6 +4,7 @@ import (
 	"mugowalker/backend/afk/activities"
 	"mugowalker/backend/bot"
 	"mugowalker/backend/cfg"
+	"mugowalker/backend/pilot"
 )
 
 func (d *Daywalker) Run(chosen string) {
@@ -57,7 +58,7 @@ func doActivity(miss cfg.Mission, ns activities.Nightstalker, g activities.Gamer
 	}
 }
 
-func Nightstalker(b *bot.BasicBot, user cfg.AppUser) *Daywalker {
+func Nightstalker(b *bot.BasicBot, user *pilot.Pilot) *Daywalker {
 	gm := New(user)
 	return NewArenaBot(b, gm)
 }

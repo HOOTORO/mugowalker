@@ -3,10 +3,10 @@ package activities
 import (
 	"fmt"
 	"math"
-	"strings"
-	"time"
 	c "mugowalker/backend/cfg"
 	"mugowalker/backend/ocr"
+	"strings"
+	"time"
 
 	"golang.org/x/exp/slices"
 )
@@ -17,8 +17,6 @@ type Gamer interface {
 	Quests() uint
 	SetQuests(uint)
 }
-
-var log = c.Logger()
 
 type DailyQuest uint
 
@@ -154,12 +152,12 @@ type BoardQuest struct {
 }
 
 func (q BoardQuest) String() string {
-	return fmt.Sprintf("\n|> Btn[%s]Que[%v]Pos[%vx%v] - Desc: %s", q.Btn, q.Quest, c.Red(q.X), c.Red(q.Y), c.Ylw(q.Desc))
+	return fmt.Sprintf("\n|> Btn[%s]Que[%v]Pos[%vx%v] - Desc: %s", q.Btn, q.Quest, q.X, q.Y, q.Desc)
 }
 
 func BoardsQuests(or []ocr.AlmoResult) (brdq []BoardQuest) {
 
-	log.Trace(c.Ylw("↓  parsing board quests from results  ↓ \n"), c.Cyan(or))
+	fmt.Printf("↓  parsing board quests from results  ↓ \n", or)
 	for _, str := range or {
 		if str.Linechars == "Go" || strings.Contains(str.Linechars, "completed") {
 			qblock := &BoardQuest{}

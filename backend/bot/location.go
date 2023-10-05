@@ -2,7 +2,6 @@
 package bot
 
 import (
-	c "mugowalker/backend/cfg"
 	"mugowalker/backend/ocr"
 	"strings"
 )
@@ -31,11 +30,11 @@ func GuessLocation(a *ocr.ImageProfile, locations []any) (locname string) {
 		}
 	}
 	if maxh == 1 {
-		outFn(c.Mgt("GUESSHI |>"), c.Ylw(f("Bad recognition -> %v ", c.Red("retry"))))
+		outFn("GUESSHI |>", f("Bad recognition -> %v ", "retry"))
 		a.TryAgain()
 	}
 
-	log.Debug(c.Mgt("GUESSHI |> "), c.Ylw(f(" ↓ Location ↓ \n\t -->  Winner|> %v  Hits|> %v]\n\t --> candidates: %v", resloc, maxh, candidates)))
+	log.Debug("GUESSHI |> ", f(" ↓ Location ↓ \n\t -->  Winner|> %v  Hits|> %v]\n\t --> candidates: %v", resloc, maxh, candidates))
 	return resloc
 }
 

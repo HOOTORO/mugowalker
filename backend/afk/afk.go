@@ -5,24 +5,15 @@ import (
 
 	"mugowalker/backend/afk/activities"
 	"mugowalker/backend/afk/repository"
-	"mugowalker/backend/cfg"
-
-	"github.com/sirupsen/logrus"
+	"mugowalker/backend/pilot"
 )
-
-var log *logrus.Logger
-
-func init() {
-	log = cfg.Logger()
-	// repository.DbInit(func(s string) string { log.Println(s); return s })
-}
 
 type Game struct {
 	Name      string
 	Active    bool
 	Locations []any
 	User      *repository.User
-	profile   cfg.AppUser
+	profile   *pilot.Pilot
 }
 
 func (g *Game) String() string {
@@ -30,28 +21,24 @@ func (g *Game) String() string {
 }
 
 // New Game for a given User
-func New(up cfg.AppUser) *Game {
-	log.Infof("Launch %v", up)
+func New(up *pilot.Pilot) *Game {
 
 	anylocs := activities.AllLocations()
 	for _, l := range anylocs {
 		if loc, ok := l.(activities.Location); ok {
 			for _, kw := range loc.Keywords() {
 				if kw == "%account" {
-					loc.Kws = append(loc.Kws, up.Account())
+					loc.Kws = append(loc.Kws, up.Account)
 				}
 			}
 
 		}
-		//anylocs = append(anylocs, l)
+		anylocs = append(anylocs, l)
 	}
-
-	log.Infof("Locations: %v", anylocs...)
-
-	user := repository.GetUser(up.Account())
+	user := &repository.User{Username: up.Account} //repository.GetUser(up.Account)
 
 	return &Game{
-		Name:      up.Game(),
+		Name:      up.Game,
 		Locations: anylocs,
 		Active:    true,
 		User:      user,

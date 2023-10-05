@@ -2,14 +2,15 @@ package afk
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
 	"mugowalker/backend/afk/activities"
 	"mugowalker/backend/afk/repository"
 	"mugowalker/backend/bot"
-	c "mugowalker/backend/cfg"
 	"mugowalker/backend/ocr"
+	"mugowalker/backend/settings"
 
 	"golang.org/x/exp/slices"
 )
@@ -53,26 +54,22 @@ func (s sessionBtn) Position() (x int, y int) {
 }
 
 func NewArenaBot(b *bot.BasicBot, g *Game) *Daywalker {
-	btns := repository.GetButtons(b.Resolution.X, b.Resolution.Y)
+	fmt.Printf("\n%v, %v", b, g)
+	// btns := repository.GetButtons(b.Resolution.X, b.Resolution.Y)
 	return &Daywalker{
 		BasicBot: b,
 		Game:     g,
 		fprefix:  time.Now().Format("2006_01"),
 		cnt:      0, maxocrtry: 2,
 		knownBtns: make(map[activities.Button]sessionBtn, 0),
-		knwnBtns:  btns,
+		// knwnBtns:  btns,
 	}
 }
 
 var outFn func(string, string)
 
-func init() {
-	log = c.Logger()
-
-}
-
 func (dw *Daywalker) String() string {
-	return c.F("\nBot status:\n   Game: %v\n ActiveTask: %v\nDevice: %+v", dw.Game, dw.ActiveTask, dw.Device)
+	return fmt.Sprintf("\nBot status:\n   Game: %v\n ActiveTask: %v\nDevice: %+v", dw.Game, dw.ActiveTask, dw.Device)
 }
 
 // ///////////////////////////////////////////////////////////
@@ -83,9 +80,9 @@ func (dw *Daywalker) Location() string {
 
 }
 func (dw *Daywalker) TempScreenshot(name string) string {
-	imgf := c.F("%v_%v.png", dw.fprefix, name)
-	dw.lastscreenshot = c.TempFile(imgf)
-	pt := dw.Screenshot(c.TempFile(imgf))
+	imgf := fmt.Sprintf("%v_%v.png", dw.fprefix, name)
+	dw.lastscreenshot = "wd/temp/" + imgf
+	pt := dw.Screenshot("wd/temp/" + imgf)
 	return pt
 }
 
@@ -97,11 +94,11 @@ func availiableToday(days string) bool {
 
 // Press button, search for 'button's text in ocr results
 func (dw *Daywalker) Press(b activities.Button) bool {
-	log.Debugf("Known buttons: %+v", dw.knwnBtns)
+	dw.NotifyUI(settings.TRACE, fmt.Sprintf("Known buttons: %+v", dw.knwnBtns))
 	if len(dw.knwnBtns) > 0 {
 		butt, e := dw.button(b.String())
 		if e == nil {
-			dw.NotifyUI(c.Cyan("BTN PRSD"), c.Green(c.F("%v |> %vx%v", butt, butt.X, butt.Y)))
+			dw.NotifyUI("BTN PRSD", fmt.Sprintf("%v |> %vx%v", butt, butt.X, butt.Y))
 			dw.Tap(butt.X, butt.Y, 1)
 			return true
 		}
@@ -124,7 +121,7 @@ Lookin:
 }
 
 func LookForButton(or []ocr.AlmoResult, b activities.Button) (x, y int, e error) {
-	log.Debugf(c.Red("Looking for BTN: %v"), b.String()) //, c.RFW(or))
+	fmt.Printf("Looking for BTN: %v", b.String()) //, c.RFW(or))
 	if b.String() == "" {
 		return 500, 100, nil
 	}

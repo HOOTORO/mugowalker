@@ -1,13 +1,14 @@
 import { writable } from 'svelte/store';
 
 function createLog() {
-    const { subscribe, set, update } = writable("( ͡°( ͡° ͜ʖ( ͡° ͜ʖ ͡°)ʖ ͡°) ͡°)       ᓚᘏᗢ<br>");
+    const head = "<h3 style='color:orange'>( ͡°( ͡° ͜ʖ( ͡° ͜ʖ ͡°)ʖ ͡°) ͡°)     ᓚᘏᗢ </h3>"
+    const { subscribe, set, update } = writable(head);
 
     return {
         subscribe,
         writeLog: (str: string) => update((n) => n + "<br>" + str),
         // decrement: () => update((n) => n - 1),
-        reset: () => set("( ͡°( ͡° ͜ʖ( ͡° ͜ʖ ͡°)ʖ ͡°) ͡°)       ᓚᘏᗢ<br>")
+        reset: () => set(head)
     };
 }
 
