@@ -1,73 +1,58 @@
 package backend
 
 import (
+	"encoding/json"
 	"fmt"
-	"mugowalker/backend/adb"
-	"mugowalker/backend/afk"
-	"mugowalker/backend/bot"
 	"mugowalker/backend/localstore"
-	"mugowalker/backend/pilot"
 	"mugowalker/backend/settings"
 
-	"github.com/wailsapp/wails"
-
-	"gopkg.in/yaml.v3"
+	"github.com/wailsapp/wails/v2/pkg/logger"
 )
 
-const filename = "conf.yaml"
+const (
+	filename = "conf.json"
+	account  = "acc.json"
+)
 
 type Config struct {
-	Settings   *settings.Settings
-	Pilot      *pilot.Pilot
-	Bot        *afk.Daywalker
-	Logger     *wails.CustomLogger
-	localStore *localstore.LocalStore
+	*settings.Settings
+	*settings.Pilot
+	Log logger.Logger
+	*localstore.LocalStore
 }
 
 // WailsInit performs setup when Wails is ready.
-func (c *Config) WailsInit(out func(string, string)) error {
-	c.Pilot = pilot.Default()
-	gw := afk.New(c.Pilot)
-	bb := bot.New(out, c.Settings)
-
-	c.Bot = afk.NewArenaBot(bb, gw)
-	// c.Logger.Info("Config initialized...")
+func (c *Config) WailsInit() error {
+	c.Log = logger.NewFileLogger(c.Settings.Logfile)
+	// os.Truncate(c.Settings.Logfile, 0)
+	a, err := c.Load(account, true)
+	if err != nil {
+		c.Pilot = settings.DefaultPilot()
+	}
+	if err = json.Unmarshal(a, &c.Pilot); err != nil {
+		fmt.Printf("error")
+	}
+	c.Log.Info("\n<------------------------------>\nConfig initialized...\n<------------------------------>\n\n\n\n\n")
 	return nil
 }
 
 // NewConfig returns a new instance of Config.
 func NewConfig() *Config {
 	c := &Config{}
-	c.localStore = localstore.NewLocalStore()
+	c.LocalStore = localstore.NewLocalStore()
 
-	a, err := c.localStore.Load(filename, true)
+	a, err := c.Load(filename, true)
 	if err != nil {
 		c.Settings = settings.Default()
 	}
-	if err = yaml.Unmarshal(a, &c.Settings); err != nil {
+	if err = json.Unmarshal(a, &c.Settings); err != nil {
 		fmt.Printf("error")
 	}
 	return c
 }
-
-func (c *Config) AdbConnect(str string) (isConnected bool) {
-	dev, err := adb.Connect(str)
-
-	if err == nil {
-		c.Bot.Connect(dev)
-		isConnected = true
-
-	}
-	return
-
+func (c *Config) CurrentConfiguration() *settings.Settings {
+	return c.Settings
 }
-
-// func Run(ctx *context.Context) *Backend {
-
-// 	return &Backend{
-// 		runtimeCtx:    nil,
-// 		configuration: configuration,
-// 		user:          user,
-// 		dw:            bot,
-// 	}
-// }
+func (c *Config) CurrentPilot() *settings.Pilot {
+	return c.Pilot
+}

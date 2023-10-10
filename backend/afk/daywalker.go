@@ -4,141 +4,60 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"mugowalker/backend/afk/activities"
-	"mugowalker/backend/afk/repository"
 	"mugowalker/backend/bot"
-	"mugowalker/backend/ocr"
-	"mugowalker/backend/settings"
-
-	"golang.org/x/exp/slices"
-)
-
-const (
-	alto = "ALTO"
+	"mugowalker/backend/image"
 )
 
 var (
-	ErrUnknownButton = errors.New("Not found button named:")
+	ErrUnknownButton = errors.New("not found button named")
 )
 
 type Daywalker struct {
-	*bot.BasicBot
+	*bot.Bot
 	*Game
-
-	cnt            uint8
-	ActiveTask     string
-	Reactive       bool
-	currentOcr     *ocr.ImageProfile
-	fprefix        string
-	lastscreenshot string
-	maxocrtry      int
-	knownBtns      map[activities.Button]sessionBtn
-	knwnBtns       []*repository.Button
+	ActiveTask string
+	currentOcr *image.ImageProfile
 }
 
-type sessionBtn struct {
-	x, y int
-}
-
-func (s sessionBtn) String() string {
-	return "ssnBtn"
-}
-func (s sessionBtn) Offset() (x int, y int) {
-	return 0, 0
-}
-
-func (s sessionBtn) Position() (x int, y int) {
-	return s.x, s.y
-}
-
-func NewArenaBot(b *bot.BasicBot, g *Game) *Daywalker {
-	fmt.Printf("\n%v, %v", b, g)
-	// btns := repository.GetButtons(b.Resolution.X, b.Resolution.Y)
+func NewDaywalker(b *bot.Bot, g *Game) *Daywalker {
 	return &Daywalker{
-		BasicBot: b,
-		Game:     g,
-		fprefix:  time.Now().Format("2006_01"),
-		cnt:      0, maxocrtry: 2,
-		knownBtns: make(map[activities.Button]sessionBtn, 0),
-		// knwnBtns:  btns,
+		Bot:  b,
+		Game: g,
 	}
 }
 
-var outFn func(string, string)
-
 func (dw *Daywalker) String() string {
-	return fmt.Sprintf("\nBot status:\n   Game: %v\n ActiveTask: %v\nDevice: %+v", dw.Game, dw.ActiveTask, dw.Device)
+	return fmt.Sprintf("\n\tDevice: %+v%v", dw.Device, dw.Game)
 }
 
 // ///////////////////////////////////////////////////////////
 // ///////////////////////////////////////////////////////////
 func (dw *Daywalker) Location() string {
-	dw.currentOcr = dw.ScanText()
+	dw.currentOcr = dw.Text()
 	return bot.GuessLocation(dw.currentOcr, dw.Locations)
 
 }
-func (dw *Daywalker) TempScreenshot(name string) string {
-	imgf := fmt.Sprintf("%v_%v.png", dw.fprefix, name)
-	dw.lastscreenshot = "wd/temp/" + imgf
-	pt := dw.Screenshot("wd/temp/" + imgf)
-	return pt
-}
 
-func availiableToday(days string) bool {
-	d := strings.Split(days, "/")
-	weekday := time.Now().Weekday().String()
-	return slices.Contains(d, weekday[:3])
-}
-
-// Press button, search for 'button's text in ocr results
-func (dw *Daywalker) Press(b activities.Button) bool {
-	dw.NotifyUI(settings.TRACE, fmt.Sprintf("Known buttons: %+v", dw.knwnBtns))
-	if len(dw.knwnBtns) > 0 {
-		butt, e := dw.button(b.String())
-		if e == nil {
-			dw.NotifyUI("BTN PRSD", fmt.Sprintf("%v |> %vx%v", butt, butt.X, butt.Y))
-			dw.Tap(butt.X, butt.Y, 1)
-			return true
-		}
+func (dw *Daywalker) TapOrBack(word string) bool {
+	if err := dw.FindTap(word, 0, 0); err != nil {
+		dw.Back()
+		return false
+	} else {
+		return true
 	}
-
-	res := dw.currentOcr.Result()
-Lookin:
-	x, y, e := LookForButton(res, b)
-	if e != nil {
-		res = dw.currentOcr.TryAgain()
-		goto Lookin
-	}
-	// dw.knownBtns[b] = sessionBtn{x: x, y: y}
-	nb := repository.NewBtn(b.String(), "", x, y, dw.Resolution.X, dw.Resolution.Y)
-	dw.knwnBtns = append(dw.knwnBtns, nb)
-	dw.Press(b)
-	// Let location load
-	time.Sleep(3 * time.Second)
-	return true
 }
 
-func LookForButton(or []ocr.AlmoResult, b activities.Button) (x, y int, e error) {
-	fmt.Printf("Looking for BTN: %v", b.String()) //, c.RFW(or))
+func LookForButton(or []*image.ScreenWord, b activities.Button) (x, y int, e error) {
+	fmt.Printf("\nLooking for BTN: %v", b.String())
 	if b.String() == "" {
 		return 500, 100, nil
 	}
 	for _, r := range or {
-		if strings.Contains(r.Linechars, b.String()) {
-			xo, yo := b.Offset()
-			return r.X + xo, r.Y + yo, nil
+		if strings.Contains(r.S, b.String()) {
+			return r.X, r.Y, nil
 		}
 	}
 	return 0, 0, errors.New("btn not found here")
-}
-
-func (dw *Daywalker) button(s string) (*repository.Button, error) {
-	for _, b := range dw.knwnBtns {
-		if s == b.Name {
-			return b, nil
-		}
-	}
-	return &repository.Button{}, ErrUnknownButton
 }

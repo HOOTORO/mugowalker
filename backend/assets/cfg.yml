@@ -1,5 +1,5 @@
-draw_step: false
-logfile: appp.log
+drawstep: false
+logfile: app_base.log
 loglevel: TRACE
 imagick:
   colorspace: Gray
@@ -7,7 +7,7 @@ imagick:
   threshold: 75%
   edge: "2"
   negate: true
-  black-threshold: 90%
+  blackthreshold: 90%
 tesseract:
   psm: 3
   args:

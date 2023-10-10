@@ -1,0 +1,28 @@
+{
+    "bluestacks": {
+        "cmd": "launchApp",
+        "instance": "Rvc64",
+        "package": "com.lilithgames.hgame.gp.id"
+    },
+    "drawstep": false,
+    "ignoredwords": [
+        "Go",
+        "Up",
+        "In",
+        "Tap"
+    ],
+    "imagick": {
+        "alpha": "off",
+        "blackthreshold": "70%",
+        "colorspace": "Gray",
+        "edge": "2",
+        "negate": true,
+        "threshold": "70%"
+    },
+    "logfile": "application.log",
+    "loglevel": "TRACE",
+    "tesseract": {
+        "args": null,
+        "psm": 3
+    }
+}

@@ -37,7 +37,6 @@ const (
 func (d *Device) Tap(x, y string) error {
 	e := d.Command(input, tap, x, y).Run()
 	if e != nil {
-		// log.Errorf("\nerr:%v\nduring run:%v", e, "tap")
 		time.Sleep(10 * time.Second)
 		d.Tap(x, y)
 	}
@@ -54,69 +53,59 @@ func (d *Device) Swipe(x, y, x1, y1, td int) error {
 	duration := strconv.Itoa(td)
 
 	e := d.Command(swipe, xPos, yPos, x1Pos, y1Pos, duration).Run()
-	if e != nil {
-		// log.Errorf("\nerr:%vduring run:%v", e, "swipe")
-	}
 	return e
 }
 
 // "screencap -p /sdcard/ff.png"
-func (d *Device) Screencap(f string) {
+func (d *Device) Screencap() {
 	// -p for png
-	e := d.Command(screencap, remotedir+f).Run()
+	name := fmt.Sprintf("S_%v_%v.png", len(d.Files)+1, time.Now().UnixMilli())
+	remotePath := remotedir + name
+	e := d.Command(screencap, remotePath).Run()
 	if e != nil {
-		// log.Errorf("\nrun: %v err: %v", "scr", e.Error())
-		// keepAliveVM()
 		time.Sleep(10 * time.Second)
-		d.Screencap(f)
+		d.Screencap()
+	} else {
+		d.Files = append(d.Files, &RemoteFile{name: name, path: remotePath})
 	}
 }
 
 // adb shell input keyevent 4
 func (d *Device) Back() {
-	e := d.Command(input, keyevent, backbtn).Run()
-	if e != nil {
-		// log.Errorf("\nrun: %v err: %v", "scr", e.Error())
-	}
+	d.Command(input, keyevent, backbtn).Run()
+
 }
 
-func (d *Device) Home() {
+func (d *Device) Home() error {
 	e := d.Command(input, keyevent, home).Run()
-	if e != nil {
-		// log.Errorf("\nrun: %v err: %v", "scr", e.Error())
-	}
+	return e
 }
 
 func (d *Device) PS(appname string) string {
-	// pss := fmt.Sprintf("shell '%v | %v %v'", ps, grep, appname)
 	cmd := d.Command(ps, appname)
 	var b bytes.Buffer
 	cmd.Stdout = &b
-	// log.Tracef("remote sh args: %v", cmd.Args)
 	e := cmd.Run()
 	if e != nil {
-		// log.Errorf("\nrun: %v err: %v\nargs: %+v", "ps", e.Error(), cmd)
+		return ""
 	}
-	// log.Debugf("	↓ Remote PS ↓ \n%#v", b)
 	return b.String()
 }
 
+// Use:
+// adb shell am start -n '<appPackageName>/<appActitivityName>'
+// To get <appPackageName> run :
+// adb shell pm list packages
+// To get <appActitivityName> lunch app and run
+// adb shell dumpsys window | grep -E 'mCurrentFocus'
 func (d *Device) StartApp(appname string) error {
-	cmd := d.Command(am, start, appname)
-
+	cmd := d.Command(am, start, "-n", appname)
 	e := cmd.Run()
-	if e != nil {
-		// log.Errorf("\nrun: %v err: %v\nargs: %v", "startapp", e.Error(), cmd.Args)
-	}
 	return e
 }
 
 func (d *Device) KillApp(appname string) error {
 	cmd := d.Command(am, kill, appname)
-
 	e := cmd.Run()
-	if e != nil {
-		// log.Errorf("\nrun: %v err: %v\nargs: %v", "killapp", e.Error(), cmd.Args)
-	}
 	return e
 }

@@ -8,15 +8,27 @@ import (
 
 var ErrLocNotFound = errors.New("unknown location")
 
+// ///////////////////////////
+// Global afk activities ///
+// /////////////////////////
+type Mission int
+
 const (
-	AfkAppID     = "com.lilithgames.hgame.gp"
-	AfkTestAppID = "com.lilithgames.hgame.gp.id"
+	PushCampain Mission = iota + 1
+	ClimbKings
+	ClimbWild
+	ClimbGrave
+	ClimbInferno
+	ClimbMaul
+	ClimbLight
+	ClimbCelestial
+	GuildBosses
+	DailyM
 )
 
 const (
-	reactionsCfg = "assets/reactions.yaml"
-	dailyCfg     = "assets/daily.yaml"
-	dailyCfgTwo  = "assets/dailyv2.yaml"
+	AfkAppID     = "com.lilithgame.hgame.gp"
+	AfkTestAppID = "com.lilithgames.hgame.gp.id"
 )
 
 var (

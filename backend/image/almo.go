@@ -1,10 +1,11 @@
-package ocr
+package image
 
 import (
 	"encoding/xml"
 	"fmt"
 	"mugowalker/backend/cfg"
-	"mugowalker/backend/settings"
+	"mugowalker/backend/localstore"
+	"regexp"
 	"strings"
 
 	"golang.org/x/exp/slices"
@@ -97,22 +98,23 @@ type Alto struct {
 
 func UnmarshalAlto(f string) Alto {
 	var alt Alto
-	data, e := readTmp(fmt.Sprintf("%v.xml", f))
+	data, e := localstore.ReadTempFile(fmt.Sprintf("%v.xml", f))
 	if e != nil {
-		log(settings.ERR, "tess xml parse err: %v"+e.Error())
+		log("tess xml parse err: " + e.Error())
 	}
 	xml.Unmarshal(data, &alt)
 	return alt
 }
 
-func (a Alto) parse(ex []string) []AlmoResult {
-	var res []AlmoResult
-	res = make([]AlmoResult, 0)
+func (a Alto) parse(ex []string) []*ScreenWord {
+	var res []*ScreenWord
+	res = make([]*ScreenWord, 0)
 	tl := a.Layout.Page.PrintSpace.ComposedBlock.TextBlock.TextLine
 	for i, line := range tl {
 		for _, v := range line.String {
-			if len(v.CONTENT) > 3 || slices.Contains(ex, v.CONTENT) || strings.ContainsAny(v.CONTENT, "0123456789") {
-				res = append(res, AlmoResult{Linechars: lowertrim(v.CONTENT), X: cfg.ToInt(v.HPOS), Y: cfg.ToInt(v.VPOS), LineNo: i})
+			clean := regexp.MustCompile(`[^a-zA-Z0-9 ]+`).ReplaceAllString(v.CONTENT, "")
+			if len(clean) > 3 || slices.Contains(ex, clean) {
+				res = append(res, SW(lowertrim(clean), cfg.ToInt(v.HPOS), cfg.ToInt(v.VPOS), i))
 			}
 		}
 	}
@@ -121,4 +123,16 @@ func (a Alto) parse(ex []string) []AlmoResult {
 
 func lowertrim(str string) string {
 	return strings.ToLower(strings.TrimSpace(str))
+}
+
+var almoResultsStringer = func(arr []*ScreenWord, psm int) string {
+	var s string
+	s = fmt.Sprintf("__________|> PSM %v <|__________", psm)
+	for i, elem := range arr {
+		if i%3 == 0 {
+			s += "\n"
+		}
+		s += elem.String()
+	}
+	return s
 }

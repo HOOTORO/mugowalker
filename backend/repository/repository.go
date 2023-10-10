@@ -2,22 +2,18 @@ package repository
 
 import (
 	"errors"
+	"mugowalker/backend"
 	"os"
 	"time"
 
 	"github.com/sirupsen/logrus"
-	// "github.com/glebarez/sqlite"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 const (
-	appdata   = "afkarena.db"
-	locations = "locations.db"
-	arenaDB   = "arena.db"
+	arenaDB = "arena.db"
 )
 
-// var udb, lcdb *gorm.DB
 var db *gorm.DB
 var log *logrus.Logger
 
@@ -72,53 +68,14 @@ func init() {
 		Level: logrus.TraceLevel,
 	}
 
-	db, err := gorm.Open(sqlite.Open(arenaDB), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
+	backend.OpenConnection(arenaDB)
+	db = backend.Conn
 
 	e := db.AutoMigrate(&User{}, &Daily{}, &Progress{}, &RawLocation{}, &Button{})
 	if e != nil {
 		log.Errorf("\nerr:%v\nduring run:%v", e, "udb connect")
 	}
 }
-
-// func DbInit(fn func(string) string) {
-// 	f, _ := os.OpenFile(fn("db.log"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
-
-// 	log = &logrus.Logger{
-// 		Out: f,
-// 		Formatter: &logrus.TextFormatter{
-// 			ForceColors:               true,
-// 			EnvironmentOverrideColors: true,
-// 			PadLevelText:              true,
-// 			TimestampFormat:           time.Stamp,
-// 		},
-// 		Level: logrus.TraceLevel,
-// 	}
-
-// 	udb = CreateDBConnection(fn(appdata))
-// 	migrateScheme(udb, &User{}, &Daily{}, &Progress{})
-// 	lcdb = CreateDBConnection(fn(locations))
-// 	migrateScheme(lcdb, &RawLocation{}, &Button{})
-// }
-
-// func CreateDBConnection(dbname string) *gorm.DB {
-// 	db, err := gorm.Open(sqlite.Open(dbname), &gorm.Config{})
-// 	if err != nil {
-// 		panic("failed to connect database")
-// 	}
-// 	return db
-// }
-
-// func migrateScheme(g *gorm.DB, datatypes ...interface{}) {
-// 	// Migrate the schema
-// 	e := g.AutoMigrate(datatypes...)
-// 	if e != nil {
-// 		log.Errorf("\nerr:%v\nduring run:%v", e, "udb connect")
-// 	}
-// }
-
 func GetUser(user string) *User {
 	var usr User
 	r := db.Where("username = ?", user).First(&usr)
@@ -223,13 +180,13 @@ func (b Button) Position() (x int, y int) {
 }
 
 func GetButtons(xResolution, yResolution int) []*Button {
-	// var bts []*Button
-	// r := db.Where("xwmsize = ? and ywmsize = ?", xResolution, yResolution).Find(&bts)
-	// if errors.Is(r.Error, gorm.ErrRecordNotFound) {
-	// 	log.Error("No entries rn")
-	// }
-	bts := make([]*Button, 1)
-	bts = append(bts, NewBtn("ddd", "dfd", 1, 1, 2, 2))
+	var bts []*Button
+	r := db.Where("xwmsize = ? and ywmsize = ?", xResolution, yResolution).Find(&bts)
+	if errors.Is(r.Error, gorm.ErrRecordNotFound) {
+		log.Error("No entries rn")
+	}
+	// bts := make([]*Button, 1)
+	// bts = append(bts, NewBtn("ddd", "dfd", 1, 1, 2, 2))
 	return bts
 }
 func NewBtn(name, text string, x, y, xResolution, yResolution int) *Button {
@@ -241,6 +198,6 @@ func NewBtn(name, text string, x, y, xResolution, yResolution int) *Button {
 		Xwmsize: xResolution,
 		Ywmsize: yResolution,
 	}
-	// db.Save(b)
+	db.Save(b)
 	return b
 }

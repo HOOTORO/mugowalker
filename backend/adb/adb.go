@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -66,9 +67,10 @@ type Cmd struct {
 // The returned error is nil if the command runs, has no problems copying
 // stdout and stderr, and exits with a zero exit status.
 func (c *Cmd) Run() error {
-    var args []string
-    if c.Device != nil {
-		args = append(args, "-s", c.Device.Serial)
+	var args []string
+	if c.Device != nil {
+		ID := strconv.Itoa(c.Device.TransportId)
+		args = append(args, "-t", ID)
 	}
 	if c.Path != "" {
 		args = append(args, "shell", c.Path)
@@ -104,4 +106,3 @@ func (c *Cmd) Call() (string, error) {
 	}
 	return stdout.String(), err
 }
-

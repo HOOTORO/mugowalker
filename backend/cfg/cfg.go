@@ -3,24 +3,17 @@ package cfg
 import (
 	"errors"
 	"fmt"
+	"mugowalker/backend/localstore"
 
-	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
+
+	"github.com/sirupsen/logrus"
 )
 
-const (
-	defaultcfg = "backend/assets/cfg.yml" //"assets/default.yaml"
-	game       = "AFK Arena"
-	temp       = "wd/temp"
-)
-
-type Runnable interface {
-	Path() string
-	Args() []string
-}
+var temp = localstore.TempDir()
 
 var (
 	ErrWorkDirFail        = errors.New("working directories wasn't created. Exit")
@@ -29,34 +22,8 @@ var (
 )
 
 var (
-	log *logrus.Logger
+	log *logrus.Logger = logrus.New()
 )
-
-func init() {
-
-	// repository.DbInit(func(x string) string {
-	// 	return filepath.Join(sysvars.Db, x)
-	// })
-}
-
-// type enum interface {
-// 	~uint
-// 	String() string
-// 	Values() []string
-// }
-
-// // Deserialize bits to string values
-// func Deserialize[T enum](raw T) []string {
-// 	var result []string
-// 	for i := 0; i < len(raw.Values()); i++ {
-// 		if d := T(1 << i); raw&(1<<uint(i)) != 0 {
-// 			result = append(result, d.String())
-// 		}
-// 	}
-// 	return result
-// }
-
-// Logger for app to use
 
 // GetImages from temp/<appfolder>
 func GetImages() []string {
@@ -71,10 +38,10 @@ func GetImages() []string {
 	return res
 }
 
-func RunCmd(r Runnable) error {
-	pt := LookupPath(r.Path())
-	log.Trace("  ↓   RunCMD   ↓ \n", pt, "\n", r.Args())
-	cmd := exec.Command(pt, r.Args()...)
+func RunCmd(command string, args []string) error {
+	pt := LookupPath(command)
+	log.Trace("  ↓   RunCMD   ↓ \n", pt, "\n", args)
+	cmd := exec.Command(pt, args...)
 	return cmd.Run()
 }
 
@@ -101,17 +68,18 @@ func ToInt(s string) int {
 	return num
 }
 
-func safeEnv(n string) string {
-	str, ok := os.LookupEnv(n)
-	if ok {
-		return str
-	}
-	log.Warnf("$Env:%v NOT FOUND, BE AWARE", n)
-	return ""
-}
 func Shortener(str string, n int) string {
 	if len(str) > n+3 {
 		return str[:n] + "..."
 	}
 	return str
+}
+
+func Filter[T any](ss []T, test func(T) bool) (ret []T) {
+	for _, s := range ss {
+		if test(s) {
+			ret = append(ret, s)
+		}
+	}
+	return
 }

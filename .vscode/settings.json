@@ -1,14 +1,37 @@
 {
-    "cSpell.language": "en,ru,lorem",
+    "cSpell.language": "en,ru,lorem,ru-RU",
     "cSpell.words": [
+        "afkapp",
+        "afktestapp",
         "Almo",
+        "anylocs",
         "assetserver",
+        "hgame",
+        "HPOS",
+        "imagick",
+        "Magick",
+        "maxh",
+        "Mugo",
         "Mugowalker",
+        "PHYSICALIMGNR",
         "sysvars",
         "tesseract",
+        "VPOS",
         "wailsapp",
         "wailsjs",
-        "Warnf"
+        "Warnf",
+        "Wrizz",
+        "Xlink",
+        "xyln"
     ],
-    "go.toolsEnvVars": {}
+    "go.toolsEnvVars": {},
+    "sqltools.useNodeRuntime": true,
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "ddsf",
+            "database": "${workspaceFolder:mugowalker}/arena.db"
+        }
+    ]
 }

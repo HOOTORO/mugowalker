@@ -1,8 +1,8 @@
 <script lang="ts">
     import { afterUpdate, onMount } from "svelte";
     import Device from "./components/Device.svelte";
+    import Settings from "./components/Settings.svelte";
     import * as rt from "./lib/wailsjs/runtime/runtime.js";
-    // import { main } from "$lib/wailsjs/go/models.js";
     import { activity } from "./stores/activity.js";
     import { message } from "./stores/message.js";
 
@@ -14,7 +14,7 @@
 
     onMount(async () => {
         rt.EventsOn("message", (msg) => {
-            rt.LogPrint("review msg!" + msg);
+            rt.LogPrint(msg);
             $message = msg;
             activity.writeLog(msg);
         });
@@ -35,14 +35,11 @@
 </script>
 
 <div class="main">
-    <Device />
-    <!-- <h1 id="🤖">Account</h1> -->
-    <!-- <Account /> -->
-    <!--  <span>
+    <div class="userinput">
+        <Device />
         <h1 id="⚙️">Settings</h1>
         <Settings />
-    </span>
-     <span> <h1 id="❤️">Imaginer</h1></span> -->
+    </div>
     <div class="output">
         <h1 id="🌝">
             <span>ACTIVITY LOG</span>
@@ -56,7 +53,12 @@
 <style lang="scss">
     .main {
         display: flex;
+        padding: 1.5rem;
         justify-content: space-between;
+    }
+
+    .userinput {
+        max-width: 45%;
     }
     .output {
         display: inline-flex;
@@ -64,16 +66,17 @@
         justify-items: center;
         border: 1px outset #8400ff;
         border-radius: 5px;
+        width: 50%;
+        max-height: 760px;
     }
     .lof {
         padding-left: 5px;
         padding-right: 5px;
-        font-size: small;
+        font-size: 10px;
         text-align: left;
         opacity: 0.9;
         background-color: transparent;
         text-wrap: nowrap;
-        max-height: 500px;
         overflow-y: auto;
     }
 </style>

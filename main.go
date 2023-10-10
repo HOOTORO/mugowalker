@@ -19,19 +19,17 @@ var assets embed.FS
 var icon []byte
 
 func main() {
-	// Create an instance of the app structure
-	app := NewApp()
 
-	emitter := func(s1, s2 string) { app.sendMessage(s1, s2) }
 	back := backend.NewConfig()
-	back.WailsInit(emitter)
-	// back := backend.Run(app)
+	back.WailsInit()
 
+	// Create an instance of the app structure
+	app := NewApp(back)
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:         "Mugo Walker",
-		Width:         700,
-		Height:        700,
+		Width:         900,
+		Height:        1200,
 		Frameless:     false,
 		DisableResize: true,
 		Fullscreen:    false,
@@ -44,6 +42,7 @@ func main() {
 		LogLevel:           logger.DEBUG,
 		LogLevelProduction: logger.ERROR,
 		OnStartup:          app.startup,
+		OnDomReady:         app.OnDomReady,
 		CSSDragProperty:    "--wails-draggable",
 		CSSDragValue:       "drag",
 		Bind: []interface{}{
@@ -79,6 +78,9 @@ func main() {
 				Message: "© 2023 HOOTORO",
 				Icon:    icon,
 			},
+		},
+		Debug: options.Debug{
+			OpenInspectorOnStartup: false,
 		},
 	},
 	)

@@ -1,60 +1,5 @@
 package activities
 
-import "fmt"
-
-type Button interface {
-	String() string
-	Offset() (x, y int)
-	Position() (x, y int)
-}
-
-type afkbtn struct {
-	name         string
-	x, y, xo, yo int
-}
-
-var (
-	Quests          = afkbtn{name: "quests"}
-	Bag             = afkbtn{name: "bag"}
-	MailBtn         = afkbtn{name: "mail"}
-	Go              = afkbtn{name: "go"}
-	Collect         = afkbtn{name: "collect"}
-	Begin           = afkbtn{name: "begin"}
-	BeginB          = afkbtn{name: "stage", yo: 739}
-	BeginBoss       = afkbtn{name: "begin", xo: 1}
-	CampainBotPanel = afkbtn{name: "campaign"}
-	ForrestBotPanel = afkbtn{name: "forrest"}
-	BattleBtn       = afkbtn{name: "battle"}
-	TryAgain        = afkbtn{name: "again"}
-	Next            = afkbtn{name: "next"}
-	Continue        = afkbtn{name: "continue"}
-	Challenge       = afkbtn{name: "challenge"}
-	King            = afkbtn{name: "tower"}
-	Wld             = afkbtn{name: "world"}
-	Grvbrn          = afkbtn{name: "forsaken"}
-	Infrl           = afkbtn{name: "infernal"}
-	Mlr             = afkbtn{name: "brutal"}
-	Lght            = afkbtn{name: "light"}
-	Clstl           = afkbtn{name: "celestial"}
-	Any             = afkbtn{name: ""}
-	Community       = afkbtn{name: "community", yo: 80, xo: 40}
-)
-
-var (
-	f = fmt.Sprintf
-)
-
-func (b afkbtn) String() string {
-	return b.name
-}
-func (b afkbtn) Offset() (x, y int) {
-	return b.xo, b.yo
-}
-
-func (b afkbtn) Position() (x, y int) {
-	return b.x, b.y
-}
-
 func AllLocations() []any {
 	return []any{
 		// Bottom panel
@@ -70,9 +15,9 @@ func AllLocations() []any {
 		// DF -> Arena
 		Soloarena, OpponentList,
 		// DF -> Factional towers
-		Graveborn, Wilder, Light, Nauler, Hypo, Celestial,
+		Graveborn, Wilder, Light, Mauler, Hypo, Celestial,
 		// Ranhorn -> Guild
-		guildgrounds, guildchest, wrizz, skipF,
+		guildgrounds, guildchest, WrizzLoc, skipF,
 		// Ranhorn -> Oak
 		oak,
 	}
@@ -96,10 +41,10 @@ func (l *Location) HitThreshold() int {
 	return l.Hit
 }
 
-var baselocs = []*Location{Forrest, Ranhorn, Campain}
+var baseLocations = []*Location{Forrest, Ranhorn, Campain}
 
 func isBaseLoc(s string) bool {
-	for _, v := range baselocs {
+	for _, v := range baseLocations {
 		if v.ID == s {
 			return true
 		}
@@ -144,7 +89,7 @@ var (
 	}
 	Stats = &Location{
 		ID:  "stat",
-		Kws: []string{"%account", "statistics", "battle", "hero", "info", "baltle"},
+		Kws: []string{"%account", "statistics", "battle", "hero", "info", "baftle"},
 		Hit: 2,
 	}
 	RightBanner = &Location{
@@ -230,7 +175,7 @@ var (
 		Kws: []string{"light", "floor", "leaderboard", "stage", "info", "cleared", "challendge"},
 		Hit: 5,
 	}
-	Nauler = &Location{
+	Mauler = &Location{
 		ID:  "bc",
 		Kws: []string{"brutal", "citadel", "floor", "leaderboard", "stage", "info", "cleared", "challendge"},
 		Hit: 5,
@@ -255,7 +200,7 @@ var (
 		Kws: []string{"fortune", "chests", "realm", "fabled", "brave", "guildmate", "share", "with", "everyone"},
 		Hit: 3,
 	}
-	wrizz = &Location{
+	WrizzLoc = &Location{
 		ID:  "wrizz",
 		Kws: []string{"wrizz", "challenge"},
 		Hit: 2,

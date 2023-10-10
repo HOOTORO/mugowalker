@@ -1,6 +1,8 @@
 package localstore
 
 import (
+	"fmt"
+	"math/rand"
 	"os"
 	"path"
 )
@@ -13,7 +15,32 @@ type LocalStore struct {
 }
 
 func NewLocalStore() *LocalStore {
-	return &LocalStore{ConfDir: path.Join(getConfigHome(), app), WorkDir: path.Join(getTempHome(), app)}
+	return &LocalStore{ConfDir: getConfigHome(), WorkDir: getTempHome()}
+}
+
+func TempDir() string {
+	return getTempHome()
+}
+func TempFile() (*os.File, error) {
+	outfile, err := os.CreateTemp(TempDir(), "tempo-f-")
+	if err != nil {
+		return nil, err
+	}
+	defer outfile.Close()
+	return outfile, nil
+}
+func RandPostfix(str string) string {
+	num := rand.Intn(10000000000)
+	filename := fmt.Sprintf("%s-%d", str, num)
+	return path.Join(TempDir(), filename)
+}
+
+func ReadTempFile(fname string) ([]byte, error) {
+	bytes, err := os.ReadFile(fname)
+	if err != nil {
+		return nil, err
+	}
+	return bytes, nil
 }
 
 func (ls *LocalStore) Store(data []byte, filename string, isConf bool) error {
@@ -37,12 +64,13 @@ func (ls *LocalStore) Load(filename string, isConf bool) ([]byte, error) {
 }
 
 func getConfigHome() string {
-
 	conf, e := os.UserConfigDir()
 	if e != nil {
 		return getUserHome()
 	}
-	return conf
+	appFolder := path.Join(conf, app)
+	ensureDirExists(appFolder)
+	return appFolder
 }
 
 func getTempHome() string {
@@ -51,7 +79,9 @@ func getTempHome() string {
 	if err != nil {
 		return getUserHome()
 	}
-	return cache
+	appFolder := path.Join(cache, app)
+	ensureDirExists(appFolder)
+	return appFolder
 }
 
 func getUserHome() string {
@@ -59,7 +89,9 @@ func getUserHome() string {
 	if e != nil {
 		return "."
 	}
-	return home
+	appFolder := path.Join(home, app)
+	ensureDirExists(appFolder)
+	return appFolder
 }
 
 func (ls *LocalStore) target(b bool) string {

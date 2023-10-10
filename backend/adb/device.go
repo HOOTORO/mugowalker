@@ -20,7 +20,7 @@ var (
 // Point Offset:
 // 0 -> full x*height
 // 1 -> center point
-// 2 -> xmax-1 height
+// 2 -> xMax-1 height
 type Point struct {
 	image.Point
 	Offset int
@@ -52,10 +52,11 @@ type Device struct {
 	TransportId int
 	Resolution  Point
 	abi         string
+	Files       []*RemoteFile
 }
 
 func (d *Device) String() string {
-	return fmt.Sprintf("Device<%s%s>[resolution:%s]", d.Serial, d.abi, d.Resolution)
+	return fmt.Sprintf("<%s%s>[%spx] ID: %d", d.Serial, d.abi, d.Resolution, d.TransportId)
 }
 
 // Command returns a new Cmd that will run the command with the specified name
@@ -87,22 +88,22 @@ func Connect(hostport string) (*Device, error) {
 		return nil, ErrADBNotFound
 	}
 	//check existing connection
-	devs, e := Devices()
+	devices, e := Devices()
 	if e == nil {
-		for _, d := range devs {
+		for _, d := range devices {
 			if d.Serial == hostport {
 				return d, nil
+			} else {
+				return devices[0], nil
 			}
 		}
 	}
-	// serial := fmt.Sprintf("%v:%v", host, port)
 	cmd := Cmd{Args: []string{"connect", hostport}}
 
 	if out, err := cmd.Call(); err == nil && checkOut(out) {
 		dev := &Device{Serial: hostport, DevState: Online}
 		_ = resolution(dev)
 		Abi(dev)
-		// log.Infof("--> %v", out)
 		return dev, nil
 	} else {
 		return nil, errors.New(out)
@@ -123,7 +124,7 @@ func parseDevices(out string) ([]*Device, error) {
 		case 0, 8:
 			continue
 		case 6:
-			tid, _ := strconv.Atoi(strings.Trim(fields[5], "transpo_id:"))
+			tid, _ := strconv.Atoi(strings.Trim(fields[5], "transport_id:"))
 			device := &Device{
 				Serial:      fields[0],
 				DevState:    state(fields[1]),
@@ -136,7 +137,6 @@ func parseDevices(out string) ([]*Device, error) {
 			return nil, ErrNoDevices
 		}
 	}
-	// log.Infof("Availiable Devices:\n%v", devices)
 	return devices, nil
 }
 

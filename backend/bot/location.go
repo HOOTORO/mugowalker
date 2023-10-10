@@ -2,7 +2,7 @@
 package bot
 
 import (
-	"mugowalker/backend/ocr"
+	"mugowalker/backend/image"
 	"strings"
 )
 
@@ -14,14 +14,14 @@ type Location interface {
 	HitThreshold() int
 }
 
-func GuessLocation(a *ocr.ImageProfile, locations []any) (locname string) {
+func GuessLocation(a *image.ImageProfile, locations []any) (locname string) {
 	maxh := 1
 	var resloc string
 	var candidates []string
 	for _, loc := range locations {
 		l, ok := loc.(Location)
 		if ok {
-			hit := Intersect(a.Result(), l.Keywords())
+			hit := Intersect(a.TesseractResult(), l.Keywords())
 			if len(hit) >= l.HitThreshold() && len(hit) >= maxh {
 				maxh = len(hit)
 				candidates = append(candidates, l.Id())
@@ -30,17 +30,17 @@ func GuessLocation(a *ocr.ImageProfile, locations []any) (locname string) {
 		}
 	}
 	if maxh == 1 {
-		outFn("GUESSHI |>", f("Bad recognition -> %v ", "retry"))
-		a.TryAgain()
+		outFn("GUESS |>", f("Bad recognition -> %v ", "retry"))
+		a.Redo()
 	}
 
-	log.Debug("GUESSHI |> ", f(" ↓ Location ↓ \n\t -->  Winner|> %v  Hits|> %v]\n\t --> candidates: %v", resloc, maxh, candidates))
+	outFn("GUESS |> ", f(" ↓ Location ↓ \n\t -->  Winner|> %v  Hits|> %v]\n\t --> candidates: %v", resloc, maxh, candidates))
 	return resloc
 }
 
-func TextPosition(str string, alto []ocr.AlmoResult) (x, y int) {
+func TextPosition(str string, alto []image.ScreenWord) (x, y int) {
 	for _, v := range alto {
-		if strings.Contains(v.Linechars, str) {
+		if strings.Contains(v.S, str) {
 			return v.X, v.Y
 		}
 
@@ -48,24 +48,15 @@ func TextPosition(str string, alto []ocr.AlmoResult) (x, y int) {
 	return 0, 0
 }
 
-func Intersect(or []ocr.AlmoResult, k []string) (r []string) {
+func Intersect(or []*image.ScreenWord, k []string) (r []string) {
 NextLine:
 	for _, v := range or {
 		for _, kw := range k {
-			if strings.Contains(v.Linechars, kw) {
-				r = append(r, v.Linechars)
+			if strings.Contains(v.S, kw) {
+				r = append(r, v.S)
 				continue NextLine
 			}
 		}
 	}
 	return r
-
 }
-
-type notify struct{ s string }
-
-// func GuessNotify(str chan interface{}) tea.Msg {
-// 	return func(s string) {
-// 		str <- notify{s}
-// 	}
-// }
